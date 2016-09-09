@@ -1,0 +1,10 @@
+[package]
+name = "orderedmap"
+version = "0.1.0"
+authors = ["bluss <bluss@users.noreply.github.com>"]
+
+[dependencies]
+itertools = "0.4"
+
+[profile.bench]
+debug = true
