@@ -57,6 +57,7 @@ impl Pos {
     }
 }
 
+/// A hash map that preserves insertion order of the key-value pairs.
 #[derive(Clone)]
 pub struct OrderedMap<K, V> {
     len: usize,
@@ -457,6 +458,20 @@ impl<'a, K, V> IndexMut<&'a K> for OrderedMap<K, V>
         } else {
             panic!("OrderedMap: key not found")
         }
+    }
+}
+
+use std::iter::FromIterator;
+
+impl<K, V> FromIterator<(K, V)> for OrderedMap<K, V>
+    where K: Hash + Eq
+{
+    fn from_iter<I: IntoIterator<Item=(K, V)>>(iterable: I) -> Self {
+        let iter = iterable.into_iter();
+        let (low, _) = iter.size_hint();
+        let mut map = Self::with_capacity(low);
+        for (k, v) in iter { map.insert(k, v); }
+        map
     }
 }
 
