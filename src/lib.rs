@@ -197,7 +197,7 @@ impl<K, V> OrderedMap<K, V>
                         self.indices[probe] = Pos::new(old_index);
                         old_index = i;
                         dist = their_dist;
-                    } 
+                    }
                 } else {
                     self.indices[probe] = Pos::new(old_index);
                     break;
