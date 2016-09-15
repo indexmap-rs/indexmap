@@ -314,7 +314,6 @@ impl<K, V> OrderedMap<K, V>
 
     pub fn insert(&mut self, key: K, value: V) {
         self.reserve_one();
-        //assert!(self.len() + 1 < self.capacity());
         match self.insert_phase_1(key, value) {
             Inserted::AlreadyExists | Inserted::Done => { }
             Inserted::SwapWith { probe, old_index, dist } => {
