@@ -411,37 +411,17 @@ mod tests {
     #[test]
     fn it_works() {
         let mut map = OrderedMap::new();
-        println!("{:?}", map);
         map.insert(1, ());
         map.insert(1, ());
-        println!("{:?}", map);
-        /*
-        println!("{:?}", map);
-        map.insert(2);
-        println!("{:?}", map);
-        println!("{:?}", map[&2]);
-        */
-        //println!("{:?}", map[&3]);
-        for i in 0..map.capacity() - 2 {
-            println!("Insert {}", i);
-            map.insert(i, ());
-            println!("{:?}", map);
-            for j in 0..i + 1 {
-                print!("{:?}, ", map[&j]);
-            }
-            println!("");
-            for key in map.keys() {
-                print!("key={}, ", key);
-            }
-            println!("");
-        }
+        assert_eq!(map.len(), 1);
+        assert!(map.get(&1).is_some());
     }
 
     #[test]
     fn insert() {
         let insert = [0, 4, 2, 12, 8, 7, 11, 5];
         let not_present = [1, 3, 6, 9, 10];
-        let mut map = OrderedMap::with_capacity(insert.len() + 1);
+        let mut map = OrderedMap::with_capacity(insert.len());
 
         for (i, &elt) in insert.iter().enumerate() {
             assert_eq!(map.len(), i);
@@ -484,8 +464,8 @@ mod tests {
 
     #[test]
     fn insert_order() {
-        let insert = [0, 4, 2, 12, 8, 7, 11, 5];
-        let mut map = OrderedMap::with_capacity(insert.len() + 1);
+        let insert = [0, 4, 2, 12, 8, 7, 11, 5, 3, 17, 19, 22, 23];
+        let mut map = OrderedMap::new();
 
         for &elt in &insert {
             map.insert(elt, ());
