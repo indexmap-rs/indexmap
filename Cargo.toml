@@ -6,5 +6,8 @@ authors = ["bluss <bluss@users.noreply.github.com>"]
 [dependencies]
 itertools = "0.4"
 
+[dev-dependencies]
+rand = "0.3"
+
 [profile.bench]
 debug = true

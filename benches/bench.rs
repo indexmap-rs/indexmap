@@ -1,5 +1,6 @@
 #![feature(test)]
 extern crate test;
+extern crate rand;
 
 use test::Bencher;
 
@@ -9,6 +10,8 @@ use orderedmap::OrderedMap;
 
 use std::collections::HashMap;
 use std::iter::FromIterator;
+
+use rand::{weak_rng, Rng};
 
 #[bench]
 fn insert_hashmap_10_000(b: &mut Bencher) {
@@ -226,14 +229,18 @@ fn lookup_orderedmap_10_000(b: &mut Bencher) {
 fn lookup_hashmap_100_000(b: &mut Bencher) {
     let c = 100_000;
     let mut map = HashMap::with_capacity(c);
-    let len = c - c/10;
-    for x in 0..len {
-        map.insert(x, ());
+    let mut keys = (0..c - c/10).collect::<Vec<_>>();
+    for &key in &keys {
+        map.insert(key, ());
     }
-    assert_eq!(map.len(), len);
+    assert_eq!(map.len(), keys.len());
+    let mut rng = weak_rng();
+    rng.shuffle(&mut keys);
+    let len = keys.len();
+    keys.truncate(len/2);
     b.iter(|| {
         let mut found = 0;
-        for key in 90_000..110_000 {
+        for &key in &keys {
             found += map.get(&key).is_some() as i32;
         }
         found
@@ -244,14 +251,18 @@ fn lookup_hashmap_100_000(b: &mut Bencher) {
 fn lookup_orderedmap_100_000(b: &mut Bencher) {
     let c = 100_000;
     let mut map = OrderedMap::with_capacity(c);
-    let len = c - c/10;
-    for x in 0..len {
-        map.insert(x, ());
+    let mut keys = (0..c - c/10).collect::<Vec<_>>();
+    for &key in &keys {
+        map.insert(key, ());
     }
-    assert_eq!(map.len(), len);
+    assert_eq!(map.len(), keys.len());
+    let mut rng = weak_rng();
+    rng.shuffle(&mut keys);
+    let len = keys.len();
+    keys.truncate(len/2);
     b.iter(|| {
         let mut found = 0;
-        for key in 90_000..110_000 {
+        for &key in &keys {
             found += map.get(&key).is_some() as i32;
         }
         found
