@@ -269,3 +269,27 @@ fn lookup_orderedmap_100_000(b: &mut Bencher) {
     });
 }
 
+// without preallocation
+#[bench]
+fn grow_hashmap_10_000(b: &mut Bencher) {
+    let c = 10_000;
+    b.iter(|| {
+        let mut map = HashMap::new();
+        for x in 0..c {
+            map.insert(x, ());
+        }
+        map
+    });
+}
+
+#[bench]
+fn grow_orderedmap_10_000(b: &mut Bencher) {
+    let c = 10_000;
+    b.iter(|| {
+        let mut map = OrderedMap::new();
+        for x in 0..c {
+            map.insert(x, ());
+        }
+        map
+    });
+}

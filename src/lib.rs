@@ -12,6 +12,7 @@ use std::borrow::Borrow;
 
 use std::cmp::max;
 use std::fmt;
+use std::mem::swap;
 
 fn hash_elem<K: ?Sized + Hash>(k: &K) -> u64 {
     let mut h = SipHasher13::new();
@@ -20,6 +21,11 @@ fn hash_elem<K: ?Sized + Hash>(k: &K) -> u64 {
 }
 
 type PosType = usize;
+
+macro_rules! debug {
+    ($fmt:expr) => { };
+    ($fmt:expr, $($t:tt)*) => { };
+}
 
 #[derive(Copy)]
 struct Pos {
@@ -98,9 +104,10 @@ impl<K: fmt::Debug, V: fmt::Debug> fmt::Debug for OrderedMap<K, V>
                 let hash = self.entries[pos].hash;
                 let key = &self.entries[pos].key;
                 let desire = desired_pos(self.mask, hash);
-                try!(writeln!(f, ", desired_pos={}, probe_distance={}, key={:?}",
+                try!(writeln!(f, ", desired_pos={}, probe_distance={}, hash={:#x} key={:?}",
                               desire,
                               probe_distance(self.mask, hash, i),
+                              hash,
                               key));
             }
             try!(writeln!(f, ""));
@@ -113,20 +120,36 @@ impl<K: fmt::Debug, V: fmt::Debug> fmt::Debug for OrderedMap<K, V>
 impl<K, V> OrderedMap<K, V>
     where K: Eq + Hash
 {
-    pub fn new() -> Self { Self::with_capacity(0) }
+    pub fn new() -> Self {
+        Self::with_capacity(0)
+    }
 
     pub fn with_capacity(n: usize) -> Self {
-        let power = max(n.next_power_of_two(), 8);
+        let power = if n == 0 { 0 } else { max(n.next_power_of_two(), 8) };
         OrderedMap {
             len: 0,
-            mask: (power - 1),
+            mask: power.wrapping_sub(1),
             indices: vec![Pos::none(); power],
             entries: Vec::with_capacity(n),
         }
     }
 
+    fn with_capacity_no_entries(n: usize) -> Self {
+        let power = max(n.next_power_of_two(), 8);
+        OrderedMap {
+            len: 0,
+            mask: (power - 1),
+            indices: vec![Pos::none(); power],
+            entries: Vec::new(),
+        }
+    }
+
     pub fn len(&self) -> usize { self.len }
-    pub fn capacity(&self) -> usize { self.indices.len() }
+    pub fn capacity(&self) -> usize {
+        // Use load capacity 75%
+        let raw_cap = self.indices.len();
+        raw_cap - raw_cap / 4
+    }
 
     // First phase: Look for the preferred location for key.
     //
@@ -137,7 +160,7 @@ impl<K, V> OrderedMap<K, V>
         let hash = hash_elem(&key);
         let mut probe = desired_pos(self.mask, hash);
         let mut dist = 0;
-        debug_assert!(1 + self.len() < self.capacity());
+        debug_assert!(self.len() < self.capacity());
         loop {
             if probe < self.indices.len() {
                 if let Some(i) = self.indices[probe].pos() {
@@ -211,8 +234,81 @@ impl<K, V> OrderedMap<K, V>
         }
     }
 
+    fn first_allocation(&mut self) {
+        debug_assert_eq!(self.len(), 0);
+        *self = OrderedMap::with_capacity(8);
+    }
+
+    #[inline(never)]
+    fn double_capacity(&mut self) {
+        debug_assert!(self.capacity() == 0 || self.len() > 0);
+        if self.capacity() == 0 {
+            return self.first_allocation();
+        }
+
+        // find first ideally placed element -- start of cluster
+        let mut first_ideal = 0;
+        for (i, index) in enumerate(&self.indices) {
+            if let Some(pos) = index.pos() {
+                if 0 == probe_distance(self.mask, self.entries[pos].hash, i) {
+                    first_ideal = i;
+                    break;
+                }
+            }
+        }
+
+        let mut old_self = OrderedMap::with_capacity_no_entries(self.indices.len() * 2);
+        swap(self, &mut old_self);
+        for pos in &old_self.indices[first_ideal..] {
+            if let Some(i) = pos.pos() {
+                self.insert_hashed_ordered(i, &old_self.entries[i]);
+            }
+        }
+
+        for pos in &old_self.indices[..first_ideal] {
+            if let Some(i) = pos.pos() {
+                self.insert_hashed_ordered(i, &old_self.entries[i]);
+            }
+        }
+        self.entries = old_self.entries;
+        debug_assert_eq!(self.len, old_self.len);
+    }
+
+    // bumps length;
+    fn insert_hashed_ordered(&mut self, index: usize, entry: &Entry<K, V>) {
+        // find first empty bucket and insert there
+        let mut probe = desired_pos(self.mask, entry.hash);
+        let mut dist = 0;
+        debug_assert!(self.len() < self.capacity());
+        loop {
+            if probe < self.indices.len() {
+                if let Some(_) = self.indices[probe].pos() {
+                    /* nothing */
+                } else {
+                    // empty bucket, insert here
+                    self.indices[probe] = Pos::new(index);
+                    self.len += 1;
+                    debug!("insert_hashed_ordered: insert at probe {} with dist={} (hash={:x}, mask={:x})",
+                             probe, dist, entry.hash as usize & self.mask, self.mask);
+                    return;
+                }
+                probe += 1;
+                dist += 1;
+            } else {
+                probe = 0;
+            }
+        }
+    }
+
+    fn reserve_one(&mut self) {
+        if self.len() == self.capacity() {
+            self.double_capacity();
+        }
+    }
+
     pub fn insert(&mut self, key: K, value: V) {
-        assert!(self.len() + 1 < self.capacity());
+        self.reserve_one();
+        //assert!(self.len() + 1 < self.capacity());
         match self.insert_phase_1(key, value) {
             Inserted::AlreadyExists | Inserted::Done => { }
             Inserted::SwapWith { probe, old_index, dist } => {
@@ -336,7 +432,7 @@ mod tests {
     }
 
     #[test]
-    fn insert_works() {
+    fn insert() {
         let insert = [0, 4, 2, 12, 8, 7, 11, 5];
         let not_present = [1, 3, 6, 9, 10];
         let mut map = OrderedMap::with_capacity(insert.len() + 1);
@@ -356,16 +452,27 @@ mod tests {
     }
 
     #[test]
-    fn insert_works_2() {
-        let mut map = OrderedMap::with_capacity(64);
+    fn insert_2() {
+        let mut map = OrderedMap::with_capacity(16);
 
-        for i in 0..58 {
+        let mut keys = vec![];
+        keys.extend(0..16);
+        keys.extend(128..267);
+
+        for &i in &keys {
+            let old_map = map.clone();
             map.insert(i, ());
+            for key in old_map.keys() {
+                if !map.get(key).is_some() {
+                    println!("old_map: {:?}", old_map);
+                    println!("map: {:?}", map);
+                    panic!("did not find {} in map", key);
+                }
+            }
         }
-        println!("{:?}", map);
 
-        for i in 0..64 {
-            assert_eq!(map.get(&i).is_some(), i < 58, "did not find {}", i);
+        for &i in &keys {
+            assert!(map.get(&i).is_some(), "did not find {}", i);
         }
     }
 
@@ -382,6 +489,30 @@ mod tests {
         assert_eq!(map.keys().count(), insert.len());
         for (a, b) in insert.iter().zip(map.keys()) {
             assert_eq!(a, b);
+        }
+    }
+
+    #[test]
+    fn grow() {
+        let insert = [0, 4, 2, 12, 8, 7, 11];
+        let not_present = [1, 3, 6, 9, 10];
+        let mut map = OrderedMap::with_capacity(insert.len());
+
+
+        for (i, &elt) in insert.iter().enumerate() {
+            assert_eq!(map.len(), i);
+            map.insert(elt, ());
+            assert_eq!(map.len(), i + 1);
+            assert_eq!(map.get(&elt), Some(&elt));
+            assert_eq!(map[&elt], elt);
+        }
+
+        println!("{:?}", map);
+        map.double_capacity();
+        println!("{:?}", map);
+
+        for &elt in &not_present {
+            assert!(map.get(&elt).is_none());
         }
     }
 }
