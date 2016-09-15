@@ -118,6 +118,14 @@ impl<K, V> fmt::Debug for OrderedMap<K, V>
     }
 }
 
+fn usable_capacity(cap: usize) -> usize {
+    cap - cap / 4
+}
+
+fn to_raw_capacity(n: usize) -> usize {
+    n + n / 3
+}
+
 impl<K, V> OrderedMap<K, V>
     where K: Eq + Hash
 {
@@ -126,6 +134,7 @@ impl<K, V> OrderedMap<K, V>
     }
 
     pub fn with_capacity(n: usize) -> Self {
+        let n = to_raw_capacity(n);
         let power = if n == 0 { 0 } else { max(n.next_power_of_two(), 8) };
         OrderedMap {
             len: 0,
@@ -153,9 +162,7 @@ impl<K, V> OrderedMap<K, V>
     }
 
     pub fn capacity(&self) -> usize {
-        // Use load capacity 75%
-        let raw_cap = self.raw_capacity();
-        raw_cap - raw_cap / 4
+        usable_capacity(self.raw_capacity())
     }
 
     // First phase: Look for the preferred location for key.
