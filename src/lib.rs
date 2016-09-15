@@ -1,3 +1,4 @@
+#![feature(sip_hash_13)] // must use for fair comparison
 extern crate itertools;
 
 mod macros;
@@ -5,7 +6,7 @@ mod macros;
 use itertools::free::{enumerate};
 
 use std::hash::Hash;
-use std::hash::SipHasher;
+use std::hash::SipHasher13;
 use std::hash::Hasher;
 use std::borrow::Borrow;
 
@@ -13,7 +14,7 @@ use std::cmp::max;
 use std::fmt;
 
 fn hash_elem<K: ?Sized + Hash>(k: &K) -> u64 {
-    let mut h = SipHasher::new();
+    let mut h = SipHasher13::new();
     k.hash(&mut h);
     h.finish()
 }
