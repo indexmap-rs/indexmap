@@ -85,6 +85,32 @@ fn insert_orderedmap_str_10_000(b: &mut Bencher) {
 }
 
 #[bench]
+fn insert_hashmap_int_bigvalue_10_000(b: &mut Bencher) {
+    let c = 10_000;
+    let value = [0u64; 10];
+    b.iter(|| {
+        let mut map = HashMap::with_capacity(c);
+        for i in 0..c {
+            map.insert(i, value);
+        }
+        map
+    });
+}
+
+#[bench]
+fn insert_orderedmap_int_bigvalue_10_000(b: &mut Bencher) {
+    let c = 10_000;
+    let value = [0u64; 10];
+    b.iter(|| {
+        let mut map = OrderedMap::with_capacity(c);
+        for i in 0..c {
+            map.insert(i, value);
+        }
+        map
+    });
+}
+
+#[bench]
 fn insert_hashmap_100_000(b: &mut Bencher) {
     let c = 100_000;
     b.iter(|| {
