@@ -225,7 +225,7 @@ impl<K, V> OrderedMap<K, V>
         }
     }
 
-    pub fn get<Q>(&self, key: &Q) -> Option<&K>
+    pub fn get<Q: ?Sized>(&self, key: &Q) -> Option<&K>
         where K: Borrow<Q>,
               Q: Eq + Hash,
     {
