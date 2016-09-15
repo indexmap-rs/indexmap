@@ -12,8 +12,8 @@
 ///     "a" => 1,
 ///     "b" => 2,
 /// };
-/// //assert_eq!(map["a"], 1);
-/// //assert_eq!(map["b"], 2);
+/// assert_eq!(map["a"], 1);
+/// assert_eq!(map["b"], 2);
 /// assert_eq!(map.get("c"), None);
 ///
 /// // "a" is the first key

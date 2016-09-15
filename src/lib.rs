@@ -432,11 +432,13 @@ impl<'a, K, V> ExactSizeIterator for Keys<'a, K, V> { }
 
 use std::ops::{Index, IndexMut};
 
-impl<'a, K, V> Index<&'a K> for OrderedMap<K, V>
-    where K: Eq + Hash
+impl<'a, K, V, Q: ?Sized> Index<&'a Q> for OrderedMap<K, V>
+    where K: Eq + Hash,
+          K: Borrow<Q>,
+          Q: Eq + Hash,
 {
     type Output = V;
-    fn index(&self, key: &'a K) -> &V {
+    fn index(&self, key: &'a Q) -> &V {
         if let Some(v) = self.get(key) {
             v
         } else {
@@ -449,10 +451,12 @@ impl<'a, K, V> Index<&'a K> for OrderedMap<K, V>
 /// pairs that are already present.
 ///
 /// You can **not** insert new pairs with index syntax, use `.insert()`.
-impl<'a, K, V> IndexMut<&'a K> for OrderedMap<K, V>
-    where K: Eq + Hash
+impl<'a, K, V, Q: ?Sized> IndexMut<&'a Q> for OrderedMap<K, V>
+    where K: Eq + Hash,
+          K: Borrow<Q>,
+          Q: Eq + Hash,
 {
-    fn index_mut(&mut self, key: &'a K) -> &mut V {
+    fn index_mut(&mut self, key: &'a Q) -> &mut V {
         if let Some(v) = self.get_mut(key) {
             v
         } else {
