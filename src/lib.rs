@@ -283,7 +283,6 @@ impl<K, V> OrderedMap<K, V>
     fn insert_hashed_ordered(&mut self, index: usize, entry: &Entry<K, V>) {
         // find first empty bucket and insert there
         let mut probe = desired_pos(self.mask, entry.hash);
-        let mut dist = 0;
         debug_assert!(self.len() < self.raw_capacity());
         loop {
             if probe < self.indices.len() {
@@ -293,12 +292,9 @@ impl<K, V> OrderedMap<K, V>
                     // empty bucket, insert here
                     self.indices[probe] = Pos::new(index);
                     self.len += 1;
-                    debug!("insert_hashed_ordered: insert at probe {} with dist={} (hash={:x}, mask={:x})",
-                             probe, dist, entry.hash as usize & self.mask, self.mask);
                     return;
                 }
                 probe += 1;
-                dist += 1;
             } else {
                 probe = 0;
             }
