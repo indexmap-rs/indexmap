@@ -360,6 +360,46 @@ impl<K, V> OrderedMap<K, V>
         }
         None
     }
+
+    pub fn get_mut<Q: ?Sized>(&mut self, key: &Q) -> Option<&mut V>
+        where K: Borrow<Q>,
+              Q: Eq + Hash,
+    {
+        self.get_pair_mut(key).map(|(_, v)| v)
+    }
+
+    pub fn get_pair_mut<Q: ?Sized>(&mut self, key: &Q) -> Option<(&mut K, &mut V)>
+        where K: Borrow<Q>,
+              Q: Eq + Hash,
+    {
+        let h = hash_elem(key);
+        let mut probe = h as usize & self.mask;
+        let mut dist = 0;
+        let found;
+        loop {
+            if probe < self.indices.len() {
+                if let Some(i) = self.indices[probe].pos() {
+                    let entry = &self.entries[i];
+                    let that_dist = probe_distance(self.mask, entry.hash, probe);
+                    if dist > that_dist {
+                        // give up when probe distance is too long
+                        return None;
+                    } else if entry.hash == h && *entry.key.borrow() == *key {
+                        found = i;
+                        break;
+                    }
+                } else {
+                    return None;
+                }
+                probe += 1;
+                dist += 1;
+            } else {
+                probe = 0;
+            }
+        }
+        let entry = &mut self.entries[found];
+        Some((&mut entry.key, &mut entry.value))
+    }
 }
 
 use std::slice::Iter as SliceIter;
@@ -389,7 +429,7 @@ impl<'a, K, V> DoubleEndedIterator for Keys<'a, K, V> {
 impl<'a, K, V> ExactSizeIterator for Keys<'a, K, V> { }
 
 
-use std::ops::Index;
+use std::ops::{Index, IndexMut};
 
 impl<'a, K, V> Index<&'a K> for OrderedMap<K, V>
     where K: Eq + Hash
@@ -397,6 +437,22 @@ impl<'a, K, V> Index<&'a K> for OrderedMap<K, V>
     type Output = V;
     fn index(&self, key: &'a K) -> &V {
         if let Some(v) = self.get(key) {
+            v
+        } else {
+            panic!("OrderedMap: key not found")
+        }
+    }
+}
+
+/// Mutable indexing allows changing / updating values of key-value
+/// pairs that are already present.
+///
+/// You can **not** insert new pairs with index syntax, use `.insert()`.
+impl<'a, K, V> IndexMut<&'a K> for OrderedMap<K, V>
+    where K: Eq + Hash
+{
+    fn index_mut(&mut self, key: &'a K) -> &mut V {
+        if let Some(v) = self.get_mut(key) {
             v
         } else {
             panic!("OrderedMap: key not found")
