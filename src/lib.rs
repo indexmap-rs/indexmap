@@ -145,9 +145,15 @@ impl<K, V> OrderedMap<K, V>
     }
 
     pub fn len(&self) -> usize { self.len }
+
+    #[inline(always)]
+    fn raw_capacity(&self) -> usize {
+        self.indices.len()
+    }
+
     pub fn capacity(&self) -> usize {
         // Use load capacity 75%
-        let raw_cap = self.indices.len();
+        let raw_cap = self.raw_capacity();
         raw_cap - raw_cap / 4
     }
 
@@ -160,7 +166,7 @@ impl<K, V> OrderedMap<K, V>
         let hash = hash_elem(&key);
         let mut probe = desired_pos(self.mask, hash);
         let mut dist = 0;
-        debug_assert!(self.len() < self.capacity());
+        debug_assert!(self.len() < self.raw_capacity());
         loop {
             if probe < self.indices.len() {
                 if let Some(i) = self.indices[probe].pos() {
@@ -241,8 +247,8 @@ impl<K, V> OrderedMap<K, V>
 
     #[inline(never)]
     fn double_capacity(&mut self) {
-        debug_assert!(self.capacity() == 0 || self.len() > 0);
-        if self.capacity() == 0 {
+        debug_assert!(self.raw_capacity() == 0 || self.len() > 0);
+        if self.raw_capacity() == 0 {
             return self.first_allocation();
         }
 
@@ -279,7 +285,7 @@ impl<K, V> OrderedMap<K, V>
         // find first empty bucket and insert there
         let mut probe = desired_pos(self.mask, entry.hash);
         let mut dist = 0;
-        debug_assert!(self.len() < self.capacity());
+        debug_assert!(self.len() < self.raw_capacity());
         loop {
             if probe < self.indices.len() {
                 if let Some(_) = self.indices[probe].pos() {
