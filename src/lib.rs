@@ -18,9 +18,14 @@ fn hash_elem<K: ?Sized + Hash>(k: &K) -> u64 {
 
 type PosType = usize;
 
-#[derive(Copy, Clone)]
+#[derive(Copy)]
 struct Pos {
     index: PosType,
+}
+
+impl Clone for Pos {
+    #[inline(always)]
+    fn clone(&self) -> Self { *self }
 }
 
 impl fmt::Debug for Pos {
@@ -51,7 +56,7 @@ pub struct OrderedMap<K, V> {
     entries: Vec<Entry<K, V>>,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Copy, Clone, Debug)]
 struct Entry<K, V> {
     hash: u64,
     key: K,
