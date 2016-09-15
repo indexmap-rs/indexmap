@@ -14,6 +14,34 @@ use std::iter::FromIterator;
 use rand::{weak_rng, Rng};
 
 #[bench]
+fn new_hashmap(b: &mut Bencher) {
+    b.iter(|| {
+        HashMap::<String, String>::new()
+    });
+}
+
+#[bench]
+fn new_orderedmap(b: &mut Bencher) {
+    b.iter(|| {
+        OrderedMap::<String, String>::new()
+    });
+}
+
+#[bench]
+fn with_capacity_10e5_hashmap(b: &mut Bencher) {
+    b.iter(|| {
+        HashMap::<String, String>::with_capacity(10_000)
+    });
+}
+
+#[bench]
+fn with_capacity_10e5_orderedmap(b: &mut Bencher) {
+    b.iter(|| {
+        OrderedMap::<String, String>::with_capacity(10_000)
+    });
+}
+
+#[bench]
 fn insert_hashmap_10_000(b: &mut Bencher) {
     let c = 10_000;
     b.iter(|| {
