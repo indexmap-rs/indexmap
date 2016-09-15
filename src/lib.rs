@@ -93,26 +93,26 @@ enum Inserted {
     }
 }
 
-impl<K: fmt::Debug, V: fmt::Debug> fmt::Debug for OrderedMap<K, V>
+impl<K, V> fmt::Debug for OrderedMap<K, V>
+    where K: fmt::Debug + Hash + Eq,
+          V: fmt::Debug
 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        try!(writeln!(f, "len={}", self.len));
-        try!(writeln!(f, "indices={:?}", self.indices));
+        try!(f.debug_map().entries(self.keys().map(|k| (k, &self[k]))).finish());
+        try!(writeln!(f, ""));
         for (i, index) in enumerate(&self.indices) {
             try!(write!(f, "{}: {:?}", i, index));
             if let Some(pos) = index.pos() {
                 let hash = self.entries[pos].hash;
                 let key = &self.entries[pos].key;
                 let desire = desired_pos(self.mask, hash);
-                try!(writeln!(f, ", desired_pos={}, probe_distance={}, hash={:#x} key={:?}",
+                try!(writeln!(f, ", desired={}, probe_distance={}, key={:?}",
                               desire,
                               probe_distance(self.mask, hash, i),
-                              hash,
                               key));
             }
             try!(writeln!(f, ""));
         }
-        try!(writeln!(f, "entries={:?}", self.entries));
         Ok(())
     }
 }
@@ -198,7 +198,6 @@ impl<K, V> OrderedMap<K, V>
                             dist: their_dist,
                         };
                     } else if self.entries[i].hash == hash && self.entries[i].key == key {
-                        //println!("entry already exists");
                         return Inserted::AlreadyExists;
                     }
                 } else {
