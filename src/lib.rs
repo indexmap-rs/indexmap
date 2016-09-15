@@ -324,7 +324,14 @@ impl<K, V> OrderedMap<K, V>
         }
     }
 
-    pub fn get<Q: ?Sized>(&self, key: &Q) -> Option<&K>
+    pub fn get<Q: ?Sized>(&self, key: &Q) -> Option<&V>
+        where K: Borrow<Q>,
+              Q: Eq + Hash,
+    {
+        self.get_pair(key).map(|(_, v)| v)
+    }
+
+    pub fn get_pair<Q: ?Sized>(&self, key: &Q) -> Option<(&K, &V)>
         where K: Borrow<Q>,
               Q: Eq + Hash,
     {
@@ -340,7 +347,7 @@ impl<K, V> OrderedMap<K, V>
                         // give up when probe distance is too long
                         break;
                     } else if entry.hash == h && *entry.key.borrow() == *key {
-                        return Some(&entry.key);
+                        return Some((&entry.key, &entry.value));
                     }
                 } else {
                     break;
@@ -387,8 +394,8 @@ use std::ops::Index;
 impl<'a, K, V> Index<&'a K> for OrderedMap<K, V>
     where K: Eq + Hash
 {
-    type Output = K;
-    fn index(&self, key: &'a K) -> &K {
+    type Output = V;
+    fn index(&self, key: &'a K) -> &V {
         if let Some(v) = self.get(key) {
             v
         } else {
@@ -419,7 +426,7 @@ mod tests {
 
         for (i, &elt) in insert.iter().enumerate() {
             assert_eq!(map.len(), i);
-            map.insert(elt, ());
+            map.insert(elt, elt);
             assert_eq!(map.len(), i + 1);
             assert_eq!(map.get(&elt), Some(&elt));
             assert_eq!(map[&elt], elt);
@@ -481,7 +488,7 @@ mod tests {
 
         for (i, &elt) in insert.iter().enumerate() {
             assert_eq!(map.len(), i);
-            map.insert(elt, ());
+            map.insert(elt, elt);
             assert_eq!(map.len(), i + 1);
             assert_eq!(map.get(&elt), Some(&elt));
             assert_eq!(map[&elt], elt);
