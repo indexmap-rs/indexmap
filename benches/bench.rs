@@ -222,3 +222,39 @@ fn lookup_orderedmap_10_000(b: &mut Bencher) {
     });
 }
 
+#[bench]
+fn lookup_hashmap_100_000(b: &mut Bencher) {
+    let c = 100_000;
+    let mut map = HashMap::with_capacity(c);
+    let len = c - c/10;
+    for x in 0..len {
+        map.insert(x, ());
+    }
+    assert_eq!(map.len(), len);
+    b.iter(|| {
+        let mut found = 0;
+        for key in 90_000..110_000 {
+            found += map.get(&key).is_some() as i32;
+        }
+        found
+    });
+}
+
+#[bench]
+fn lookup_orderedmap_100_000(b: &mut Bencher) {
+    let c = 100_000;
+    let mut map = OrderedMap::with_capacity(c);
+    let len = c - c/10;
+    for x in 0..len {
+        map.insert(x, ());
+    }
+    assert_eq!(map.len(), len);
+    b.iter(|| {
+        let mut found = 0;
+        for key in 90_000..110_000 {
+            found += map.get(&key).is_some() as i32;
+        }
+        found
+    });
+}
+
