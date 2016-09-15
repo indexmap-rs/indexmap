@@ -1,5 +1,7 @@
 extern crate itertools;
 
+mod macros;
+
 use itertools::free::{enumerate};
 
 use std::hash::Hash;
