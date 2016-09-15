@@ -326,9 +326,24 @@ impl<K, V> OrderedMap<K, V>
 
     }
 
+    /// Return an iterator over the keys of the map
     pub fn keys(&self) -> Keys<K, V> {
         Keys {
             iter: self.entries.iter()
+        }
+    }
+
+    /// Return an iterator over the key-value pairs of the map
+    pub fn iter(&self) -> Iter<K, V> {
+        Iter {
+            iter: self.entries.iter()
+        }
+    }
+
+    /// Return an iterator over the key-value pairs of the map
+    pub fn iter_mut(&mut self) -> IterMut<K, V> {
+        IterMut {
+            iter: self.entries.iter_mut()
         }
     }
 
@@ -411,6 +426,7 @@ impl<K, V> OrderedMap<K, V>
 }
 
 use std::slice::Iter as SliceIter;
+use std::slice::IterMut as SliceIterMut;
 
 pub struct Keys<'a, K: 'a, V: 'a> {
     iter: SliceIter<'a, Entry<K, V>>,
@@ -434,8 +450,49 @@ impl<'a, K, V> DoubleEndedIterator for Keys<'a, K, V> {
     }
 }
 
-impl<'a, K, V> ExactSizeIterator for Keys<'a, K, V> { }
+pub struct Iter<'a, K: 'a, V: 'a> {
+    iter: SliceIter<'a, Entry<K, V>>,
+}
 
+impl<'a, K, V> Iterator for Iter<'a, K, V> {
+    type Item = (&'a K, &'a V);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.iter.next().map(|e| (&e.key, &e.value))
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.iter.size_hint()
+    }
+}
+
+impl<'a, K, V> DoubleEndedIterator for Iter<'a, K, V> {
+    fn next_back(&mut self) -> Option<Self::Item> {
+        self.iter.next_back().map(|e| (&e.key, &e.value))
+    }
+}
+
+pub struct IterMut<'a, K: 'a, V: 'a> {
+    iter: SliceIterMut<'a, Entry<K, V>>,
+}
+
+impl<'a, K, V> Iterator for IterMut<'a, K, V> {
+    type Item = (&'a K, &'a mut V);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.iter.next().map(|e| (&e.key, &mut e.value))
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.iter.size_hint()
+    }
+}
+
+impl<'a, K, V> DoubleEndedIterator for IterMut<'a, K, V> {
+    fn next_back(&mut self) -> Option<Self::Item> {
+        self.iter.next_back().map(|e| (&e.key, &mut e.value))
+    }
+}
 
 use std::ops::{Index, IndexMut};
 
