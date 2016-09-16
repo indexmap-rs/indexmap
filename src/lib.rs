@@ -440,11 +440,10 @@ impl<K, V> OrderedMap<K, V>
         self.len -= 1;
 
         // correct index that points to the entry that had to swap places
-        if found != self.entries.len() {
+        if let Some(entry) = self.entries.get(found) {
             // was not last element
             // examine new element in `found` and find it in indices
-            let new_hash = self.entries[found].hash;
-            let mut probe = desired_pos(self.mask, new_hash);
+            let mut probe = desired_pos(self.mask, entry.hash);
             probe_loop!(probe < self.indices.len(), {
                 if let Some(i) = self.indices[probe].pos() {
                     if i >= self.entries.len() {
@@ -462,8 +461,7 @@ impl<K, V> OrderedMap<K, V>
             let mut probe = probe + 1;
             probe_loop!(probe < self.indices.len(), {
                 if let Some(i) = self.indices[probe].pos() {
-                    let dist = probe_distance(self.mask, self.entries[i].hash, probe);
-                    if dist > 0 {
+                    if probe_distance(self.mask, self.entries[i].hash, probe) > 0 {
                         self.indices[last_probe] = Pos::new(i);
                         self.indices[probe] = Pos::none();
                     } else {
