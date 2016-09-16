@@ -441,6 +441,7 @@ impl<K, V, S> OrderMap<K, V, S>
     {
         self.swap_remove_pair(key).map(second)
     }
+
     /// Remove the key-value pair equivalent to `key` and return it.
     ///
     /// Like `Vec::swap_remove`, the pair is removed by swapping it with the
@@ -458,6 +459,7 @@ impl<K, V, S> OrderMap<K, V, S>
         };
         self.remove_found(probe, found)
     }
+
     /// Remove the last key-value pair
     pub fn pop(&mut self) -> Option<(K, V)> {
         self.pop_impl()
@@ -739,6 +741,14 @@ impl<K, V, S> FromIterator<(K, V)> for OrderMap<K, V, S>
     }
 }
 
+impl<K, V, S> Extend<(K, V)> for OrderMap<K, V, S>
+    where K: Hash + Eq,
+          S: BuildHasher + Default,
+{
+    fn extend<I: IntoIterator<Item=(K, V)>>(&mut self, iterable: I) {
+        for (k, v) in iterable { self.insert(k, v); }
+    }
+}
 
 impl<K, V, S> Default for OrderMap<K, V, S>
     where S: BuildHasher + Default,
