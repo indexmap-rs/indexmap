@@ -10,4 +10,6 @@ Using robin hood hashing just like Rust's libstd HashMap.
 - Has lookup
 - Has resize (grow on insert)
 - Has no allocation in OrderedMap::new()
-- No remove
+
+- Remove is implemented, but it destroys the insertion order
+  usual back shift deletion, but only on the index vector, so it's cheaper
