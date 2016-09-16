@@ -1,15 +1,14 @@
 
 Experimental hash table implementation in just Rust (stable, no unsafe code).
 
-Python 3.6-style hash map where it keeps a consistent order. Fast insertion / growth
-and iteration.
+This is inpired by Python 3.6's new dict implementation (which remembers
+the insertion order and is fast to iterate).
+
+This implementation corresponds to their "compact hash map" idea as it is now.
 
 Using robin hood hashing just like Rust's libstd HashMap.
 
-- Has insert
-- Has lookup
-- Has resize (grow on insert)
-- Has no allocation in OrderMap::new()
+- Has insert, lookup, grow
 - Remove is implemented, but it perturbs the insertion order.
   It's the usual backwards shift deletion, but only on the index vector, so
   it's cheaper.
