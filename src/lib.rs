@@ -420,7 +420,7 @@ impl<K, V> OrderedMap<K, V>
     }
 
     /// insertion-order-destroying removal!
-    pub fn remove_pair<Q: ?Sized>(&mut self, key: &Q) -> Option<(K, V)>
+    pub fn swap_remove_pair<Q: ?Sized>(&mut self, key: &Q) -> Option<(K, V)>
         where K: Borrow<Q>,
               Q: Eq + Hash,
     {
@@ -727,12 +727,12 @@ mod tests {
         let remove = [4, 12, 8, 7];
 
         for &key in &remove_fail {
-            assert!(map.remove_pair(&key).is_none());
+            assert!(map.swap_remove_pair(&key).is_none());
         }
         println!("{:?}", map);
         for &key in &remove {
         //println!("{:?}", map);
-            assert_eq!(map.remove_pair(&key), Some((key, key)));
+            assert_eq!(map.swap_remove_pair(&key), Some((key, key)));
         }
         println!("{:?}", map);
 

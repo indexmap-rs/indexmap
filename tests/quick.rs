@@ -41,7 +41,7 @@ quickcheck! {
             map.insert(key, ());
         }
         for &key in &remove {
-            map.remove_pair(&key);
+            map.swap_remove_pair(&key);
         }
         let elements = &set(&insert) - &set(&remove);
         map.len() == elements.len() && map.iter().count() == elements.len() &&
