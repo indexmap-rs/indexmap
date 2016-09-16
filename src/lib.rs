@@ -143,10 +143,12 @@ impl<K, V> fmt::Debug for OrderedMap<K, V>
     }
 }
 
+#[inline]
 fn usable_capacity(cap: usize) -> usize {
     cap - cap / 4
 }
 
+#[inline]
 fn to_raw_capacity(n: usize) -> usize {
     n + n / 3
 }
