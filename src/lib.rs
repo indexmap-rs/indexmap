@@ -119,9 +119,10 @@ enum Inserted {
     }
 }
 
-impl<K, V> fmt::Debug for OrderMap<K, V>
+impl<K, V, S> fmt::Debug for OrderMap<K, V, S>
     where K: fmt::Debug + Hash + Eq,
-          V: fmt::Debug
+          V: fmt::Debug,
+          S: BuildHasher,
 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         try!(f.debug_map().entries(self.iter()).finish());
@@ -646,8 +647,9 @@ impl<'a, K, V> DoubleEndedIterator for IntoIter<K, V> {
     }
 }
 
-impl<'a, K, V> IntoIterator for &'a OrderMap<K, V>
-    where K: Hash + Eq
+impl<'a, K, V, S> IntoIterator for &'a OrderMap<K, V, S>
+    where K: Hash + Eq,
+          S: BuildHasher,
 {
     type Item = (&'a K, &'a V);
     type IntoIter = Iter<'a, K, V>;
@@ -656,8 +658,9 @@ impl<'a, K, V> IntoIterator for &'a OrderMap<K, V>
     }
 }
 
-impl<'a, K, V> IntoIterator for &'a mut OrderMap<K, V>
-    where K: Hash + Eq
+impl<'a, K, V, S> IntoIterator for &'a mut OrderMap<K, V, S>
+    where K: Hash + Eq,
+          S: BuildHasher,
 {
     type Item = (&'a K, &'a mut V);
     type IntoIter = IterMut<'a, K, V>;
@@ -666,8 +669,9 @@ impl<'a, K, V> IntoIterator for &'a mut OrderMap<K, V>
     }
 }
 
-impl<K, V> IntoIterator for OrderMap<K, V>
-    where K: Hash + Eq
+impl<K, V, S> IntoIterator for OrderMap<K, V, S>
+    where K: Hash + Eq,
+          S: BuildHasher,
 {
     type Item = (K, V);
     type IntoIter = IntoIter<K, V>;
@@ -680,10 +684,11 @@ impl<K, V> IntoIterator for OrderMap<K, V>
 
 use std::ops::{Index, IndexMut};
 
-impl<'a, K, V, Q: ?Sized> Index<&'a Q> for OrderMap<K, V>
+impl<'a, K, V, Q: ?Sized, S> Index<&'a Q> for OrderMap<K, V, S>
     where K: Eq + Hash,
           K: Borrow<Q>,
           Q: Eq + Hash,
+          S: BuildHasher,
 {
     type Output = V;
     fn index(&self, key: &'a Q) -> &V {
@@ -699,10 +704,11 @@ impl<'a, K, V, Q: ?Sized> Index<&'a Q> for OrderMap<K, V>
 /// pairs that are already present.
 ///
 /// You can **not** insert new pairs with index syntax, use `.insert()`.
-impl<'a, K, V, Q: ?Sized> IndexMut<&'a Q> for OrderMap<K, V>
+impl<'a, K, V, Q: ?Sized, S> IndexMut<&'a Q> for OrderMap<K, V, S>
     where K: Eq + Hash,
           K: Borrow<Q>,
           Q: Eq + Hash,
+          S: BuildHasher,
 {
     fn index_mut(&mut self, key: &'a Q) -> &mut V {
         if let Some(v) = self.get_mut(key) {
@@ -715,13 +721,14 @@ impl<'a, K, V, Q: ?Sized> IndexMut<&'a Q> for OrderMap<K, V>
 
 use std::iter::FromIterator;
 
-impl<K, V> FromIterator<(K, V)> for OrderMap<K, V>
-    where K: Hash + Eq
+impl<K, V, S> FromIterator<(K, V)> for OrderMap<K, V, S>
+    where K: Hash + Eq,
+          S: BuildHasher + Default,
 {
     fn from_iter<I: IntoIterator<Item=(K, V)>>(iterable: I) -> Self {
         let iter = iterable.into_iter();
         let (low, _) = iter.size_hint();
-        let mut map = Self::with_capacity(low);
+        let mut map = Self::with_capacity_and_hasher(low, <_>::default());
         for (k, v) in iter { map.insert(k, v); }
         map
     }
