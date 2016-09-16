@@ -1,4 +1,3 @@
-#![feature(sip_hash_13)] // must use for fair comparison
 extern crate itertools;
 
 mod macros;
@@ -7,18 +6,19 @@ mod util;
 use itertools::free::{enumerate};
 
 use std::hash::Hash;
-use std::hash::SipHasher13;
+use std::hash::BuildHasher;
 use std::hash::Hasher;
+use std::collections::hash_map::RandomState;
 use std::borrow::Borrow;
 
 use std::cmp::max;
 use std::fmt;
-use std::mem::swap;
+use std::mem::{swap, replace};
 
 use util::{second, ptr_eq};
 
-fn hash_elem<K: ?Sized + Hash>(k: &K) -> HashValue {
-    let mut h = SipHasher13::new();
+fn hash_elem_using<B: BuildHasher, K: ?Sized + Hash>(build: &B, k: &K) -> HashValue {
+    let mut h = build.build_hasher();
     k.hash(&mut h);
     HashValue(h.finish() as usize)
 }
@@ -80,15 +80,16 @@ impl Pos {
 ///
 /// The key-value pairs have a consistent order that is determined by
 /// the sequence of insertion and removal calls on the map. The order does
-/// not depend on the keys of the map at all.
+/// not depend on the keys or the hash function at all.
 ///
 /// All iterators traverse the map in the same order.
 #[derive(Clone)]
-pub struct OrderMap<K, V> {
+pub struct OrderMap<K, V, S = RandomState> {
     len: usize,
     mask: usize,
     indices: Vec<Pos>,
     entries: Vec<Entry<K, V>>,
+    hash_builder: S,
 }
 
 #[derive(Copy, Clone, Debug)]
@@ -173,6 +174,15 @@ impl<K, V> OrderMap<K, V> {
     }
 
     pub fn with_capacity(n: usize) -> Self {
+        Self::with_capacity_and_hasher(n, <_>::default())
+    }
+}
+
+impl<K, V, S> OrderMap<K, V, S>
+{
+    pub fn with_capacity_and_hasher(n: usize, hash_builder: S) -> Self
+        where S: BuildHasher
+    {
         let raw = to_raw_capacity(n);
         let power = if n == 0 { 0 } else { max(raw.next_power_of_two(), 8) };
         OrderMap {
@@ -180,18 +190,7 @@ impl<K, V> OrderMap<K, V> {
             mask: power.wrapping_sub(1),
             indices: vec![Pos::none(); power],
             entries: Vec::with_capacity(usable_capacity(power)),
-        }
-    }
-
-    // `n` must be a power of two
-    fn with_raw_capacity_no_entries(n: usize) -> Self {
-        let power = n;
-        debug_assert_eq!(n, n.next_power_of_two());
-        OrderMap {
-            len: 0,
-            mask: (power - 1),
-            indices: vec![Pos::none(); power],
-            entries: Vec::new(),
+            hash_builder: hash_builder,
         }
     }
 
@@ -207,8 +206,9 @@ impl<K, V> OrderMap<K, V> {
     }
 }
 
-impl<K, V> OrderMap<K, V>
-    where K: Eq + Hash
+impl<K, V, S> OrderMap<K, V, S>
+    where K: Eq + Hash,
+          S: BuildHasher,
 {
     pub fn clear(&mut self) {
         self.entries.clear();
@@ -223,7 +223,7 @@ impl<K, V> OrderMap<K, V>
     // When we insert they key, it might be that we need to continue displacing
     // entries (robin hood hashing), in which case Inserted::RobinHood is returned
     fn insert_phase_1(&mut self, key: K, value: V) -> Inserted {
-        let hash = hash_elem(&key);
+        let hash = hash_elem_using(&self.hash_builder, &key);
         let mut probe = desired_pos(self.mask, hash);
         let mut dist = 0;
         debug_assert!(self.len() < self.raw_capacity());
@@ -277,7 +277,10 @@ impl<K, V> OrderMap<K, V>
 
     fn first_allocation(&mut self) {
         debug_assert_eq!(self.len(), 0);
-        *self = OrderMap::with_raw_capacity_no_entries(8);
+        let power = 8usize;
+        self.mask = power.wrapping_sub(1);
+        self.indices = vec![Pos::none(); power];
+        self.entries = Vec::with_capacity(usable_capacity(power));
     }
 
     #[inline(never)]
@@ -298,35 +301,36 @@ impl<K, V> OrderMap<K, V>
             }
         }
 
-        let mut old_self = OrderMap::with_raw_capacity_no_entries(self.indices.len() * 2);
-        swap(self, &mut old_self);
-        for pos in &old_self.indices[first_ideal..] {
+        // visit the entries in an order where we can simply reinsert them
+        // into self.indices without any bucket stealing.
+        let new_power = self.indices.len() * 2;
+        let old_indices = replace(&mut self.indices, vec![Pos::none(); new_power]);
+        self.mask = new_power.wrapping_sub(1);
+        for pos in &old_indices[first_ideal..] {
             if let Some(i) = pos.pos() {
-                self.insert_hashed_ordered(i, &old_self.entries[i]);
+                self.reinsert_entry_in_order(i);
             }
         }
 
-        for pos in &old_self.indices[..first_ideal] {
+        for pos in &old_indices[..first_ideal] {
             if let Some(i) = pos.pos() {
-                self.insert_hashed_ordered(i, &old_self.entries[i]);
+                self.reinsert_entry_in_order(i);
             }
         }
-        self.entries = old_self.entries;
-        debug_assert_eq!(self.len, old_self.len);
+        debug_assert_eq!(self.len, self.entries.len());
     }
 
-    // bumps length;
-    fn insert_hashed_ordered(&mut self, index: usize, entry: &Entry<K, V>) {
+    // write to self.indices
+    // read from self.entries at `index`
+    fn reinsert_entry_in_order(&mut self, index: usize) {
         // find first empty bucket and insert there
-        let mut probe = desired_pos(self.mask, entry.hash);
-        debug_assert!(self.len() < self.raw_capacity());
+        let mut probe = desired_pos(self.mask, self.entries[index].hash);
         probe_loop!(probe < self.indices.len(), {
             if let Some(_) = self.indices[probe].pos() {
                 /* nothing */
             } else {
                 // empty bucket, insert here
                 self.indices[probe] = Pos::new(index);
-                self.len += 1;
                 return;
             }
         });
@@ -414,7 +418,7 @@ impl<K, V> OrderMap<K, V>
               Q: Eq + Hash,
     {
         if self.len() == 0 { return None; }
-        let h = hash_elem(key);
+        let h = hash_elem_using(&self.hash_builder, &key);
         self.find_using(h, move |entry| {
             h == entry.hash && *entry.key.borrow() == *key
         })
@@ -463,7 +467,7 @@ impl<K, V> OrderMap<K, V>
 // using Hash + Eq at all in these methods.
 //
 // However, we should probably not let this show in the public API or docs.
-impl<K, V> OrderMap<K, V> {
+impl<K, V, S> OrderMap<K, V, S> {
     fn pop_impl(&mut self) -> Option<(K, V)> {
         let (probe, found) = match self.entries.last()
             .and_then(|e| self.find_existing_entry(e))
