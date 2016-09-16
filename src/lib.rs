@@ -177,7 +177,7 @@ impl<K, V> OrderedMap<K, V> {
             len: 0,
             mask: power.wrapping_sub(1),
             indices: vec![Pos::none(); power],
-            entries: Vec::with_capacity(n), // FIXME: compute adjusted n
+            entries: Vec::with_capacity(usable_capacity(power)),
         }
     }
 
