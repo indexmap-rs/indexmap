@@ -449,7 +449,6 @@ impl<K, V> OrderedMap<K, V>
         // to the other entry that has to move
         self.indices[probe] = Pos::none();
         let entry = self.entries.swap_remove(found);
-        // FIXME: need backward shift deletion here!
         self.len -= 1;
 
         // correct index that points to the entry that had to swap places
