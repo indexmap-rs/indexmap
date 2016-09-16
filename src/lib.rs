@@ -1,4 +1,6 @@
 
+#![doc(html_root_url = "https://docs.rs/ordermap/0.1/")]
+
 mod macros;
 mod util;
 
