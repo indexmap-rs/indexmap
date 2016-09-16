@@ -186,13 +186,22 @@ impl<K, V, S> OrderMap<K, V, S>
     pub fn with_capacity_and_hasher(n: usize, hash_builder: S) -> Self
         where S: BuildHasher
     {
-        let raw = to_raw_capacity(n);
-        let power = if n == 0 { 0 } else { max(raw.next_power_of_two(), 8) };
-        OrderMap {
-            mask: power.wrapping_sub(1),
-            indices: vec![Pos::none(); power],
-            entries: Vec::with_capacity(usable_capacity(power)),
-            hash_builder: hash_builder,
+        if n == 0 {
+            OrderMap {
+                mask: 0,
+                indices: Vec::new(),
+                entries: Vec::new(),
+                hash_builder: hash_builder,
+            }
+        } else {
+            let raw = to_raw_capacity(n);
+            let power = max(raw.next_power_of_two(), 8);
+            OrderMap {
+                mask: power.wrapping_sub(1),
+                indices: vec![Pos::none(); power],
+                entries: Vec::with_capacity(usable_capacity(power)),
+                hash_builder: hash_builder,
+            }
         }
     }
 
