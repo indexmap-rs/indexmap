@@ -139,6 +139,10 @@ impl<K, V, S> fmt::Debug for OrderMap<K, V, S>
             }
             try!(writeln!(f, ""));
         }
+        try!(writeln!(f, "cap={}, raw_cap={}, entries.cap={}",
+                      self.capacity(),
+                      self.raw_capacity(),
+                      self.entries.capacity()));
         Ok(())
     }
 }
@@ -315,6 +319,8 @@ impl<K, V, S> OrderMap<K, V, S>
                 self.reinsert_entry_in_order(i);
             }
         }
+        let more = self.capacity() - self.len();
+        self.entries.reserve_exact(more);
     }
 
     // write to self.indices
