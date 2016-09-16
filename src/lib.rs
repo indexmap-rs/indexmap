@@ -181,6 +181,14 @@ impl<K, V> OrderedMap<K, V>
         usable_capacity(self.raw_capacity())
     }
 
+    pub fn clear(&mut self) {
+        self.entries.clear();
+        self.len = 0;
+        for pos in &mut self.indices {
+            *pos = Pos::none();
+        }
+    }
+
     // First phase: Look for the preferred location for key.
     //
     // We will know if `key` is already in the map, before we need to insert it.
