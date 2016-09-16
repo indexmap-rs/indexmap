@@ -56,4 +56,20 @@ quickcheck! {
         itertools::assert_equal(insert.iter().unique(), map.keys());
         true
     }
+
+    fn pop(insert: Vec<u8>) -> bool {
+        let mut map = OrderedMap::new();
+        for &key in &insert {
+            map.insert(key, ());
+        }
+        let mut pops = Vec::new();
+        while let Some((key, _v)) = map.pop() {
+            pops.push(key);
+        }
+        pops.reverse();
+
+        itertools::assert_equal(insert.iter().unique(), &pops);
+        true
+    }
+
 }

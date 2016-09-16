@@ -420,6 +420,11 @@ impl<K, V> OrderedMap<K, V>
             None => return None,
             Some(t) => t,
         };
+        self.remove_found(probe, found)
+    }
+
+    fn remove_found(&mut self, probe: usize, found: usize) -> Option<(K, V)>
+    {
         // index `probe` and entry `found` is to be removed
         // use swap_remove, but then we need to update the index that points
         // to the other entry that has to move
@@ -463,6 +468,18 @@ impl<K, V> OrderedMap<K, V>
         }
 
         Some((entry.key, entry.value))
+    }
+
+    /// Remove the last key-value pair
+    pub fn pop(&mut self) -> Option<(K, V)> {
+        let (probe, found) = match self.entries.last()
+            .and_then(|e| self.find_position(&e.key))
+        {
+            None => return None,
+            Some(t) => t,
+        };
+        debug_assert_eq!(found, self.entries.len() - 1);
+        self.remove_found(probe, found)
     }
 }
 
