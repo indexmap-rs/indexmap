@@ -58,6 +58,12 @@ impl Pos {
 }
 
 /// A hash map that preserves insertion order of the key-value pairs.
+///
+/// The key-value pairs have a consistent order that is determined by
+/// the sequence of insertion and removal calls on the map. The order does
+/// not depend on the keys of the map at all.
+///
+/// All iterators traverse the map in the same order.
 #[derive(Clone)]
 pub struct OrderedMap<K, V> {
     len: usize,
@@ -335,21 +341,21 @@ impl<K, V> OrderedMap<K, V>
 
     }
 
-    /// Return an iterator over the keys of the map
+    /// Return an iterator over the keys of the map, in their order
     pub fn keys(&self) -> Keys<K, V> {
         Keys {
             iter: self.entries.iter()
         }
     }
 
-    /// Return an iterator over the key-value pairs of the map
+    /// Return an iterator over the key-value pairs of the map, in their order
     pub fn iter(&self) -> Iter<K, V> {
         Iter {
             iter: self.entries.iter()
         }
     }
 
-    /// Return an iterator over the key-value pairs of the map
+    /// Return an iterator over the key-value pairs of the map, in their order
     pub fn iter_mut(&mut self) -> IterMut<K, V> {
         IterMut {
             iter: self.entries.iter_mut()
