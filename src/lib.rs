@@ -99,7 +99,7 @@ impl<K, V> fmt::Debug for OrderedMap<K, V>
           V: fmt::Debug
 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        try!(f.debug_map().entries(self.keys().map(|k| (k, &self[k]))).finish());
+        try!(f.debug_map().entries(self.iter()).finish());
         try!(writeln!(f, ""));
         for (i, index) in enumerate(&self.indices) {
             try!(write!(f, "{}: {:?}", i, index));
@@ -395,10 +395,22 @@ impl<K, V> OrderedMap<K, V>
         where K: Borrow<Q>,
               Q: Eq + Hash,
     {
+        if let Some((_, found)) = self.find_position(key) {
+            let entry = &mut self.entries[found];
+            Some((&mut entry.key, &mut entry.value))
+        } else {
+            None
+        }
+    }
+
+    /// Return probe (indices) and position (entries)
+    fn find_position<Q: ?Sized>(&self, key: &Q) -> Option<(usize, usize)>
+        where K: Borrow<Q>,
+              Q: Eq + Hash,
+    {
         let h = hash_elem(key);
-        let mut probe = h as usize & self.mask;
+        let mut probe = desired_pos(self.mask, h);
         let mut dist = 0;
-        let found;
         loop {
             if probe < self.indices.len() {
                 if let Some(i) = self.indices[probe].pos() {
@@ -408,8 +420,7 @@ impl<K, V> OrderedMap<K, V>
                         // give up when probe distance is too long
                         return None;
                     } else if entry.hash == h && *entry.key.borrow() == *key {
-                        found = i;
-                        break;
+                        return Some((probe, i));
                     }
                 } else {
                     return None;
@@ -420,8 +431,73 @@ impl<K, V> OrderedMap<K, V>
                 probe = 0;
             }
         }
-        let entry = &mut self.entries[found];
-        Some((&mut entry.key, &mut entry.value))
+    }
+
+    /// insertion-order-destroying removal!
+    pub fn remove_pair<Q: ?Sized>(&mut self, key: &Q) -> Option<(K, V)>
+        where K: Borrow<Q>,
+              Q: Eq + Hash,
+    {
+        let (probe, found) = match self.find_position(key) {
+            None => return None,
+            Some(t) => t,
+        };
+        // index `probe` and entry `found` is to be removed
+        // use swap_remove, but then we need to update the index that points
+        // to the other entry that has to move
+        self.indices[probe] = Pos::none();
+        let entry = self.entries.swap_remove(found);
+        // FIXME: need backward shift deletion here!
+        self.len -= 1;
+
+        // backward shift deletion in self.indices
+        // after probe, shift all non-ideally placed indices backward
+        {
+            let mut last_probe = probe;
+            let mut probe = probe + 1;
+            loop {
+                if probe < self.indices.len() {
+                    if let Some(i) = self.indices[probe].pos() {
+                        let dist = probe_distance(self.mask, self.entries[i].hash, probe);
+                        if dist > 0 {
+                            self.indices[last_probe] = Pos::new(i);
+                            self.indices[probe] = Pos::none();
+                        } else {
+                            break;
+                        }
+                    } else {
+                        break;
+                    }
+                    last_probe = probe;
+                    probe += 1;
+                } else {
+                    probe = 0;
+                }
+            }
+        }
+
+        // correct index that points to the entry that had to swap places
+        if found != self.entries.len() {
+            // was not last element
+            // examine new element in `found` and find it in indices
+            let new_hash = self.entries[found].hash;
+            let mut probe = desired_pos(self.mask, new_hash);
+            loop {
+                if probe < self.indices.len() {
+                    if let Some(i) = self.indices[probe].pos() {
+                        if i >= self.entries.len() {
+                            // found it
+                            self.indices[probe] = Pos::new(found);
+                            break;
+                        }
+                    }
+                    probe += 1;
+                } else {
+                    probe = 0;
+                }
+            }
+        }
+        Some((entry.key, entry.value))
     }
 }
 
@@ -640,5 +716,40 @@ mod tests {
         for &elt in &not_present {
             assert!(map.get(&elt).is_none());
         }
+    }
+
+    #[test]
+    fn remove() {
+        let insert = [0, 4, 2, 12, 8, 7, 11, 5, 3, 17, 19, 22, 23];
+        let mut map = OrderedMap::new();
+
+        for &elt in &insert {
+            map.insert(elt, elt);
+        }
+
+        assert_eq!(map.keys().count(), map.len());
+        assert_eq!(map.keys().count(), insert.len());
+        for (a, b) in insert.iter().zip(map.keys()) {
+            assert_eq!(a, b);
+        }
+
+        let remove_fail = [99, 77];
+        let remove = [4, 12, 8, 7];
+
+        for &key in &remove_fail {
+            assert!(map.remove_pair(&key).is_none());
+        }
+        println!("{:?}", map);
+        for &key in &remove {
+        //println!("{:?}", map);
+            assert_eq!(map.remove_pair(&key), Some((key, key)));
+        }
+        println!("{:?}", map);
+
+        for key in &insert {
+            assert_eq!(map.get(key).is_some(), !remove.contains(key));
+        }
+        assert_eq!(map.len(), insert.len() - remove.len());
+        assert_eq!(map.keys().count(), insert.len() - remove.len());
     }
 }
