@@ -226,6 +226,7 @@ impl<K, V, S> OrderMap<K, V, S>
         let hash = hash_elem_using(&self.hash_builder, &key);
         let mut probe = desired_pos(self.mask, hash);
         let mut dist = 0;
+        let insert_kind;
         debug_assert!(self.len() < self.raw_capacity());
         probe_loop!(probe < self.indices.len(), {
             if let Some(i) = self.indices[probe].pos() {
@@ -236,13 +237,12 @@ impl<K, V, S> OrderMap<K, V, S>
                     let index = self.entries.len();
                     let mut pos = Pos::new(index);
                     swap(&mut pos, &mut self.indices[probe]);
-                    self.entries.push(Entry { hash: hash, key: key, value: value });
-                    self.len += 1;
-                    return Inserted::RobinHood {
+                    insert_kind = Inserted::RobinHood {
                         probe: probe,
                         old_pos: pos,
                         dist: their_dist,
                     };
+                    break;
                 } else if self.entries[i].hash == hash && self.entries[i].key == key {
                     return Inserted::AlreadyExists;
                 }
@@ -250,12 +250,14 @@ impl<K, V, S> OrderMap<K, V, S>
                 // empty bucket, insert here
                 let index = self.entries.len();
                 self.indices[probe] = Pos::new(index);
-                self.entries.push(Entry { hash: hash, key: key, value: value });
-                self.len += 1;
-                return Inserted::Done;
+                insert_kind = Inserted::Done;
+                break;
             }
             dist += 1;
         });
+        self.entries.push(Entry { hash: hash, key: key, value: value });
+        self.len += 1;
+        insert_kind
     }
 
     fn insert_phase_2(&mut self, mut probe: usize, mut old_pos: Pos, mut dist: usize) {
