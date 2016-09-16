@@ -1,10 +1,10 @@
 [package]
 name = "ordermap"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["bluss"]
 documentation = "https://docs.rs/ordermap/0.1/"
 repository = "https://github.com/bluss/ordermap"
-license = "Apace-2.0/MIT"
+license = "Apache-2.0/MIT"
 description = "A hash table with consistent order and fast iteration."
 
 [dependencies]
