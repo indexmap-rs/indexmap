@@ -15,7 +15,7 @@ use std::cmp::max;
 use std::fmt;
 use std::mem::swap;
 
-use util::second;
+use util::{second, ptr_eq};
 
 fn hash_elem<K: ?Sized + Hash>(k: &K) -> u64 {
     let mut h = SipHasher13::new();
@@ -149,9 +149,7 @@ macro_rules! probe_loop {
     }
 }
 
-impl<K, V> OrderedMap<K, V>
-    where K: Eq + Hash
-{
+impl<K, V> OrderedMap<K, V> {
     pub fn new() -> Self {
         Self::with_capacity(0)
     }
@@ -189,7 +187,11 @@ impl<K, V> OrderedMap<K, V>
     pub fn capacity(&self) -> usize {
         usable_capacity(self.raw_capacity())
     }
+}
 
+impl<K, V> OrderedMap<K, V>
+    where K: Eq + Hash
+{
     pub fn clear(&mut self) {
         self.entries.clear();
         self.len = 0;
@@ -197,7 +199,6 @@ impl<K, V> OrderedMap<K, V>
             *pos = Pos::none();
         }
     }
-
     // First phase: Look for the preferred location for key.
     //
     // We will know if `key` is already in the map, before we need to insert it.
@@ -376,7 +377,7 @@ impl<K, V> OrderedMap<K, V>
         where K: Borrow<Q>,
               Q: Eq + Hash,
     {
-        if let Some((_, found)) = self.find_position(key) {
+        if let Some((_, found)) = self.find(key) {
             let entry = &self.entries[found];
             Some((&entry.key, &entry.value))
         } else {
@@ -395,7 +396,7 @@ impl<K, V> OrderedMap<K, V>
         where K: Borrow<Q>,
               Q: Eq + Hash,
     {
-        if let Some((_, found)) = self.find_position(key) {
+        if let Some((_, found)) = self.find(key) {
             let entry = &mut self.entries[found];
             Some((&mut entry.key, &mut entry.value))
         } else {
@@ -404,28 +405,15 @@ impl<K, V> OrderedMap<K, V>
     }
 
     /// Return probe (indices) and position (entries)
-    fn find_position<Q: ?Sized>(&self, key: &Q) -> Option<(usize, usize)>
+    fn find<Q: ?Sized>(&self, key: &Q) -> Option<(usize, usize)>
         where K: Borrow<Q>,
               Q: Eq + Hash,
     {
         if self.len() == 0 { return None; }
         let h = hash_elem(key);
-        let mut probe = desired_pos(self.mask, h);
-        let mut dist = 0;
-        probe_loop!(probe < self.indices.len(), {
-            if let Some(i) = self.indices[probe].pos() {
-                let entry = &self.entries[i];
-                if dist > probe_distance(self.mask, entry.hash, probe) {
-                    // give up when probe distance is too long
-                    return None;
-                } else if entry.hash == h && *entry.key.borrow() == *key {
-                    return Some((probe, i));
-                }
-            } else {
-                return None;
-            }
-            dist += 1;
-        });
+        self.find_using(h, move |entry| {
+            h == entry.hash && *entry.key.borrow() == *key
+        })
     }
 
     /// Remove the key-value pair equivalent to `key` and return
@@ -453,11 +441,63 @@ impl<K, V> OrderedMap<K, V>
         where K: Borrow<Q>,
               Q: Eq + Hash,
     {
-        let (probe, found) = match self.find_position(key) {
+        let (probe, found) = match self.find(key) {
             None => return None,
             Some(t) => t,
         };
         self.remove_found(probe, found)
+    }
+    /// Remove the last key-value pair
+    pub fn pop(&mut self) -> Option<(K, V)> {
+        self.pop_impl()
+    }
+}
+
+// Methods that don't use any properties (Hash / Eq) of K.
+//
+// It's cleaner to separate them out, then the compiler checks that we are not
+// using Hash + Eq at all in these methods.
+//
+// However, we should probably not let this show in the public API or docs.
+impl<K, V> OrderedMap<K, V> {
+    fn pop_impl(&mut self) -> Option<(K, V)> {
+        let (probe, found) = match self.entries.last()
+            .and_then(|e| self.find_existing_entry(e))
+        {
+            None => return None,
+            Some(t) => t,
+        };
+        debug_assert_eq!(found, self.entries.len() - 1);
+        self.remove_found(probe, found)
+    }
+
+    /// Return probe (indices) and position (entries)
+    fn find_using<F>(&self, hash: u64, key_eq: F) -> Option<(usize, usize)>
+        where F: Fn(&Entry<K, V>) -> bool,
+    {
+        debug_assert!(self.len() > 0);
+        let mut probe = desired_pos(self.mask, hash);
+        let mut dist = 0;
+        probe_loop!(probe < self.indices.len(), {
+            if let Some(i) = self.indices[probe].pos() {
+                let entry = &self.entries[i];
+                if dist > probe_distance(self.mask, entry.hash, probe) {
+                    // give up when probe distance is too long
+                    return None;
+                } else if key_eq(entry) {
+                    return Some((probe, i));
+                }
+            } else {
+                return None;
+            }
+            dist += 1;
+        });
+    }
+
+    fn find_existing_entry(&self, entry: &Entry<K, V>) -> Option<(usize, usize)>
+    {
+        if self.len() == 0 { return None; }
+        self.find_using(entry.hash, move |other_ent| ptr_eq(entry, other_ent))
     }
 
     fn remove_found(&mut self, probe: usize, found: usize) -> Option<(K, V)>
@@ -507,18 +547,8 @@ impl<K, V> OrderedMap<K, V>
         Some((entry.key, entry.value))
     }
 
-    /// Remove the last key-value pair
-    pub fn pop(&mut self) -> Option<(K, V)> {
-        let (probe, found) = match self.entries.last()
-            .and_then(|e| self.find_position(&e.key))
-        {
-            None => return None,
-            Some(t) => t,
-        };
-        debug_assert_eq!(found, self.entries.len() - 1);
-        self.remove_found(probe, found)
-    }
 }
+
 
 use std::slice::Iter as SliceIter;
 use std::slice::IterMut as SliceIterMut;
