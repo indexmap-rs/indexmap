@@ -1,6 +1,11 @@
 #![feature(test)]
 extern crate test;
 extern crate rand;
+extern crate fnv;
+
+use fnv::FnvHasher;
+use std::hash::BuildHasherDefault;
+type FnvBuilder = BuildHasherDefault<FnvHasher>;
 
 use test::Bencher;
 
@@ -315,6 +320,31 @@ fn grow_orderedmap_10_000(b: &mut Bencher) {
     let c = 10_000;
     b.iter(|| {
         let mut map = OrderMap::new();
+        for x in 0..c {
+            map.insert(x, ());
+        }
+        map
+    });
+}
+
+// without preallocation
+#[bench]
+fn grow_fnv_hashmap_10_000(b: &mut Bencher) {
+    let c = 10_000;
+    b.iter(|| {
+        let mut map: HashMap<_, _, FnvBuilder> = HashMap::default();
+        for x in 0..c {
+            map.insert(x, ());
+        }
+        map
+    });
+}
+
+#[bench]
+fn grow_fnv_orderedmap_10_000(b: &mut Bencher) {
+    let c = 10_000;
+    b.iter(|| {
+        let mut map: OrderMap<_, _, FnvBuilder> = OrderMap::default();
         for x in 0..c {
             map.insert(x, ());
         }
