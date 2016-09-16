@@ -452,9 +452,30 @@ impl<K, V> OrderedMap<K, V>
         // FIXME: need backward shift deletion here!
         self.len -= 1;
 
+        // correct index that points to the entry that had to swap places
+        if found != self.entries.len() {
+            // was not last element
+            // examine new element in `found` and find it in indices
+            let new_hash = self.entries[found].hash;
+            let mut probe = desired_pos(self.mask, new_hash);
+            loop {
+                if probe < self.indices.len() {
+                    if let Some(i) = self.indices[probe].pos() {
+                        if i >= self.entries.len() {
+                            // found it
+                            self.indices[probe] = Pos::new(found);
+                            break;
+                        }
+                    }
+                    probe += 1;
+                } else {
+                    probe = 0;
+                }
+            }
+        }
         // backward shift deletion in self.indices
         // after probe, shift all non-ideally placed indices backward
-        {
+        if self.len > 0 {
             let mut last_probe = probe;
             let mut probe = probe + 1;
             loop {
@@ -478,27 +499,6 @@ impl<K, V> OrderedMap<K, V>
             }
         }
 
-        // correct index that points to the entry that had to swap places
-        if found != self.entries.len() {
-            // was not last element
-            // examine new element in `found` and find it in indices
-            let new_hash = self.entries[found].hash;
-            let mut probe = desired_pos(self.mask, new_hash);
-            loop {
-                if probe < self.indices.len() {
-                    if let Some(i) = self.indices[probe].pos() {
-                        if i >= self.entries.len() {
-                            // found it
-                            self.indices[probe] = Pos::new(found);
-                            break;
-                        }
-                    }
-                    probe += 1;
-                } else {
-                    probe = 0;
-                }
-            }
-        }
         Some((entry.key, entry.value))
     }
 }
