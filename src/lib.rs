@@ -735,6 +735,14 @@ impl<K, V, S> FromIterator<(K, V)> for OrderMap<K, V, S>
 }
 
 
+impl<K, V, S> Default for OrderMap<K, V, S>
+    where S: BuildHasher + Default,
+{
+    fn default() -> Self {
+        Self::with_capacity_and_hasher(0, S::default())
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
