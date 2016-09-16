@@ -8,6 +8,7 @@ itertools = "0.4"
 
 [dev-dependencies]
 rand = "0.3"
+quickcheck = "0.3.1"
 
 [profile.bench]
 debug = true
