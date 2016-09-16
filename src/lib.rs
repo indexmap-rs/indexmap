@@ -358,25 +358,12 @@ impl<K, V> OrderedMap<K, V>
         where K: Borrow<Q>,
               Q: Eq + Hash,
     {
-        if self.len() == 0 { return None; }
-        let h = hash_elem(key);
-        let mut probe = desired_pos(self.mask, h);
-        let mut dist = 0;
-        probe_loop!(probe < self.indices.len(), {
-            if let Some(i) = self.indices[probe].pos() {
-                let entry = &self.entries[i];
-                if dist > probe_distance(self.mask, entry.hash, probe) {
-                    // give up when probe distance is too long
-                    break;
-                } else if entry.hash == h && *entry.key.borrow() == *key {
-                    return Some((&entry.key, &entry.value));
-                }
-            } else {
-                break;
-            }
-            dist += 1;
-        });
-        None
+        if let Some((_, found)) = self.find_position(key) {
+            let entry = &self.entries[found];
+            Some((&entry.key, &entry.value))
+        } else {
+            None
+        }
     }
 
     pub fn get_mut<Q: ?Sized>(&mut self, key: &Q) -> Option<&mut V>
