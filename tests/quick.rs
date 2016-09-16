@@ -1,10 +1,10 @@
 
-extern crate orderedmap;
+extern crate ordermap;
 extern crate itertools;
 #[macro_use]
 extern crate quickcheck;
 
-use orderedmap::OrderedMap;
+use ordermap::OrderMap;
 use itertools::Itertools;
 
 use std::collections::HashSet;
@@ -19,7 +19,7 @@ fn set<'a, T: 'a, I>(iter: I) -> HashSet<T>
 
 quickcheck! {
     fn contains(insert: Vec<u32>) -> bool {
-        let mut map = OrderedMap::new();
+        let mut map = OrderMap::new();
         for &key in &insert {
             map.insert(key, ());
         }
@@ -27,7 +27,7 @@ quickcheck! {
     }
 
     fn contains_not(insert: Vec<u8>, not: Vec<u8>) -> bool {
-        let mut map = OrderedMap::new();
+        let mut map = OrderMap::new();
         for &key in &insert {
             map.insert(key, ());
         }
@@ -36,7 +36,7 @@ quickcheck! {
     }
 
     fn insert_remove(insert: Vec<u8>, remove: Vec<u8>) -> bool {
-        let mut map = OrderedMap::new();
+        let mut map = OrderMap::new();
         for &key in &insert {
             map.insert(key, ());
         }
@@ -49,7 +49,7 @@ quickcheck! {
     }
 
     fn insertion_order(insert: Vec<u32>) -> bool {
-        let mut map = OrderedMap::new();
+        let mut map = OrderMap::new();
         for &key in &insert {
             map.insert(key, ());
         }
@@ -58,7 +58,7 @@ quickcheck! {
     }
 
     fn pop(insert: Vec<u8>) -> bool {
-        let mut map = OrderedMap::new();
+        let mut map = OrderMap::new();
         for &key in &insert {
             map.insert(key, ());
         }
@@ -74,7 +74,7 @@ quickcheck! {
 
     fn with_cap(cap: u16) -> bool {
         let cap = cap as usize;
-        let mut map = OrderedMap::with_capacity(cap);
+        let mut map = OrderMap::with_capacity(cap);
         map.insert(1, 1);
         println!("wish: {}, got: {} (diff: {})", cap, map.capacity(), map.capacity() as isize - cap as isize);
         map.capacity() >= cap

@@ -1,14 +1,14 @@
 
 #[macro_export]
-/// Create a `OrderedMap` from a list of key-value pairs
+/// Create an `OrderMap` from a list of key-value pairs
 ///
 /// ## Example
 ///
 /// ```
-/// #[macro_use] extern crate orderedmap;
+/// #[macro_use] extern crate ordermap;
 /// # fn main() {
 ///
-/// let map = orderedmap!{
+/// let map = ordermap!{
 ///     "a" => 1,
 ///     "b" => 2,
 /// };
@@ -20,15 +20,15 @@
 /// assert_eq!(map.keys().next(), Some(&"a"));
 /// # }
 /// ```
-macro_rules! orderedmap {
+macro_rules! ordermap {
     (@single $($x:tt)*) => (());
-    (@count $($rest:expr),*) => (<[()]>::len(&[$(orderedmap!(@single $rest)),*]));
+    (@count $($rest:expr),*) => (<[()]>::len(&[$(ordermap!(@single $rest)),*]));
 
-    ($($key:expr => $value:expr,)+) => { orderedmap!($($key => $value),+) };
+    ($($key:expr => $value:expr,)+) => { ordermap!($($key => $value),+) };
     ($($key:expr => $value:expr),*) => {
         {
-            let _cap = orderedmap!(@count $($key),*);
-            let mut _map = $crate::OrderedMap::with_capacity(_cap);
+            let _cap = ordermap!(@count $($key),*);
+            let mut _map = $crate::OrderMap::with_capacity(_cap);
             $(
                 _map.insert($key, $value);
             )*

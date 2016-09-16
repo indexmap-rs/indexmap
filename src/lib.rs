@@ -84,7 +84,7 @@ impl Pos {
 ///
 /// All iterators traverse the map in the same order.
 #[derive(Clone)]
-pub struct OrderedMap<K, V> {
+pub struct OrderMap<K, V> {
     len: usize,
     mask: usize,
     indices: Vec<Pos>,
@@ -119,7 +119,7 @@ enum Inserted {
     }
 }
 
-impl<K, V> fmt::Debug for OrderedMap<K, V>
+impl<K, V> fmt::Debug for OrderMap<K, V>
     where K: fmt::Debug + Hash + Eq,
           V: fmt::Debug
 {
@@ -167,7 +167,7 @@ macro_rules! probe_loop {
     }
 }
 
-impl<K, V> OrderedMap<K, V> {
+impl<K, V> OrderMap<K, V> {
     pub fn new() -> Self {
         Self::with_capacity(0)
     }
@@ -175,7 +175,7 @@ impl<K, V> OrderedMap<K, V> {
     pub fn with_capacity(n: usize) -> Self {
         let raw = to_raw_capacity(n);
         let power = if n == 0 { 0 } else { max(raw.next_power_of_two(), 8) };
-        OrderedMap {
+        OrderMap {
             len: 0,
             mask: power.wrapping_sub(1),
             indices: vec![Pos::none(); power],
@@ -187,7 +187,7 @@ impl<K, V> OrderedMap<K, V> {
     fn with_raw_capacity_no_entries(n: usize) -> Self {
         let power = n;
         debug_assert_eq!(n, n.next_power_of_two());
-        OrderedMap {
+        OrderMap {
             len: 0,
             mask: (power - 1),
             indices: vec![Pos::none(); power],
@@ -207,7 +207,7 @@ impl<K, V> OrderedMap<K, V> {
     }
 }
 
-impl<K, V> OrderedMap<K, V>
+impl<K, V> OrderMap<K, V>
     where K: Eq + Hash
 {
     pub fn clear(&mut self) {
@@ -277,7 +277,7 @@ impl<K, V> OrderedMap<K, V>
 
     fn first_allocation(&mut self) {
         debug_assert_eq!(self.len(), 0);
-        *self = OrderedMap::with_raw_capacity_no_entries(8);
+        *self = OrderMap::with_raw_capacity_no_entries(8);
     }
 
     #[inline(never)]
@@ -298,7 +298,7 @@ impl<K, V> OrderedMap<K, V>
             }
         }
 
-        let mut old_self = OrderedMap::with_raw_capacity_no_entries(self.indices.len() * 2);
+        let mut old_self = OrderMap::with_raw_capacity_no_entries(self.indices.len() * 2);
         swap(self, &mut old_self);
         for pos in &old_self.indices[first_ideal..] {
             if let Some(i) = pos.pos() {
@@ -463,7 +463,7 @@ impl<K, V> OrderedMap<K, V>
 // using Hash + Eq at all in these methods.
 //
 // However, we should probably not let this show in the public API or docs.
-impl<K, V> OrderedMap<K, V> {
+impl<K, V> OrderMap<K, V> {
     fn pop_impl(&mut self) -> Option<(K, V)> {
         let (probe, found) = match self.entries.last()
             .and_then(|e| self.find_existing_entry(e))
@@ -625,7 +625,7 @@ impl<'a, K, V> DoubleEndedIterator for IterMut<'a, K, V> {
 
 use std::ops::{Index, IndexMut};
 
-impl<'a, K, V, Q: ?Sized> Index<&'a Q> for OrderedMap<K, V>
+impl<'a, K, V, Q: ?Sized> Index<&'a Q> for OrderMap<K, V>
     where K: Eq + Hash,
           K: Borrow<Q>,
           Q: Eq + Hash,
@@ -635,7 +635,7 @@ impl<'a, K, V, Q: ?Sized> Index<&'a Q> for OrderedMap<K, V>
         if let Some(v) = self.get(key) {
             v
         } else {
-            panic!("OrderedMap: key not found")
+            panic!("OrderMap: key not found")
         }
     }
 }
@@ -644,7 +644,7 @@ impl<'a, K, V, Q: ?Sized> Index<&'a Q> for OrderedMap<K, V>
 /// pairs that are already present.
 ///
 /// You can **not** insert new pairs with index syntax, use `.insert()`.
-impl<'a, K, V, Q: ?Sized> IndexMut<&'a Q> for OrderedMap<K, V>
+impl<'a, K, V, Q: ?Sized> IndexMut<&'a Q> for OrderMap<K, V>
     where K: Eq + Hash,
           K: Borrow<Q>,
           Q: Eq + Hash,
@@ -653,14 +653,14 @@ impl<'a, K, V, Q: ?Sized> IndexMut<&'a Q> for OrderedMap<K, V>
         if let Some(v) = self.get_mut(key) {
             v
         } else {
-            panic!("OrderedMap: key not found")
+            panic!("OrderMap: key not found")
         }
     }
 }
 
 use std::iter::FromIterator;
 
-impl<K, V> FromIterator<(K, V)> for OrderedMap<K, V>
+impl<K, V> FromIterator<(K, V)> for OrderMap<K, V>
     where K: Hash + Eq
 {
     fn from_iter<I: IntoIterator<Item=(K, V)>>(iterable: I) -> Self {
@@ -679,7 +679,7 @@ mod tests {
 
     #[test]
     fn it_works() {
-        let mut map = OrderedMap::new();
+        let mut map = OrderMap::new();
         map.insert(1, ());
         map.insert(1, ());
         assert_eq!(map.len(), 1);
@@ -690,7 +690,7 @@ mod tests {
     fn insert() {
         let insert = [0, 4, 2, 12, 8, 7, 11, 5];
         let not_present = [1, 3, 6, 9, 10];
-        let mut map = OrderedMap::with_capacity(insert.len());
+        let mut map = OrderMap::with_capacity(insert.len());
 
         for (i, &elt) in insert.iter().enumerate() {
             assert_eq!(map.len(), i);
@@ -708,7 +708,7 @@ mod tests {
 
     #[test]
     fn insert_2() {
-        let mut map = OrderedMap::with_capacity(16);
+        let mut map = OrderMap::with_capacity(16);
 
         let mut keys = vec![];
         keys.extend(0..16);
@@ -734,7 +734,7 @@ mod tests {
     #[test]
     fn insert_order() {
         let insert = [0, 4, 2, 12, 8, 7, 11, 5, 3, 17, 19, 22, 23];
-        let mut map = OrderedMap::new();
+        let mut map = OrderMap::new();
 
         for &elt in &insert {
             map.insert(elt, ());
@@ -751,7 +751,7 @@ mod tests {
     fn grow() {
         let insert = [0, 4, 2, 12, 8, 7, 11];
         let not_present = [1, 3, 6, 9, 10];
-        let mut map = OrderedMap::with_capacity(insert.len());
+        let mut map = OrderMap::with_capacity(insert.len());
 
 
         for (i, &elt) in insert.iter().enumerate() {
@@ -774,7 +774,7 @@ mod tests {
     #[test]
     fn remove() {
         let insert = [0, 4, 2, 12, 8, 7, 11, 5, 3, 17, 19, 22, 23];
-        let mut map = OrderedMap::new();
+        let mut map = OrderMap::new();
 
         for &elt in &insert {
             map.insert(elt, elt);

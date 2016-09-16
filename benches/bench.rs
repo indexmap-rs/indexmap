@@ -4,9 +4,9 @@ extern crate rand;
 
 use test::Bencher;
 
-extern crate orderedmap;
+extern crate ordermap;
 
-use orderedmap::OrderedMap;
+use ordermap::OrderMap;
 
 use std::collections::HashMap;
 use std::iter::FromIterator;
@@ -23,7 +23,7 @@ fn new_hashmap(b: &mut Bencher) {
 #[bench]
 fn new_orderedmap(b: &mut Bencher) {
     b.iter(|| {
-        OrderedMap::<String, String>::new()
+        OrderMap::<String, String>::new()
     });
 }
 
@@ -37,7 +37,7 @@ fn with_capacity_10e5_hashmap(b: &mut Bencher) {
 #[bench]
 fn with_capacity_10e5_orderedmap(b: &mut Bencher) {
     b.iter(|| {
-        OrderedMap::<String, String>::with_capacity(10_000)
+        OrderMap::<String, String>::with_capacity(10_000)
     });
 }
 
@@ -57,7 +57,7 @@ fn insert_hashmap_10_000(b: &mut Bencher) {
 fn insert_orderedmap_10_000(b: &mut Bencher) {
     let c = 10_000;
     b.iter(|| {
-        let mut map = OrderedMap::with_capacity(c);
+        let mut map = OrderMap::with_capacity(c);
         for x in 0..c {
             map.insert(x, ());
         }
@@ -81,7 +81,7 @@ fn insert_hashmap_string_10_000(b: &mut Bencher) {
 fn insert_orderedmap_string_10_000(b: &mut Bencher) {
     let c = 10_000;
     b.iter(|| {
-        let mut map = OrderedMap::with_capacity(c);
+        let mut map = OrderMap::with_capacity(c);
         for x in 0..c {
             map.insert(x.to_string(), ());
         }
@@ -107,7 +107,7 @@ fn insert_orderedmap_str_10_000(b: &mut Bencher) {
     let c = 10_000;
     let ss = Vec::from_iter((0..c).map(|x| x.to_string()));
     b.iter(|| {
-        let mut map = OrderedMap::with_capacity(c);
+        let mut map = OrderMap::with_capacity(c);
         for key in &ss {
             map.insert(&key[..], ());
         }
@@ -133,7 +133,7 @@ fn insert_orderedmap_int_bigvalue_10_000(b: &mut Bencher) {
     let c = 10_000;
     let value = [0u64; 10];
     b.iter(|| {
-        let mut map = OrderedMap::with_capacity(c);
+        let mut map = OrderMap::with_capacity(c);
         for i in 0..c {
             map.insert(i, value);
         }
@@ -157,7 +157,7 @@ fn insert_hashmap_100_000(b: &mut Bencher) {
 fn insert_orderedmap_100_000(b: &mut Bencher) {
     let c = 100_000;
     b.iter(|| {
-        let mut map = OrderedMap::with_capacity(c);
+        let mut map = OrderMap::with_capacity(c);
         for x in 0..c {
             map.insert(x, ());
         }
@@ -181,7 +181,7 @@ fn insert_hashmap_150(b: &mut Bencher) {
 fn insert_orderedmap_150(b: &mut Bencher) {
     let c = 150;
     b.iter(|| {
-        let mut map = OrderedMap::with_capacity(c);
+        let mut map = OrderMap::with_capacity(c);
         for x in 0..c {
             map.insert(x, ());
         }
@@ -206,7 +206,7 @@ fn iterate_hashmap_10_000(b: &mut Bencher) {
 #[bench]
 fn iterate_orderedmap_10_000(b: &mut Bencher) {
     let c = 10_000;
-    let mut map = OrderedMap::with_capacity(c);
+    let mut map = OrderMap::with_capacity(c);
     let len = c - c/10;
     for x in 0..len {
         map.insert(x, ());
@@ -238,7 +238,7 @@ fn lookup_hashmap_10_000(b: &mut Bencher) {
 #[bench]
 fn lookup_orderedmap_10_000(b: &mut Bencher) {
     let c = 10_000;
-    let mut map = OrderedMap::with_capacity(c);
+    let mut map = OrderMap::with_capacity(c);
     let len = c - c/10;
     for x in 0..len {
         map.insert(x, ());
@@ -278,7 +278,7 @@ fn lookup_hashmap_100_000(b: &mut Bencher) {
 #[bench]
 fn lookup_orderedmap_100_000(b: &mut Bencher) {
     let c = 100_000;
-    let mut map = OrderedMap::with_capacity(c);
+    let mut map = OrderMap::with_capacity(c);
     let mut keys = (0..c - c/10).collect::<Vec<_>>();
     for &key in &keys {
         map.insert(key, ());
@@ -314,7 +314,7 @@ fn grow_hashmap_10_000(b: &mut Bencher) {
 fn grow_orderedmap_10_000(b: &mut Bencher) {
     let c = 10_000;
     b.iter(|| {
-        let mut map = OrderedMap::new();
+        let mut map = OrderMap::new();
         for x in 0..c {
             map.insert(x, ());
         }
