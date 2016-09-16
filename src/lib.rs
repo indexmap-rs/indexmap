@@ -17,10 +17,26 @@ use std::mem::swap;
 
 use util::{second, ptr_eq};
 
-fn hash_elem<K: ?Sized + Hash>(k: &K) -> u64 {
+fn hash_elem<K: ?Sized + Hash>(k: &K) -> HashValue {
     let mut h = SipHasher13::new();
     k.hash(&mut h);
-    h.finish()
+    HashValue(h.finish() as usize)
+}
+
+/// Hash value newtype. Not larger than usize, since anything larger
+/// isn't used for selecting position anyway.
+#[derive(Copy, Debug)]
+struct HashValue(usize);
+
+impl Clone for HashValue {
+    #[inline]
+    fn clone(&self) -> Self { *self }
+}
+impl PartialEq for HashValue {
+    #[inline]
+    fn eq(&self, rhs: &Self) -> bool {
+        self.0 == rhs.0
+    }
 }
 
 type PosType = usize;
@@ -77,19 +93,19 @@ pub struct OrderedMap<K, V> {
 
 #[derive(Copy, Clone, Debug)]
 struct Entry<K, V> {
-    hash: u64,
+    hash: HashValue,
     key: K,
     value: V,
 }
 
 #[inline(always)]
-fn desired_pos(mask: usize, hash: u64) -> usize {
-    hash as usize & mask
+fn desired_pos(mask: usize, hash: HashValue) -> usize {
+    hash.0 & mask
 }
 
 /// The number of steps that `current` is forward of the desired position for hash
 #[inline(always)]
-fn probe_distance(mask: usize, hash: u64, current: usize) -> usize {
+fn probe_distance(mask: usize, hash: HashValue, current: usize) -> usize {
     current.wrapping_sub(desired_pos(mask, hash)) & mask
 }
 
@@ -472,7 +488,7 @@ impl<K, V> OrderedMap<K, V> {
     }
 
     /// Return probe (indices) and position (entries)
-    fn find_using<F>(&self, hash: u64, key_eq: F) -> Option<(usize, usize)>
+    fn find_using<F>(&self, hash: HashValue, key_eq: F) -> Option<(usize, usize)>
         where F: Fn(&Entry<K, V>) -> bool,
     {
         debug_assert!(self.len() > 0);
