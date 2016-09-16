@@ -29,3 +29,4 @@ Interesting Features:
 - Insertion order is preserved (swap_remove perturbs the order, like the method name says)
 - Implements .pop() -> Option<(K, V)> in O(1) time
 - OrderMap::new() is empty and uses no allocation until you insert something
+- No ``unsafe``.
