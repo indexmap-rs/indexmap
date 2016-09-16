@@ -126,6 +126,7 @@ fn to_raw_capacity(n: usize) -> usize {
     n + n / 3
 }
 
+// this could not be captured in an efficient iterator
 macro_rules! probe_loop {
     ($probe_var: ident < $len: expr, $body: expr) => {
         loop {
