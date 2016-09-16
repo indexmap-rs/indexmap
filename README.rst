@@ -1,5 +1,5 @@
 
-Proof of concept.
+Experimental hash table implementation in just Rust (stable, no unsafe code).
 
 Python 3.6-style hash map where it keeps a consistent order. Fast insertion / growth
 and iteration.
@@ -30,3 +30,10 @@ Interesting Features:
 - Implements .pop() -> Option<(K, V)> in O(1) time
 - OrderMap::new() is empty and uses no allocation until you insert something
 - No ``unsafe``.
+
+
+Where to go from here?
+
+- It can be an *indexable* ordered map in the current fashion
+- Ideas and PRs for how to implement insertion-order preserving remove (for example tombstones)
+  are welcome.

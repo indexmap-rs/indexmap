@@ -4,9 +4,9 @@ version = "0.1.0"
 authors = ["bluss"]
 
 [dependencies]
-itertools = "0.4"
 
 [dev-dependencies]
+itertools = "0.4"
 rand = "0.3"
 quickcheck = "0.3.1"
 fnv = "1.0"

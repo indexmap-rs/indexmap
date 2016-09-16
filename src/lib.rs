@@ -1,9 +1,6 @@
-extern crate itertools;
 
 mod macros;
 mod util;
-
-use itertools::free::{enumerate};
 
 use std::hash::Hash;
 use std::hash::BuildHasher;
@@ -15,7 +12,7 @@ use std::cmp::max;
 use std::fmt;
 use std::mem::{swap, replace};
 
-use util::{second, ptr_eq};
+use util::{second, ptr_eq, enumerate};
 
 fn hash_elem_using<B: BuildHasher, K: ?Sized + Hash>(build: &B, k: &K) -> HashValue {
     let mut h = build.build_hasher();
@@ -746,6 +743,7 @@ impl<K, V, S> Default for OrderMap<K, V, S>
 #[cfg(test)]
 mod tests {
     use super::*;
+    use util::enumerate;
 
     #[test]
     fn it_works() {
@@ -762,7 +760,7 @@ mod tests {
         let not_present = [1, 3, 6, 9, 10];
         let mut map = OrderMap::with_capacity(insert.len());
 
-        for (i, &elt) in insert.iter().enumerate() {
+        for (i, &elt) in enumerate(&insert) {
             assert_eq!(map.len(), i);
             map.insert(elt, elt);
             assert_eq!(map.len(), i + 1);
@@ -824,7 +822,7 @@ mod tests {
         let mut map = OrderMap::with_capacity(insert.len());
 
 
-        for (i, &elt) in insert.iter().enumerate() {
+        for (i, &elt) in enumerate(&insert) {
             assert_eq!(map.len(), i);
             map.insert(elt, elt);
             assert_eq!(map.len(), i + 1);
