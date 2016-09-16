@@ -365,8 +365,7 @@ impl<K, V> OrderedMap<K, V>
         probe_loop!(probe < self.indices.len(), {
             if let Some(i) = self.indices[probe].pos() {
                 let entry = &self.entries[i];
-                let that_dist = probe_distance(self.mask, entry.hash, probe);
-                if dist > that_dist {
+                if dist > probe_distance(self.mask, entry.hash, probe) {
                     // give up when probe distance is too long
                     break;
                 } else if entry.hash == h && *entry.key.borrow() == *key {
@@ -411,8 +410,7 @@ impl<K, V> OrderedMap<K, V>
         probe_loop!(probe < self.indices.len(), {
             if let Some(i) = self.indices[probe].pos() {
                 let entry = &self.entries[i];
-                let that_dist = probe_distance(self.mask, entry.hash, probe);
-                if dist > that_dist {
+                if dist > probe_distance(self.mask, entry.hash, probe) {
                     // give up when probe distance is too long
                     return None;
                 } else if entry.hash == h && *entry.key.borrow() == *key {
