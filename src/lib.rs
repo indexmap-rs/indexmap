@@ -358,6 +358,7 @@ impl<K, V> OrderedMap<K, V>
         where K: Borrow<Q>,
               Q: Eq + Hash,
     {
+        if self.len() == 0 { return None; }
         let h = hash_elem(key);
         let mut probe = h as usize & self.mask;
         let mut dist = 0;
@@ -408,6 +409,7 @@ impl<K, V> OrderedMap<K, V>
         where K: Borrow<Q>,
               Q: Eq + Hash,
     {
+        if self.len() == 0 { return None; }
         let h = hash_elem(key);
         let mut probe = desired_pos(self.mask, h);
         let mut dist = 0;
