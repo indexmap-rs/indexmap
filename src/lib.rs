@@ -556,6 +556,7 @@ impl<K, V> OrderMap<K, V> {
 
 use std::slice::Iter as SliceIter;
 use std::slice::IterMut as SliceIterMut;
+use std::vec::IntoIter as VecIntoIter;
 
 pub struct Keys<'a, K: 'a, V: 'a> {
     iter: SliceIter<'a, Entry<K, V>>,
@@ -620,6 +621,60 @@ impl<'a, K, V> Iterator for IterMut<'a, K, V> {
 impl<'a, K, V> DoubleEndedIterator for IterMut<'a, K, V> {
     fn next_back(&mut self) -> Option<Self::Item> {
         self.iter.next_back().map(|e| (&e.key, &mut e.value))
+    }
+}
+
+pub struct IntoIter<K, V> {
+    iter: VecIntoIter<Entry<K, V>>,
+}
+
+impl<K, V> Iterator for IntoIter<K, V> {
+    type Item = (K, V);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.iter.next().map(|e| (e.key, e.value))
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.iter.size_hint()
+    }
+}
+
+impl<'a, K, V> DoubleEndedIterator for IntoIter<K, V> {
+    fn next_back(&mut self) -> Option<Self::Item> {
+        self.iter.next_back().map(|e| (e.key, e.value))
+    }
+}
+
+impl<'a, K, V> IntoIterator for &'a OrderMap<K, V>
+    where K: Hash + Eq
+{
+    type Item = (&'a K, &'a V);
+    type IntoIter = Iter<'a, K, V>;
+    fn into_iter(self) -> Self::IntoIter {
+        self.iter()
+    }
+}
+
+impl<'a, K, V> IntoIterator for &'a mut OrderMap<K, V>
+    where K: Hash + Eq
+{
+    type Item = (&'a K, &'a mut V);
+    type IntoIter = IterMut<'a, K, V>;
+    fn into_iter(self) -> Self::IntoIter {
+        self.iter_mut()
+    }
+}
+
+impl<K, V> IntoIterator for OrderMap<K, V>
+    where K: Hash + Eq
+{
+    type Item = (K, V);
+    type IntoIter = IntoIter<K, V>;
+    fn into_iter(self) -> Self::IntoIter {
+        IntoIter {
+            iter: self.entries.into_iter(),
+        }
     }
 }
 
