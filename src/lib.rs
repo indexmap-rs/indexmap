@@ -2,6 +2,7 @@
 extern crate itertools;
 
 mod macros;
+mod util;
 
 use itertools::free::{enumerate};
 
@@ -13,6 +14,8 @@ use std::borrow::Borrow;
 use std::cmp::max;
 use std::fmt;
 use std::mem::swap;
+
+use util::second;
 
 fn hash_elem<K: ?Sized + Hash>(k: &K) -> u64 {
     let mut h = SipHasher13::new();
@@ -366,7 +369,7 @@ impl<K, V> OrderedMap<K, V>
         where K: Borrow<Q>,
               Q: Eq + Hash,
     {
-        self.get_pair(key).map(|(_, v)| v)
+        self.get_pair(key).map(second)
     }
 
     pub fn get_pair<Q: ?Sized>(&self, key: &Q) -> Option<(&K, &V)>
@@ -385,7 +388,7 @@ impl<K, V> OrderedMap<K, V>
         where K: Borrow<Q>,
               Q: Eq + Hash,
     {
-        self.get_pair_mut(key).map(|(_, v)| v)
+        self.get_pair_mut(key).map(second)
     }
 
     pub fn get_pair_mut<Q: ?Sized>(&mut self, key: &Q) -> Option<(&mut K, &mut V)>
@@ -425,6 +428,13 @@ impl<K, V> OrderedMap<K, V>
         });
     }
 
+    /// insertion-order-destroying removal!
+    pub fn swap_remove<Q: ?Sized>(&mut self, key: &Q) -> Option<V>
+        where K: Borrow<Q>,
+              Q: Eq + Hash,
+    {
+        self.swap_remove_pair(key).map(second)
+    }
     /// insertion-order-destroying removal!
     pub fn swap_remove_pair<Q: ?Sized>(&mut self, key: &Q) -> Option<(K, V)>
         where K: Borrow<Q>,
