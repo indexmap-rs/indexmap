@@ -112,9 +112,9 @@ fn probe_distance(mask: usize, hash: HashValue, current: usize) -> usize {
 enum Inserted {
     Done,
     AlreadyExists,
-    SwapWith {
+    RobinHood {
         probe: usize,
-        old_index: usize,
+        old_pos: Pos,
         dist: usize,
     }
 }
@@ -219,7 +219,7 @@ impl<K, V> OrderedMap<K, V>
     //
     // We will know if `key` is already in the map, before we need to insert it.
     // When we insert they key, it might be that we need to continue displacing
-    // entries (robin hood hashing), in which case Inserted::SwapWith is returned
+    // entries (robin hood hashing), in which case Inserted::RobinHood is returned
     fn insert_phase_1(&mut self, key: K, value: V) -> Inserted {
         let hash = hash_elem(&key);
         let mut probe = desired_pos(self.mask, hash);
@@ -230,28 +230,15 @@ impl<K, V> OrderedMap<K, V>
                 // if existing element probed less than us, swap
                 let their_dist = probe_distance(self.mask, self.entries[i].hash, probe);
                 if their_dist < dist {
-                    //   0    1       2       3
-                    // [ None Some(0) Some(1) None ] // indices
-                    // [ aaaa ]
-                    // [ bbbb ]
-                    //
-                    // if the new entry at index 2 is better at #1, we do:
-                    //
-                    // let index = 2;
-                    // entries.push(cccc);
-                    //
-                    // old_index = indices[1]; (Some(0))
-                    // indices[1] = Some(2);
-                    //
-                    //
-                    // insert key
+                    // robin hood: steal the spot if it's better for us
                     let index = self.entries.len();
-                    self.indices[probe] = Pos::new(index);
+                    let mut pos = Pos::new(index);
+                    swap(&mut pos, &mut self.indices[probe]);
                     self.entries.push(Entry { hash: hash, key: key, value: value });
                     self.len += 1;
-                    return Inserted::SwapWith {
+                    return Inserted::RobinHood {
                         probe: probe,
-                        old_index: i,
+                        old_pos: pos,
                         dist: their_dist,
                     };
                 } else if self.entries[i].hash == hash && self.entries[i].key == key {
@@ -269,18 +256,17 @@ impl<K, V> OrderedMap<K, V>
         });
     }
 
-    fn insert_phase_2(&mut self, mut probe: usize, mut old_index: usize, mut dist: usize) {
+    fn insert_phase_2(&mut self, mut probe: usize, mut old_pos: Pos, mut dist: usize) {
         probe_loop!(probe < self.indices.len(), {
             if let Some(i) = self.indices[probe].pos() {
                 // if existing element probed less than us, swap
                 let their_dist = probe_distance(self.mask, self.entries[i].hash, probe);
                 if their_dist < dist {
-                    self.indices[probe] = Pos::new(old_index);
-                    old_index = i;
+                    swap(&mut old_pos, &mut self.indices[probe]);
                     dist = their_dist;
                 }
             } else {
-                self.indices[probe] = Pos::new(old_index);
+                self.indices[probe] = old_pos;
                 break;
             }
             dist += 1;
@@ -354,8 +340,8 @@ impl<K, V> OrderedMap<K, V>
         self.reserve_one();
         match self.insert_phase_1(key, value) {
             Inserted::AlreadyExists | Inserted::Done => { }
-            Inserted::SwapWith { probe, old_index, dist } => {
-                self.insert_phase_2(probe, old_index, dist);
+            Inserted::RobinHood { probe, old_pos, dist } => {
+                self.insert_phase_2(probe, old_pos, dist);
             }
         }
 
