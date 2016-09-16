@@ -358,7 +358,7 @@ impl<K, V> OrderedMap<K, V>
     {
         if self.len() == 0 { return None; }
         let h = hash_elem(key);
-        let mut probe = h as usize & self.mask;
+        let mut probe = desired_pos(self.mask, h);
         let mut dist = 0;
         probe_loop!(probe < self.indices.len(), {
             if let Some(i) = self.indices[probe].pos() {
