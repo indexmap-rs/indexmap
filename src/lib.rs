@@ -85,7 +85,6 @@ impl Pos {
 /// All iterators traverse the map in the same order.
 #[derive(Clone)]
 pub struct OrderMap<K, V, S = RandomState> {
-    len: usize,
     mask: usize,
     indices: Vec<Pos>,
     entries: Vec<Entry<K, V>>,
@@ -186,7 +185,6 @@ impl<K, V, S> OrderMap<K, V, S>
         let raw = to_raw_capacity(n);
         let power = if n == 0 { 0 } else { max(raw.next_power_of_two(), 8) };
         OrderMap {
-            len: 0,
             mask: power.wrapping_sub(1),
             indices: vec![Pos::none(); power],
             entries: Vec::with_capacity(usable_capacity(power)),
@@ -194,7 +192,7 @@ impl<K, V, S> OrderMap<K, V, S>
         }
     }
 
-    pub fn len(&self) -> usize { self.len }
+    pub fn len(&self) -> usize { self.entries.len() }
 
     #[inline(always)]
     fn raw_capacity(&self) -> usize {
@@ -212,7 +210,6 @@ impl<K, V, S> OrderMap<K, V, S>
 {
     pub fn clear(&mut self) {
         self.entries.clear();
-        self.len = 0;
         for pos in &mut self.indices {
             *pos = Pos::none();
         }
@@ -256,7 +253,6 @@ impl<K, V, S> OrderMap<K, V, S>
             dist += 1;
         });
         self.entries.push(Entry { hash: hash, key: key, value: value });
-        self.len += 1;
         insert_kind
     }
 
@@ -319,7 +315,6 @@ impl<K, V, S> OrderMap<K, V, S>
                 self.reinsert_entry_in_order(i);
             }
         }
-        debug_assert_eq!(self.len, self.entries.len());
     }
 
     // write to self.indices
@@ -517,7 +512,6 @@ impl<K, V, S> OrderMap<K, V, S> {
         // to the other entry that has to move
         self.indices[probe] = Pos::none();
         let entry = self.entries.swap_remove(found);
-        self.len -= 1;
 
         // correct index that points to the entry that had to swap places
         if let Some(entry) = self.entries.get(found) {
@@ -536,7 +530,7 @@ impl<K, V, S> OrderMap<K, V, S> {
         }
         // backward shift deletion in self.indices
         // after probe, shift all non-ideally placed indices backward
-        if self.len > 0 {
+        if self.len() > 0 {
             let mut last_probe = probe;
             let mut probe = probe + 1;
             probe_loop!(probe < self.indices.len(), {
