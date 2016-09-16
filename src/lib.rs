@@ -773,6 +773,14 @@ mod tests {
     }
 
     #[test]
+    fn new() {
+        let map = OrderMap::<String, String>::new();
+        println!("{:?}", map);
+        assert_eq!(map.capacity(), 0);
+        assert_eq!(map.len(), 0);
+    }
+
+    #[test]
     fn insert() {
         let insert = [0, 4, 2, 12, 8, 7, 11, 5];
         let not_present = [1, 3, 6, 9, 10];
