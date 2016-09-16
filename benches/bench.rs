@@ -259,6 +259,83 @@ fn lookup_orderedmap_10_000(b: &mut Bencher) {
 }
 
 #[bench]
+fn lookup_hashmap_10_000_exist(b: &mut Bencher) {
+    let c = 10_000;
+    let mut map = HashMap::with_capacity(c);
+    let keys = shuffled_keys(0..c);
+    for &key in &keys {
+        map.insert(key, 1);
+    }
+    b.iter(|| {
+        let mut found = 0;
+        for key in 5000..c {
+            found += map.get(&key).is_some() as i32;
+        }
+        found
+    });
+}
+
+#[bench]
+fn lookup_hashmap_10_000_noexist(b: &mut Bencher) {
+    let c = 10_000;
+    let mut map = HashMap::with_capacity(c);
+    let keys = shuffled_keys(0..c);
+    for &key in &keys {
+        map.insert(key, 1);
+    }
+    b.iter(|| {
+        let mut found = 0;
+        for key in c..15000 {
+            found += map.get(&key).is_some() as i32;
+        }
+        found
+    });
+}
+
+fn shuffled_keys<I>(iter: I) -> Vec<I::Item>
+    where I: IntoIterator
+{
+    let mut v = Vec::from_iter(iter);
+    let mut rng = weak_rng();
+    rng.shuffle(&mut v);
+    v
+}
+
+#[bench]
+fn lookup_orderedmap_10_000_exist(b: &mut Bencher) {
+    let c = 10_000;
+    let mut map = OrderMap::with_capacity(c);
+    let keys = shuffled_keys(0..c);
+    for &key in &keys {
+        map.insert(key, 1);
+    }
+    b.iter(|| {
+        let mut found = 0;
+        for key in 5000..c {
+            found += map.get(&key).is_some() as i32;
+        }
+        found
+    });
+}
+
+#[bench]
+fn lookup_orderedmap_10_000_noexist(b: &mut Bencher) {
+    let c = 10_000;
+    let mut map = OrderMap::with_capacity(c);
+    let keys = shuffled_keys(0..c);
+    for &key in &keys {
+        map.insert(key, 1);
+    }
+    b.iter(|| {
+        let mut found = 0;
+        for key in c..15000 {
+            found += map.get(&key).is_some() as i32;
+        }
+        found
+    });
+}
+
+#[bench]
 fn lookup_hashmap_100_000(b: &mut Bencher) {
     let c = 100_000;
     let mut map = HashMap::with_capacity(c);
