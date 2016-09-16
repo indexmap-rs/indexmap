@@ -424,8 +424,8 @@ impl<K, V> OrderedMap<K, V>
     /// its value.
     ///
     /// Like `Vec::swap_remove`, the pair is removed by swapping it with the
-    /// previously last element of the map and popping it off. This perturbs
-    /// the postion of previously the last element.
+    /// last element of the map and popping it off. **This perturbs
+    /// the postion of what used to be the last element!**
     ///
     /// Return `None` if `key` is not in map.
     pub fn swap_remove<Q: ?Sized>(&mut self, key: &Q) -> Option<V>
@@ -437,8 +437,8 @@ impl<K, V> OrderedMap<K, V>
     /// Remove the key-value pair equivalent to `key` and return it.
     ///
     /// Like `Vec::swap_remove`, the pair is removed by swapping it with the
-    /// previously last element of the map and popping it off. This perturbs
-    /// the postion of previously the last element.
+    /// last element of the map and popping it off. **This perturbs
+    /// the postion of what used to be the last element!**
     ///
     /// Return `None` if `key` is not in map.
     pub fn swap_remove_pair<Q: ?Sized>(&mut self, key: &Q) -> Option<(K, V)>
