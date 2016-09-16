@@ -10,6 +10,8 @@ Using robin hood hashing just like Rust's libstd HashMap.
 - Has lookup
 - Has resize (grow on insert)
 - Has no allocation in OrderedMap::new()
-
-- Remove is implemented, but it destroys the insertion order
-  usual back shift deletion, but only on the index vector, so it's cheaper
+- Remove is implemented, but it destroys the insertion order.
+  It's the usual backwards shift deletion, but only on the index vector, so
+  it's cheaper.
+  Order-preserving removal would want to be implemented with tombstones,
+  but I'm hesitant and not sure if it can be performant.
