@@ -147,18 +147,20 @@ impl<K, V> OrderedMap<K, V>
     }
 
     pub fn with_capacity(n: usize) -> Self {
-        let n = to_raw_capacity(n);
-        let power = if n == 0 { 0 } else { max(n.next_power_of_two(), 8) };
+        let raw = to_raw_capacity(n);
+        let power = if n == 0 { 0 } else { max(raw.next_power_of_two(), 8) };
         OrderedMap {
             len: 0,
             mask: power.wrapping_sub(1),
             indices: vec![Pos::none(); power],
-            entries: Vec::with_capacity(n),
+            entries: Vec::with_capacity(n), // FIXME: compute adjusted n
         }
     }
 
-    fn with_capacity_no_entries(n: usize) -> Self {
-        let power = max(n.next_power_of_two(), 8);
+    // `n` must be a power of two
+    fn with_raw_capacity_no_entries(n: usize) -> Self {
+        let power = n;
+        debug_assert_eq!(n, n.next_power_of_two());
         OrderedMap {
             len: 0,
             mask: (power - 1),
@@ -252,7 +254,7 @@ impl<K, V> OrderedMap<K, V>
 
     fn first_allocation(&mut self) {
         debug_assert_eq!(self.len(), 0);
-        *self = OrderedMap::with_capacity(8);
+        *self = OrderedMap::with_raw_capacity_no_entries(8);
     }
 
     #[inline(never)]
@@ -273,7 +275,7 @@ impl<K, V> OrderedMap<K, V>
             }
         }
 
-        let mut old_self = OrderedMap::with_capacity_no_entries(self.indices.len() * 2);
+        let mut old_self = OrderedMap::with_raw_capacity_no_entries(self.indices.len() * 2);
         swap(self, &mut old_self);
         for pos in &old_self.indices[first_ideal..] {
             if let Some(i) = pos.pos() {
