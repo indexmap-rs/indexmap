@@ -126,6 +126,19 @@ fn to_raw_capacity(n: usize) -> usize {
     n + n / 3
 }
 
+macro_rules! probe_loop {
+    ($probe_var: ident < $len: expr, $body: expr) => {
+        loop {
+            if $probe_var < $len {
+                $body
+                $probe_var += 1;
+            } else {
+                $probe_var = 0;
+            }
+        }
+    }
+}
+
 impl<K, V> OrderedMap<K, V>
     where K: Eq + Hash
 {
@@ -175,76 +188,66 @@ impl<K, V> OrderedMap<K, V>
         let mut probe = desired_pos(self.mask, hash);
         let mut dist = 0;
         debug_assert!(self.len() < self.raw_capacity());
-        loop {
-            if probe < self.indices.len() {
-                if let Some(i) = self.indices[probe].pos() {
-                    // if existing element probed less than us, swap
-                    let their_dist = probe_distance(self.mask, self.entries[i].hash, probe);
-                    if their_dist < dist {
-                        //   0    1       2       3
-                        // [ None Some(0) Some(1) None ] // indices
-                        // [ aaaa ]
-                        // [ bbbb ]
-                        //
-                        // if the new entry at index 2 is better at #1, we do:
-                        //
-                        // let index = 2;
-                        // entries.push(cccc);
-                        //
-                        // old_index = indices[1]; (Some(0))
-                        // indices[1] = Some(2);
-                        //
-                        //
-                        // insert key
-                        let index = self.entries.len();
-                        self.indices[probe] = Pos::new(index);
-                        self.entries.push(Entry { hash: hash, key: key, value: value });
-                        self.len += 1;
-                        return Inserted::SwapWith {
-                            probe: probe,
-                            old_index: i,
-                            dist: their_dist,
-                        };
-                    } else if self.entries[i].hash == hash && self.entries[i].key == key {
-                        return Inserted::AlreadyExists;
-                    }
-                } else {
-                    // empty bucket, insert here
+        probe_loop!(probe < self.indices.len(), {
+            if let Some(i) = self.indices[probe].pos() {
+                // if existing element probed less than us, swap
+                let their_dist = probe_distance(self.mask, self.entries[i].hash, probe);
+                if their_dist < dist {
+                    //   0    1       2       3
+                    // [ None Some(0) Some(1) None ] // indices
+                    // [ aaaa ]
+                    // [ bbbb ]
+                    //
+                    // if the new entry at index 2 is better at #1, we do:
+                    //
+                    // let index = 2;
+                    // entries.push(cccc);
+                    //
+                    // old_index = indices[1]; (Some(0))
+                    // indices[1] = Some(2);
+                    //
+                    //
+                    // insert key
                     let index = self.entries.len();
                     self.indices[probe] = Pos::new(index);
                     self.entries.push(Entry { hash: hash, key: key, value: value });
                     self.len += 1;
-                    return Inserted::Done;
+                    return Inserted::SwapWith {
+                        probe: probe,
+                        old_index: i,
+                        dist: their_dist,
+                    };
+                } else if self.entries[i].hash == hash && self.entries[i].key == key {
+                    return Inserted::AlreadyExists;
                 }
-                probe += 1;
-                dist += 1;
             } else {
-                probe = 0;
+                // empty bucket, insert here
+                let index = self.entries.len();
+                self.indices[probe] = Pos::new(index);
+                self.entries.push(Entry { hash: hash, key: key, value: value });
+                self.len += 1;
+                return Inserted::Done;
             }
-        }
+            dist += 1;
+        });
     }
 
     fn insert_phase_2(&mut self, mut probe: usize, mut old_index: usize, mut dist: usize) {
-        loop {
-            if probe < self.indices.len() {
-                if let Some(i) = self.indices[probe].pos() {
-                    // if existing element probed less than us, swap
-                    let their_dist = probe_distance(self.mask, self.entries[i].hash, probe);
-                    if their_dist < dist {
-                        self.indices[probe] = Pos::new(old_index);
-                        old_index = i;
-                        dist = their_dist;
-                    }
-                } else {
+        probe_loop!(probe < self.indices.len(), {
+            if let Some(i) = self.indices[probe].pos() {
+                // if existing element probed less than us, swap
+                let their_dist = probe_distance(self.mask, self.entries[i].hash, probe);
+                if their_dist < dist {
                     self.indices[probe] = Pos::new(old_index);
-                    break;
+                    old_index = i;
+                    dist = their_dist;
                 }
-                probe += 1;
-                dist += 1;
             } else {
-                probe = 0;
+                self.indices[probe] = Pos::new(old_index);
+                break;
             }
-        }
+            dist += 1;
+        });
     }
 
     fn first_allocation(&mut self) {
@@ -292,21 +295,16 @@ impl<K, V> OrderedMap<K, V>
         // find first empty bucket and insert there
         let mut probe = desired_pos(self.mask, entry.hash);
         debug_assert!(self.len() < self.raw_capacity());
-        loop {
-            if probe < self.indices.len() {
-                if let Some(_) = self.indices[probe].pos() {
-                    /* nothing */
-                } else {
-                    // empty bucket, insert here
-                    self.indices[probe] = Pos::new(index);
-                    self.len += 1;
-                    return;
-                }
-                probe += 1;
+        probe_loop!(probe < self.indices.len(), {
+            if let Some(_) = self.indices[probe].pos() {
+                /* nothing */
             } else {
-                probe = 0;
+                // empty bucket, insert here
+                self.indices[probe] = Pos::new(index);
+                self.len += 1;
+                return;
             }
-        }
+        });
     }
 
     fn reserve_one(&mut self) {
@@ -362,26 +360,21 @@ impl<K, V> OrderedMap<K, V>
         let h = hash_elem(key);
         let mut probe = h as usize & self.mask;
         let mut dist = 0;
-        loop {
-            if probe < self.indices.len() {
-                if let Some(i) = self.indices[probe].pos() {
-                    let entry = &self.entries[i];
-                    let that_dist = probe_distance(self.mask, entry.hash, probe);
-                    if dist > that_dist {
-                        // give up when probe distance is too long
-                        break;
-                    } else if entry.hash == h && *entry.key.borrow() == *key {
-                        return Some((&entry.key, &entry.value));
-                    }
-                } else {
+        probe_loop!(probe < self.indices.len(), {
+            if let Some(i) = self.indices[probe].pos() {
+                let entry = &self.entries[i];
+                let that_dist = probe_distance(self.mask, entry.hash, probe);
+                if dist > that_dist {
+                    // give up when probe distance is too long
                     break;
+                } else if entry.hash == h && *entry.key.borrow() == *key {
+                    return Some((&entry.key, &entry.value));
                 }
-                probe += 1;
-                dist += 1;
             } else {
-                probe = 0;
+                break;
             }
-        }
+            dist += 1;
+        });
         None
     }
 
@@ -413,26 +406,21 @@ impl<K, V> OrderedMap<K, V>
         let h = hash_elem(key);
         let mut probe = desired_pos(self.mask, h);
         let mut dist = 0;
-        loop {
-            if probe < self.indices.len() {
-                if let Some(i) = self.indices[probe].pos() {
-                    let entry = &self.entries[i];
-                    let that_dist = probe_distance(self.mask, entry.hash, probe);
-                    if dist > that_dist {
-                        // give up when probe distance is too long
-                        return None;
-                    } else if entry.hash == h && *entry.key.borrow() == *key {
-                        return Some((probe, i));
-                    }
-                } else {
+        probe_loop!(probe < self.indices.len(), {
+            if let Some(i) = self.indices[probe].pos() {
+                let entry = &self.entries[i];
+                let that_dist = probe_distance(self.mask, entry.hash, probe);
+                if dist > that_dist {
+                    // give up when probe distance is too long
                     return None;
+                } else if entry.hash == h && *entry.key.borrow() == *key {
+                    return Some((probe, i));
                 }
-                probe += 1;
-                dist += 1;
             } else {
-                probe = 0;
+                return None;
             }
-        }
+            dist += 1;
+        });
     }
 
     /// insertion-order-destroying removal!
@@ -457,45 +445,35 @@ impl<K, V> OrderedMap<K, V>
             // examine new element in `found` and find it in indices
             let new_hash = self.entries[found].hash;
             let mut probe = desired_pos(self.mask, new_hash);
-            loop {
-                if probe < self.indices.len() {
-                    if let Some(i) = self.indices[probe].pos() {
-                        if i >= self.entries.len() {
-                            // found it
-                            self.indices[probe] = Pos::new(found);
-                            break;
-                        }
+            probe_loop!(probe < self.indices.len(), {
+                if let Some(i) = self.indices[probe].pos() {
+                    if i >= self.entries.len() {
+                        // found it
+                        self.indices[probe] = Pos::new(found);
+                        break;
                     }
-                    probe += 1;
-                } else {
-                    probe = 0;
                 }
-            }
+            });
         }
         // backward shift deletion in self.indices
         // after probe, shift all non-ideally placed indices backward
         if self.len > 0 {
             let mut last_probe = probe;
             let mut probe = probe + 1;
-            loop {
-                if probe < self.indices.len() {
-                    if let Some(i) = self.indices[probe].pos() {
-                        let dist = probe_distance(self.mask, self.entries[i].hash, probe);
-                        if dist > 0 {
-                            self.indices[last_probe] = Pos::new(i);
-                            self.indices[probe] = Pos::none();
-                        } else {
-                            break;
-                        }
+            probe_loop!(probe < self.indices.len(), {
+                if let Some(i) = self.indices[probe].pos() {
+                    let dist = probe_distance(self.mask, self.entries[i].hash, probe);
+                    if dist > 0 {
+                        self.indices[last_probe] = Pos::new(i);
+                        self.indices[probe] = Pos::none();
                     } else {
                         break;
                     }
-                    last_probe = probe;
-                    probe += 1;
                 } else {
-                    probe = 0;
+                    break;
                 }
-            }
+                last_probe = probe;
+            });
         }
 
         Some((entry.key, entry.value))
