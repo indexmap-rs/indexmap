@@ -351,3 +351,58 @@ fn grow_fnv_orderedmap_10_000(b: &mut Bencher) {
         map
     });
 }
+
+const MERGE: u64 = 10_000;
+#[bench]
+fn hashmap_merge_simple(b: &mut Bencher) {
+    let first_map: HashMap<u64, _> = (0..MERGE).map(|i| (i, ())).collect();
+    let second_map: HashMap<u64, _> = (MERGE..MERGE * 2).map(|i| (i, ())).collect();
+    b.iter(|| {
+        let mut merged = first_map.clone();
+        merged.extend(second_map.iter().map(|(&k, &v)| (k, v)));
+        merged
+    });
+}
+
+#[bench]
+fn hashmap_merge_shuffle(b: &mut Bencher) {
+    let first_map: HashMap<u64, _> = (0..MERGE).map(|i| (i, ())).collect();
+    let second_map: HashMap<u64, _> = (MERGE..MERGE * 2).map(|i| (i, ())).collect();
+    let mut v = Vec::new();
+    let mut rng = weak_rng();
+    b.iter(|| {
+        let mut merged = first_map.clone();
+        v.extend(second_map.iter().map(|(&k, &v)| (k, v)));
+        rng.shuffle(&mut v);
+        merged.extend(v.drain(..));
+
+        merged
+    });
+}
+
+#[bench]
+fn ordermap_merge_simple(b: &mut Bencher) {
+    let first_map: OrderMap<u64, _> = (0..MERGE).map(|i| (i, ())).collect();
+    let second_map: OrderMap<u64, _> = (MERGE..MERGE * 2).map(|i| (i, ())).collect();
+    b.iter(|| {
+        let mut merged = first_map.clone();
+        merged.extend(second_map.iter().map(|(&k, &v)| (k, v)));
+        merged
+    });
+}
+
+#[bench]
+fn ordermap_merge_shuffle(b: &mut Bencher) {
+    let first_map: OrderMap<u64, _> = (0..MERGE).map(|i| (i, ())).collect();
+    let second_map: OrderMap<u64, _> = (MERGE..MERGE * 2).map(|i| (i, ())).collect();
+    let mut v = Vec::new();
+    let mut rng = weak_rng();
+    b.iter(|| {
+        let mut merged = first_map.clone();
+        v.extend(second_map.iter().map(|(&k, &v)| (k, v)));
+        rng.shuffle(&mut v);
+        merged.extend(v.drain(..));
+
+        merged
+    });
+}
