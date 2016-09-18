@@ -7,6 +7,9 @@ repository = "https://github.com/bluss/ordermap"
 license = "Apache-2.0/MIT"
 description = "A hash table with consistent order and fast iteration."
 
+[lib]
+bench = false
+
 [dependencies]
 
 [dev-dependencies]
