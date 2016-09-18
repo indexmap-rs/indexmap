@@ -2,6 +2,8 @@
 extern crate test;
 extern crate rand;
 extern crate fnv;
+#[macro_use]
+extern crate lazy_static;
 
 use fnv::FnvHasher;
 use std::hash::BuildHasherDefault;
@@ -300,19 +302,53 @@ fn lookup_orderedmap_10_000_noexist(b: &mut Bencher) {
 }
 
 // number of items to look up
-const LOOKUP_1M_SIZE: u32 = 5000;
+const LOOKUP_MAP_SIZE: u32 = 100_000_u32;
+const LOOKUP_SAMPLE_SIZE: u32 = 5000;
+
+
+lazy_static! {
+    static ref HMAP_100K: HashMap<u32, u32> = {
+        let c = LOOKUP_MAP_SIZE;
+        let mut map = HashMap::with_capacity(c as usize);
+        let keys = shuffled_keys(0..c);
+        for &key in &keys {
+            map.insert(key, key);
+        }
+        map
+    };
+}
+
+lazy_static! {
+    static ref OMAP_100K: OrderMap<u32, u32> = {
+        let c = LOOKUP_MAP_SIZE;
+        let mut map = OrderMap::with_capacity(c as usize);
+        let keys = shuffled_keys(0..c);
+        for &key in &keys {
+            map.insert(key, key);
+        }
+        map
+    };
+}
 
 #[bench]
-fn lookup_hashmap_100_000_exist(b: &mut Bencher) {
-    let c = 100_000_u32;
-    let mut map = HashMap::with_capacity(c as usize);
-    let keys = shuffled_keys(0..c);
-    for &key in &keys {
-        map.insert(key, ());
-    }
+fn lookup_hashmap_100_000_multi(b: &mut Bencher) {
+    let map = &*HMAP_100K;
     b.iter(|| {
         let mut found = 0;
-        for key in (c - LOOKUP_1M_SIZE)..c {
+        for key in 0..LOOKUP_SAMPLE_SIZE {
+            found += map.get(&key).is_some() as u32;
+        }
+        found
+    });
+}
+
+
+#[bench]
+fn lookup_ordermap_100_000_multi(b: &mut Bencher) {
+    let map = &*OMAP_100K;
+    b.iter(|| {
+        let mut found = 0;
+        for key in 0..LOOKUP_SAMPLE_SIZE {
             found += map.get(&key).is_some() as u32;
         }
         found
@@ -320,21 +356,26 @@ fn lookup_hashmap_100_000_exist(b: &mut Bencher) {
 }
 
 #[bench]
-fn lookup_ordermap_100_000_exist(b: &mut Bencher) {
-    let c = 100_000_u32;
-    let mut map = OrderMap::with_capacity(c as usize);
-    let keys = shuffled_keys(0..c);
-    for &key in &keys {
-        map.insert(key, ());
-    }
+fn lookup_hashmap_100_000_single(b: &mut Bencher) {
+    let map = &*HMAP_100K;
+    let mut iter = (0..LOOKUP_MAP_SIZE + LOOKUP_SAMPLE_SIZE).cycle();
     b.iter(|| {
-        let mut found = 0;
-        for key in (c - LOOKUP_1M_SIZE)..c {
-            found += map.get(&key).is_some() as u32;
-        }
-        found
+        let key = iter.next().unwrap();
+        map.get(&key).is_some()
     });
 }
+
+
+#[bench]
+fn lookup_ordermap_100_000_single(b: &mut Bencher) {
+    let map = &*OMAP_100K;
+    let mut iter = (0..LOOKUP_MAP_SIZE + LOOKUP_SAMPLE_SIZE).cycle();
+    b.iter(|| {
+        let key = iter.next().unwrap();
+        map.get(&key).is_some()
+    });
+}
+
 
 
 // without preallocation
