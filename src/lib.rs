@@ -522,11 +522,10 @@ impl<K, V, S> OrderMap<K, V, S>
     }
 
     // write to self.indices
-    // read from self.entries at `index`
+    // read from self.entries at `pos`
     //
     // reinserting rewrites all `Pos` entries anyway. This handles transitioning
-    // from u32 to u64 size class automatically, just by using the two type
-    // parameters.
+    // from u32 to u64 size class if needed by using the two type parameters.
     fn reinsert_entry_in_order<SzNew, SzOld>(&mut self, pos: Pos)
         where SzNew: Size,
               SzOld: Size,
