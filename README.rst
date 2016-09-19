@@ -18,8 +18,9 @@ Using robin hood hashing just like Rust's libstd HashMap.
 Performance:
 
 - Iteration is very fast
-- Lookup is the same-ish as libstd HashMap, possibly suffers under load more due
-  to the index vec to entries vec indirection
+- Lookup is faster than libstd HashMap for "small" tables (below something like
+  100 000 key-value pairs), but suffers under load more due
+  to the index vec to entries vec indirection still.
 - Growing the map is faster than libstd HashMap, doesn't need to move keys and values
   at all, only the index vec
 
@@ -37,7 +38,7 @@ Where to go from here?
 - Ideas and PRs for how to implement insertion-order preserving remove (for example tombstones)
   are welcome.
 
-- Idea for more cache efficient lookup:
+- Idea for more cache efficient lookup (This was implemented in 0.1.2)
 
   Current ``indices: Vec<Pos>``. ``Pos`` is interpreted as ``(u32, u32)`` more
   or less when raw_capacity() fits in 32 bits.  Pos then stores both the lower
@@ -57,6 +58,11 @@ __ https://docs.rs/ordermap/0.1/
 
 Recent Changes
 --------------
+
+- 0.1.2
+
+  - Implement the 32/32 split idea for ``Pos`` which improves cache utilization
+    and lookup performance
 
 - 0.1.1
 
