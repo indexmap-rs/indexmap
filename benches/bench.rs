@@ -307,11 +307,16 @@ const LOOKUP_SAMPLE_SIZE: u32 = 5000;
 
 
 lazy_static! {
+    static ref KEYS: Vec<u32> = {
+        shuffled_keys(0..LOOKUP_MAP_SIZE)
+    };
+}
+lazy_static! {
     static ref HMAP_100K: HashMap<u32, u32> = {
         let c = LOOKUP_MAP_SIZE;
         let mut map = HashMap::with_capacity(c as usize);
-        let keys = shuffled_keys(0..c);
-        for &key in &keys {
+        let keys = &*KEYS;
+        for &key in keys {
             map.insert(key, key);
         }
         map
@@ -322,8 +327,8 @@ lazy_static! {
     static ref OMAP_100K: OrderMap<u32, u32> = {
         let c = LOOKUP_MAP_SIZE;
         let mut map = OrderMap::with_capacity(c as usize);
-        let keys = shuffled_keys(0..c);
-        for &key in &keys {
+        let keys = &*KEYS;
+        for &key in keys {
             map.insert(key, key);
         }
         map
@@ -350,6 +355,34 @@ fn lookup_ordermap_100_000_multi(b: &mut Bencher) {
         let mut found = 0;
         for key in 0..LOOKUP_SAMPLE_SIZE {
             found += map.get(&key).is_some() as u32;
+        }
+        found
+    });
+}
+
+// inorder: Test looking up keys in the same order as they were inserted
+#[bench]
+fn lookup_hashmap_100_000_inorder_multi(b: &mut Bencher) {
+    let map = &*HMAP_100K;
+    let keys = &*KEYS;
+    b.iter(|| {
+        let mut found = 0;
+        for key in &keys[0..LOOKUP_SAMPLE_SIZE as usize] {
+            found += map.get(key).is_some() as u32;
+        }
+        found
+    });
+}
+
+
+#[bench]
+fn lookup_ordermap_100_000_inorder_multi(b: &mut Bencher) {
+    let map = &*OMAP_100K;
+    let keys = &*KEYS;
+    b.iter(|| {
+        let mut found = 0;
+        for key in &keys[0..LOOKUP_SAMPLE_SIZE as usize] {
+            found += map.get(key).is_some() as u32;
         }
         found
     });
