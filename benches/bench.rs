@@ -409,57 +409,32 @@ fn lookup_ordermap_100_000_single(b: &mut Bencher) {
     });
 }
 
+const GROW_SIZE: usize = 100_000;
+type GrowKey = u32;
 
-
-// without preallocation
+// Test grow/resize without preallocation
 #[bench]
-fn grow_hashmap_10_000(b: &mut Bencher) {
-    let c = 10_000;
-    b.iter(|| {
-        let mut map = HashMap::new();
-        for x in 0..c {
-            map.insert(x, ());
-        }
-        map
-    });
-}
-
-#[bench]
-fn grow_orderedmap_10_000(b: &mut Bencher) {
-    let c = 10_000;
-    b.iter(|| {
-        let mut map = OrderMap::new();
-        for x in 0..c {
-            map.insert(x, ());
-        }
-        map
-    });
-}
-
-// without preallocation
-#[bench]
-fn grow_fnv_hashmap_10_000(b: &mut Bencher) {
-    let c = 10_000;
+fn grow_fnv_hashmap_100_000(b: &mut Bencher) {
     b.iter(|| {
         let mut map: HashMap<_, _, FnvBuilder> = HashMap::default();
-        for x in 0..c {
-            map.insert(x, ());
+        for x in 0..GROW_SIZE {
+            map.insert(x as GrowKey, x as GrowKey);
         }
         map
     });
 }
 
 #[bench]
-fn grow_fnv_orderedmap_10_000(b: &mut Bencher) {
-    let c = 10_000;
+fn grow_fnv_ordermap_100_000(b: &mut Bencher) {
     b.iter(|| {
         let mut map: OrderMap<_, _, FnvBuilder> = OrderMap::default();
-        for x in 0..c {
-            map.insert(x, ());
+        for x in 0..GROW_SIZE {
+            map.insert(x as GrowKey, x as GrowKey);
         }
         map
     });
 }
+
 
 const MERGE: u64 = 10_000;
 #[bench]
