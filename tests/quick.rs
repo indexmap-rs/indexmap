@@ -78,10 +78,8 @@ quickcheck! {
         true
     }
 
-    fn with_cap(cap: u16) -> bool {
-        let cap = cap as usize;
-        let mut map = OrderMap::with_capacity(cap);
-        map.insert(1, 1);
+    fn with_cap(cap: usize) -> bool {
+        let map: OrderMap<u8, u8> = OrderMap::with_capacity(cap);
         println!("wish: {}, got: {} (diff: {})", cap, map.capacity(), map.capacity() as isize - cap as isize);
         map.capacity() >= cap
     }
