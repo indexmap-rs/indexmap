@@ -975,7 +975,7 @@ impl<K, V, S> FromIterator<(K, V)> for OrderMap<K, V, S>
 
 impl<K, V, S> Extend<(K, V)> for OrderMap<K, V, S>
     where K: Hash + Eq,
-          S: BuildHasher + Default,
+          S: BuildHasher,
 {
     fn extend<I: IntoIterator<Item=(K, V)>>(&mut self, iterable: I) {
         for (k, v) in iterable { self.insert(k, v); }
