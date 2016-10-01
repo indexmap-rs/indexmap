@@ -59,6 +59,18 @@ __ https://docs.rs/ordermap/0.1/
 Recent Changes
 --------------
 
+- 0.2.0
+
+  - Add more HashMap methods & compat with its API
+  - Experimental support for ``.entry()`` (the simplest parts of the API)
+  - Add ``.reserve()`` (placeholder impl)
+  - Add ``.remove()`` as synonym for ``.swap_remove()``
+  - Changed ``.insert()`` to swap value if the entry already exists, and
+    return Option.
+  - Experimental support as an *indexed* hash map! Added methods
+    ``.get_index(), .get_index_mut(), .swap_remove_index()``,
+    ``.get_pair_index(), .get_pair_index_mut()``.
+
 - 0.1.2
 
   - Implement the 32/32 split idea for ``Pos`` which improves cache utilization
