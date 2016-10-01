@@ -2,7 +2,7 @@
 name = "ordermap"
 version = "0.2.0"
 authors = ["bluss"]
-documentation = "https://docs.rs/ordermap/0.1/"
+documentation = "https://docs.rs/ordermap/"
 repository = "https://github.com/bluss/ordermap"
 license = "Apache-2.0/MIT"
 description = "A hash table with consistent order and fast iteration."

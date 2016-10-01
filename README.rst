@@ -48,7 +48,7 @@ Where to go from here?
 
 Please read the `API documentation here`__
 
-__ https://docs.rs/ordermap/0.1/
+__ https://docs.rs/ordermap/
 
 |crates|_
 
