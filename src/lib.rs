@@ -871,6 +871,19 @@ impl<K, V, S> OrderMap<K, V, S> {
     pub fn get_index_mut(&mut self, index: usize) -> Option<(&mut K, &mut V)> {
         self.entries.get_mut(index).map(|ent| (&mut ent.key, &mut ent.value))
     }
+
+    /// Remove the key-value pair by index
+    ///
+    /// Valid indices are *0 <= index < self.len()*
+    pub fn swap_remove_index(&mut self, index: usize) -> Option<(K, V)> {
+        let (probe, found) = match self.entries.get(index)
+            .and_then(|e| self.find_existing_entry(e))
+        {
+            None => return None,
+            Some(t) => t,
+        };
+        self.remove_found(probe, found)
+    }
 }
 
 // Methods that don't use any properties (Hash / Eq) of K.
@@ -1351,5 +1364,30 @@ mod tests {
         }
         assert_eq!(map.len(), insert.len() - remove.len());
         assert_eq!(map.keys().count(), insert.len() - remove.len());
+    }
+
+    #[test]
+    fn swap_remove_index() {
+        let insert = [0, 4, 2, 12, 8, 7, 11, 5, 3, 17, 19, 22, 23];
+        let mut map = OrderMap::new();
+
+        for &elt in &insert {
+            map.insert(elt, elt * 2);
+        }
+
+        let mut vector = insert.to_vec();
+        let remove_sequence = &[3, 3, 10, 4, 5, 4, 3, 0, 1];
+
+        // check that the same swap remove sequence on vec and map
+        // have the same result.
+        for &rm in remove_sequence {
+            let out_vec = vector.swap_remove(rm);
+            let (out_map, _) = map.swap_remove_index(rm).unwrap();
+            assert_eq!(out_vec, out_map);
+        }
+        assert_eq!(vector.len(), map.len());
+        for (a, b) in vector.iter().zip(map.keys()) {
+            assert_eq!(a, b);
+        }
     }
 }
