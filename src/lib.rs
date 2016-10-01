@@ -422,7 +422,9 @@ impl<'a, K, V> InsertEntry<'a, K, V> {
 pub struct OccupiedEntry<'a, K: 'a, V: 'a> {
     map: &'a mut OrderMap<K, V>,
     key: K,
+    #[allow(dead_code)]
     hash: HashValue,
+    #[allow(dead_code)]
     probe: usize,
     index: usize,
 }
@@ -432,6 +434,7 @@ pub struct VacantEntry<'a, K: 'a, V: 'a> {
     key: K,
     hash: HashValue,
     probe: usize,
+    #[allow(dead_code)]
     index: usize,
     dist: usize,
     stealing_bucket: bool,
