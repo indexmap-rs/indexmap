@@ -396,16 +396,16 @@ macro_rules! dispatch_32_vs_64 {
     };
 }
 
-pub enum InsertEntry<'a, K: 'a, V: 'a> {
+pub enum Entry<'a, K: 'a, V: 'a> {
     Occupied(OccupiedEntry<'a, K, V>),
     Vacant(VacantEntry<'a, K, V>),
 }
 
-impl<'a, K, V> InsertEntry<'a, K, V> {
+impl<'a, K, V> Entry<'a, K, V> {
     pub fn or_insert(self, default: V) -> &'a mut V {
         match self {
-            InsertEntry::Occupied(entry) => entry.into_mut(),
-            InsertEntry::Vacant(entry) => entry.insert(default),
+            Entry::Occupied(entry) => entry.into_mut(),
+            Entry::Vacant(entry) => entry.insert(default),
         }
     }
 
@@ -413,8 +413,8 @@ impl<'a, K, V> InsertEntry<'a, K, V> {
         where F: FnOnce() -> V,
     {
         match self {
-            InsertEntry::Occupied(entry) => entry.into_mut(),
-            InsertEntry::Vacant(entry) => entry.insert(call()),
+            Entry::Occupied(entry) => entry.into_mut(),
+            Entry::Vacant(entry) => entry.insert(call()),
         }
     }
 }
@@ -481,13 +481,13 @@ impl<K, V> OrderMap<K, V>
     where K: Hash + Eq
 {
     /// FIXME Bucket support is not finished
-    pub fn entry(&mut self, key: K) -> InsertEntry<K, V> {
+    pub fn entry(&mut self, key: K) -> Entry<K, V> {
         self.reserve_one();
         dispatch_32_vs_64!(self.entry_phase_1(key))
     }
     
     // Warning, this is a code duplication zone Entry is not yet finished
-    fn entry_phase_1<Sz>(&mut self, key: K) -> InsertEntry<K, V>
+    fn entry_phase_1<Sz>(&mut self, key: K) -> Entry<K, V>
         where Sz: Size
     {
         let hash = hash_elem_using(&self.hash_builder, &key);
@@ -501,7 +501,7 @@ impl<K, V> OrderMap<K, V>
                 let their_dist = probe_distance(self.mask, entry_hash.into_hash(), probe);
                 if their_dist < dist {
                     // robin hood: steal the spot if it's better for us
-                    return InsertEntry::Vacant(VacantEntry {
+                    return Entry::Vacant(VacantEntry {
                         map: self,
                         hash: hash,
                         key: key,
@@ -511,7 +511,7 @@ impl<K, V> OrderMap<K, V>
                         dist: their_dist,
                     });
                 } else if entry_hash == hash && self.entries[i].key == key {
-                    return InsertEntry::Occupied(OccupiedEntry {
+                    return Entry::Occupied(OccupiedEntry {
                         map: self,
                         hash: hash,
                         key: key,
@@ -521,7 +521,7 @@ impl<K, V> OrderMap<K, V>
                 }
             } else {
                 // empty bucket, insert here
-                return InsertEntry::Vacant(VacantEntry {
+                return Entry::Vacant(VacantEntry {
                     map: self,
                     hash: hash,
                     key: key,
