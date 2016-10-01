@@ -1,10 +1,21 @@
 
 Experimental hash table implementation in just Rust (stable, no unsafe code).
 
-This is inpired by Python 3.6's new dict implementation (which remembers
-the insertion order and is fast to iterate).
+This is inpired by Python 3.6's new dict implementation which remembers
+the insertion order and is fast to iterate.
 
-This implementation corresponds to their "compact hash map" idea as it is now.
+This implementation corresponds to their "compact hash map" idea as it is now,
+and has consistent order.
+
+Please read the `API documentation here`__
+
+__ https://docs.rs/ordermap/
+
+|crates|_
+
+.. |crates| image:: https://img.shields.io/crates/v/ordermap.svg
+.. _crates: https://crates.io/crates/ordermap
+
 
 Using robin hood hashing just like Rust's libstd HashMap.
 
@@ -29,12 +40,14 @@ Interesting Features:
 - Insertion order is preserved (swap_remove perturbs the order, like the method name says)
 - Implements .pop() -> Option<(K, V)> in O(1) time
 - OrderMap::new() is empty and uses no allocation until you insert something
+- Lookup key-value pairs by index and vice versa
 - No ``unsafe``.
 
 
 Where to go from here?
 
-- It can be an *indexable* ordered map in the current fashion
+- It can be an *indexable* ordered map in the current fashion.
+  (This was implemented in 0.2.0, for potential use as a graph datastructure).
 - Ideas and PRs for how to implement insertion-order preserving remove (for example tombstones)
   are welcome.
 
@@ -45,15 +58,6 @@ Where to go from here?
   half of the hash and the entry index.
   This means that the hash values in ``Bucket`` don't need to be accessed
   while scanning for an entry.
-
-Please read the `API documentation here`__
-
-__ https://docs.rs/ordermap/
-
-|crates|_
-
-.. |crates| image:: https://img.shields.io/crates/v/ordermap.svg
-.. _crates: https://crates.io/crates/ordermap
 
 
 Recent Changes
