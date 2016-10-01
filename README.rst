@@ -11,10 +11,13 @@ Please read the `API documentation here`__
 
 __ https://docs.rs/ordermap/
 
-|crates|_
+|build_status|_ |crates|_
 
 .. |crates| image:: https://img.shields.io/crates/v/ordermap.svg
 .. _crates: https://crates.io/crates/ordermap
+
+.. |build_status| image:: https://travis-ci.org/bluss/ordermap.svg
+.. _build_status: https://travis-ci.org/bluss/ordermap
 
 
 Using robin hood hashing just like Rust's libstd HashMap.
