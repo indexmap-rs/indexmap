@@ -480,6 +480,7 @@ impl<'a, K, V> OccupiedEntry<'a, K, V> {
 impl<K, V> OrderMap<K, V>
     where K: Hash + Eq
 {
+    /// FIXME Entry support is not finished
     pub fn entry(&mut self, key: K) -> InsertEntry<K, V> {
         self.reserve_one();
         dispatch_32_vs_64!(self.entry_phase_1(key))
@@ -546,9 +547,11 @@ impl<K, V, S> OrderMap<K, V, S>
         }
     }
 
+    /// FIXME Not implemented fully yet
     pub fn reserve(&mut self, additional: usize) {
-        let _ = additional;
-        /* no op for now */
+        if additional > 0 {
+            self.reserve_one();
+        }
     }
 
     // First phase: Look for the preferred location for key.
@@ -822,6 +825,7 @@ impl<K, V, S> OrderMap<K, V, S>
         self.swap_remove_pair(key).map(second)
     }
 
+    /// FIXME Same as .swap_remove
     pub fn remove<Q: ?Sized>(&mut self, key: &Q) -> Option<V>
         where K: Borrow<Q>,
               Q: Eq + Hash,
@@ -856,14 +860,14 @@ impl<K, V, S> OrderMap<K, V, S>
 impl<K, V, S> OrderMap<K, V, S> {
     /// Get a key-value pair by index
     ///
-    /// Valid indices (will return `Some`) are `0 .. self.len()`.
+    /// Valid indices are *0 <= index < self.len()*
     pub fn get_index(&self, index: usize) -> Option<(&K, &V)> {
         self.entries.get(index).map(|ent| (&ent.key, &ent.value))
     }
 
     /// Get a key-value pair by index
     ///
-    /// Valid indices (will return `Some`) are `0 .. self.len()`.
+    /// Valid indices are *0 <= index < self.len()*
     pub fn get_index_mut(&mut self, index: usize) -> Option<(&mut K, &mut V)> {
         self.entries.get_mut(index).map(|ent| (&mut ent.key, &mut ent.value))
     }
