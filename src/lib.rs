@@ -85,8 +85,8 @@ impl<Sz> From<ShortHash<Sz>> for HashValue {
     fn from(x: ShortHash<Sz>) -> Self { HashValue(x.0) }
 }
 
-/// `Pos` is stored in the `indices` array and it points to the index of an
-/// `Entry` in self.entries.
+/// `Pos` is stored in the `indices` array and it points to the index of a
+/// `Bucket` in self.entries.
 ///
 /// Pos can be interpreted either as a 64-bit index, or as a 32-bit index and
 /// a 32-bit hash.
@@ -188,7 +188,7 @@ impl<Sz> ShortHashProxy<Sz>
 
     /// Get the hash from either `self` or from a lookup into `entries`,
     /// depending on `Sz`.
-    fn get_short_hash<K, V>(&self, entries: &[Entry<K, V>], index: usize) -> ShortHash<Sz> {
+    fn get_short_hash<K, V>(&self, entries: &[Bucket<K, V>], index: usize) -> ShortHash<Sz> {
         if Sz::is_64_bit() {
             ShortHash(entries[index].hash.0, PhantomData)
         } else {
@@ -210,12 +210,12 @@ pub struct OrderMap<K, V, S = RandomState> {
     /// indices are the buckets. indices.len() == raw capacity
     indices: Vec<Pos>,
     /// entries is a dense vec of entries in their order. entries.len() == len
-    entries: Vec<Entry<K, V>>,
+    entries: Vec<Bucket<K, V>>,
     hash_builder: S,
 }
 
 #[derive(Copy, Clone, Debug)]
-struct Entry<K, V> {
+struct Bucket<K, V> {
     hash: HashValue,
     key: K,
     value: V,
@@ -455,7 +455,7 @@ impl<'a, K, V> VacantEntry<'a, K, V> {
         where Sz: Size
     {
         let index = self.map.entries.len();
-        self.map.entries.push(Entry { hash: self.hash, key: self.key, value: value });
+        self.map.entries.push(Bucket { hash: self.hash, key: self.key, value: value });
         let old_pos = replace(&mut self.map.indices[self.probe],
                               Pos::with_hash::<Sz>(index, self.hash));
         if self.stealing_bucket {
@@ -480,7 +480,7 @@ impl<'a, K, V> OccupiedEntry<'a, K, V> {
 impl<K, V> OrderMap<K, V>
     where K: Hash + Eq
 {
-    /// FIXME Entry support is not finished
+    /// FIXME Bucket support is not finished
     pub fn entry(&mut self, key: K) -> InsertEntry<K, V> {
         self.reserve_one();
         dispatch_32_vs_64!(self.entry_phase_1(key))
@@ -597,7 +597,7 @@ impl<K, V, S> OrderMap<K, V, S>
             }
             dist += 1;
         });
-        self.entries.push(Entry { hash: hash, key: key, value: value });
+        self.entries.push(Bucket { hash: hash, key: key, value: value });
         insert_kind
     }
 
@@ -930,13 +930,13 @@ impl<K, V, S> OrderMap<K, V, S> {
 
     /// Return probe (indices) and position (entries)
     fn find_using<F>(&self, hash: HashValue, key_eq: F) -> Option<(usize, usize)>
-        where F: Fn(&Entry<K, V>) -> bool,
+        where F: Fn(&Bucket<K, V>) -> bool,
     {
         dispatch_32_vs_64!(self.find_using_impl::<_>(hash, key_eq))
     }
 
     fn find_using_impl<Sz, F>(&self, hash: HashValue, key_eq: F) -> Option<(usize, usize)>
-        where F: Fn(&Entry<K, V>) -> bool,
+        where F: Fn(&Bucket<K, V>) -> bool,
               Sz: Size,
     {
         debug_assert!(self.len() > 0);
@@ -958,7 +958,7 @@ impl<K, V, S> OrderMap<K, V, S> {
         });
     }
 
-    fn find_existing_entry(&self, entry: &Entry<K, V>) -> Option<(usize, usize)>
+    fn find_existing_entry(&self, entry: &Bucket<K, V>) -> Option<(usize, usize)>
     {
         if self.len() == 0 { return None; }
         self.find_using(entry.hash, move |other_ent| ptr_eq(entry, other_ent))
@@ -1023,7 +1023,7 @@ use std::slice::IterMut as SliceIterMut;
 use std::vec::IntoIter as VecIntoIter;
 
 pub struct Keys<'a, K: 'a, V: 'a> {
-    iter: SliceIter<'a, Entry<K, V>>,
+    iter: SliceIter<'a, Bucket<K, V>>,
 }
 
 impl<'a, K, V> Iterator for Keys<'a, K, V> {
@@ -1045,7 +1045,7 @@ impl<'a, K, V> DoubleEndedIterator for Keys<'a, K, V> {
 }
 
 pub struct Iter<'a, K: 'a, V: 'a> {
-    iter: SliceIter<'a, Entry<K, V>>,
+    iter: SliceIter<'a, Bucket<K, V>>,
 }
 
 impl<'a, K, V> Iterator for Iter<'a, K, V> {
@@ -1067,7 +1067,7 @@ impl<'a, K, V> DoubleEndedIterator for Iter<'a, K, V> {
 }
 
 pub struct IterMut<'a, K: 'a, V: 'a> {
-    iter: SliceIterMut<'a, Entry<K, V>>,
+    iter: SliceIterMut<'a, Bucket<K, V>>,
 }
 
 impl<'a, K, V> Iterator for IterMut<'a, K, V> {
@@ -1089,7 +1089,7 @@ impl<'a, K, V> DoubleEndedIterator for IterMut<'a, K, V> {
 }
 
 pub struct IntoIter<K, V> {
-    iter: VecIntoIter<Entry<K, V>>,
+    iter: VecIntoIter<Bucket<K, V>>,
 }
 
 impl<K, V> Iterator for IntoIter<K, V> {

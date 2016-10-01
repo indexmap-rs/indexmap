@@ -43,7 +43,7 @@ Where to go from here?
   Current ``indices: Vec<Pos>``. ``Pos`` is interpreted as ``(u32, u32)`` more
   or less when raw_capacity() fits in 32 bits.  Pos then stores both the lower
   half of the hash and the entry index.
-  This means that the hash values in ``Entry`` don't need to be accessed
+  This means that the hash values in ``Bucket`` don't need to be accessed
   while scanning for an entry.
 
 Please read the `API documentation here`__
