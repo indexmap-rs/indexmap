@@ -232,9 +232,9 @@ fn probe_distance(mask: usize, hash: HashValue, current: usize) -> usize {
     current.wrapping_sub(desired_pos(mask, hash)) & mask
 }
 
-enum Inserted {
+enum Inserted<V> {
     Done,
-    AlreadyExists,
+    Swapped { prev_value: V },
     RobinHood {
         probe: usize,
         old_pos: Pos,
@@ -553,7 +553,7 @@ impl<K, V, S> OrderMap<K, V, S>
     // We will know if `key` is already in the map, before we need to insert it.
     // When we insert they key, it might be that we need to continue displacing
     // entries (robin hood hashing), in which case Inserted::RobinHood is returned
-    fn insert_phase_1<Sz>(&mut self, key: K, value: V) -> Inserted
+    fn insert_phase_1<Sz>(&mut self, key: K, value: V) -> Inserted<V>
         where Sz: Size
     {
         let hash = hash_elem_using(&self.hash_builder, &key);
@@ -578,7 +578,9 @@ impl<K, V, S> OrderMap<K, V, S>
                     };
                     break;
                 } else if entry_hash == hash && self.entries[i].key == key {
-                    return Inserted::AlreadyExists;
+                    return Inserted::Swapped {
+                        prev_value: replace(&mut self.entries[i].value, value),
+                    };
                 }
             } else {
                 // empty bucket, insert here
@@ -676,24 +678,27 @@ impl<K, V, S> OrderMap<K, V, S>
         }
     }
 
-    pub fn insert(&mut self, key: K, value: V) {
+    pub fn insert(&mut self, key: K, value: V) -> Option<V> {
         self.reserve_one();
         if self.size_class_is_64bit() {
             match self.insert_phase_1::<u64>(key, value) {
-                Inserted::AlreadyExists | Inserted::Done => { }
+                Inserted::Swapped { prev_value } => Some(prev_value),
+                Inserted::Done => None,
                 Inserted::RobinHood { probe, old_pos, dist } => {
                     self.insert_phase_2::<u64>(probe, old_pos, dist);
+                    None
                 }
             }
         } else {
             match self.insert_phase_1::<u32>(key, value) {
-                Inserted::AlreadyExists | Inserted::Done => { }
+                Inserted::Swapped { prev_value } => Some(prev_value),
+                Inserted::Done => None,
                 Inserted::RobinHood { probe, old_pos, dist } => {
                     self.insert_phase_2::<u32>(probe, old_pos, dist);
+                    None
                 }
             }
         }
-
     }
 
     /// Return an iterator over the keys of the map, in their order

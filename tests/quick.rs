@@ -147,6 +147,9 @@ fn assert_maps_equivalent<K, V>(a: &OrderMap<K, V>, b: &HashMap<K, V>) -> bool
     for key in b.keys() {
         assert!(a.get(key).is_some(), "a does not contain {:?}", key);
     }
+    for key in a.keys() {
+        assert_eq!(a[key], b[key]);
+    }
     true
 }
 
