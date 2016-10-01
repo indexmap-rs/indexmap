@@ -618,6 +618,19 @@ impl<K, V, S> OrderMap<K, V, S>
         }
     }
 
+    /// Return item index, key and value
+    pub fn get_pair_index<Q: ?Sized>(&self, key: &Q) -> Option<(usize, &K, &V)>
+        where K: Borrow<Q>,
+              Q: Eq + Hash,
+    {
+        if let Some((_, found)) = self.find(key) {
+            let entry = &self.entries[found];
+            Some((found, &entry.key, &entry.value))
+        } else {
+            None
+        }
+    }
+
     pub fn get_mut<Q: ?Sized>(&mut self, key: &Q) -> Option<&mut V>
         where K: Borrow<Q>,
               Q: Eq + Hash,
@@ -625,13 +638,27 @@ impl<K, V, S> OrderMap<K, V, S>
         self.get_pair_mut(key).map(second)
     }
 
-    pub fn get_pair_mut<Q: ?Sized>(&mut self, key: &Q) -> Option<(&mut K, &mut V)>
+    pub fn get_pair_mut<Q: ?Sized>(&mut self, key: &Q)
+        -> Option<(&mut K, &mut V)>
         where K: Borrow<Q>,
               Q: Eq + Hash,
     {
         if let Some((_, found)) = self.find(key) {
             let entry = &mut self.entries[found];
             Some((&mut entry.key, &mut entry.value))
+        } else {
+            None
+        }
+    }
+
+    pub fn get_pair_index_mut<Q: ?Sized>(&mut self, key: &Q)
+        -> Option<(usize, &mut K, &mut V)>
+        where K: Borrow<Q>,
+              Q: Eq + Hash,
+    {
+        if let Some((_, found)) = self.find(key) {
+            let entry = &mut self.entries[found];
+            Some((found, &mut entry.key, &mut entry.value))
         } else {
             None
         }
@@ -683,6 +710,22 @@ impl<K, V, S> OrderMap<K, V, S>
     /// Remove the last key-value pair
     pub fn pop(&mut self) -> Option<(K, V)> {
         self.pop_impl()
+    }
+}
+
+impl<K, V, S> OrderMap<K, V, S> {
+    /// Get a key-value pair by index
+    ///
+    /// Valid indices (will return `Some`) are `0 .. self.len()`.
+    pub fn get_index(&self, index: usize) -> Option<(&K, &V)> {
+        self.entries.get(index).map(|ent| (&ent.key, &ent.value))
+    }
+
+    /// Get a key-value pair by index
+    ///
+    /// Valid indices (will return `Some`) are `0 .. self.len()`.
+    pub fn get_index_mut(&mut self, index: usize) -> Option<(&mut K, &mut V)> {
+        self.entries.get_mut(index).map(|ent| (&mut ent.key, &mut ent.value))
     }
 }
 
@@ -1070,6 +1113,9 @@ mod tests {
         assert_eq!(map.keys().count(), insert.len());
         for (a, b) in insert.iter().zip(map.keys()) {
             assert_eq!(a, b);
+        }
+        for (i, k) in (0..insert.len()).zip(map.keys()) {
+            assert_eq!(map.get_index(i).unwrap().0, k);
         }
     }
 
