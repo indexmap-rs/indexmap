@@ -396,7 +396,132 @@ macro_rules! dispatch_32_vs_64 {
     };
 }
 
+pub enum InsertEntry<'a, K: 'a, V: 'a> {
+    Occupied(OccupiedEntry<'a, K, V>),
+    Vacant(VacantEntry<'a, K, V>),
+}
 
+impl<'a, K, V> InsertEntry<'a, K, V> {
+    pub fn or_insert(self, default: V) -> &'a mut V {
+        match self {
+            InsertEntry::Occupied(entry) => entry.into_mut(),
+            InsertEntry::Vacant(entry) => entry.insert(default),
+        }
+    }
+}
+
+pub struct OccupiedEntry<'a, K: 'a, V: 'a> {
+    map: &'a mut OrderMap<K, V>,
+    key: K,
+    hash: HashValue,
+    probe: usize,
+    index: usize,
+}
+
+pub struct VacantEntry<'a, K: 'a, V: 'a> {
+    map: &'a mut OrderMap<K, V>,
+    key: K,
+    hash: HashValue,
+    probe: usize,
+    index: usize,
+    dist: usize,
+    stealing_bucket: bool,
+}
+
+impl<'a, K, V> VacantEntry<'a, K, V> {
+    pub fn key(&self) -> &K { &self.key }
+    pub fn into_key(self) -> K { self.key }
+    pub fn insert(self, value: V) -> &'a mut V {
+        if self.map.size_class_is_64bit() {
+            self.insert_impl::<u64>(value)
+        } else {
+            self.insert_impl::<u32>(value)
+        }
+    }
+
+    fn insert_impl<Sz>(self, value: V) -> &'a mut V 
+        where Sz: Size
+    {
+        let index = self.map.entries.len();
+        self.map.entries.push(Entry { hash: self.hash, key: self.key, value: value });
+        let old_pos = replace(&mut self.map.indices[self.probe],
+                              Pos::with_hash::<Sz>(index, self.hash));
+        if self.stealing_bucket {
+            self.map.insert_phase_2::<Sz>(self.probe, old_pos, self.dist);
+        }
+        &mut {self.map}.entries[index].value
+    }
+}
+
+impl<'a, K, V> OccupiedEntry<'a, K, V> {
+    pub fn key(&self) -> &K { &self.key }
+    pub fn into_mut(self) -> &'a mut V {
+        &mut self.map.entries[self.index].value
+    }
+    pub fn insert(self, mut value: V) -> V {
+        swap(&mut self.map.entries[self.index].value, &mut value);
+        value
+
+    }
+}
+
+impl<K, V> OrderMap<K, V>
+    where K: Hash + Eq
+{
+    pub fn entry(&mut self, key: K) -> InsertEntry<K, V> {
+        self.reserve_one();
+        dispatch_32_vs_64!(self.entry_phase_1(key))
+    }
+    
+    // Warning, this is a code duplication zone Entry is not yet finished
+    fn entry_phase_1<Sz>(&mut self, key: K) -> InsertEntry<K, V>
+        where Sz: Size
+    {
+        let hash = hash_elem_using(&self.hash_builder, &key);
+        let mut probe = desired_pos(self.mask, hash);
+        let mut dist = 0;
+        debug_assert!(self.len() < self.raw_capacity());
+        probe_loop!(probe < self.indices.len(), {
+            if let Some((i, hash_proxy)) = self.indices[probe].resolve::<Sz>() {
+                let entry_hash = hash_proxy.get_short_hash(&self.entries, i);
+                // if existing element probed less than us, swap
+                let their_dist = probe_distance(self.mask, entry_hash.into_hash(), probe);
+                if their_dist < dist {
+                    // robin hood: steal the spot if it's better for us
+                    return InsertEntry::Vacant(VacantEntry {
+                        map: self,
+                        hash: hash,
+                        key: key,
+                        probe: probe,
+                        stealing_bucket: true,
+                        index: i,
+                        dist: their_dist,
+                    });
+                } else if entry_hash == hash && self.entries[i].key == key {
+                    return InsertEntry::Occupied(OccupiedEntry {
+                        map: self,
+                        hash: hash,
+                        key: key,
+                        probe: probe,
+                        index: i,
+                    });
+                }
+            } else {
+                // empty bucket, insert here
+                return InsertEntry::Vacant(VacantEntry {
+                    map: self,
+                    hash: hash,
+                    key: key,
+                    probe: probe,
+                    stealing_bucket: false,
+                    index: 0,
+                    dist: 0,
+                });
+            }
+            dist += 1;
+        });
+    }
+}
 
 impl<K, V, S> OrderMap<K, V, S>
     where K: Eq + Hash,
@@ -452,27 +577,6 @@ impl<K, V, S> OrderMap<K, V, S>
         });
         self.entries.push(Entry { hash: hash, key: key, value: value });
         insert_kind
-    }
-
-    fn insert_phase_2<Sz>(&mut self, mut probe: usize, mut old_pos: Pos, mut dist: usize)
-        where Sz: Size
-    {
-        probe_loop!(probe < self.indices.len(), {
-            let pos = &mut self.indices[probe];
-            if let Some((i, hash_proxy)) = pos.resolve::<Sz>() {
-                let entry_hash = hash_proxy.get_short_hash(&self.entries, i);
-                // if existing element probed less than us, swap
-                let their_dist = probe_distance(self.mask, entry_hash.into_hash(), probe);
-                if their_dist < dist {
-                    swap(&mut old_pos, pos);
-                    dist = their_dist;
-                }
-            } else {
-                *pos = old_pos;
-                break;
-            }
-            dist += 1;
-        });
     }
 
     fn first_allocation(&mut self) {
@@ -746,6 +850,30 @@ impl<K, V, S> OrderMap<K, V, S> {
         debug_assert_eq!(found, self.entries.len() - 1);
         self.remove_found(probe, found)
     }
+
+    /// phase 2 is post-insert where we swap `Pos` in the indices around to
+    /// adjust after a bucket was stolen.
+    fn insert_phase_2<Sz>(&mut self, mut probe: usize, mut old_pos: Pos, mut dist: usize)
+        where Sz: Size
+    {
+        probe_loop!(probe < self.indices.len(), {
+            let pos = &mut self.indices[probe];
+            if let Some((i, hash_proxy)) = pos.resolve::<Sz>() {
+                let entry_hash = hash_proxy.get_short_hash(&self.entries, i);
+                // if existing element probed less than us, swap
+                let their_dist = probe_distance(self.mask, entry_hash.into_hash(), probe);
+                if their_dist < dist {
+                    swap(&mut old_pos, pos);
+                    dist = their_dist;
+                }
+            } else {
+                *pos = old_pos;
+                break;
+            }
+            dist += 1;
+        });
+    }
+
 
     /// Return probe (indices) and position (entries)
     fn find_using<F>(&self, hash: HashValue, key_eq: F) -> Option<(usize, usize)>
