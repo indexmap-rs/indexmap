@@ -197,7 +197,7 @@ impl<Sz> ShortHashProxy<Sz>
     }
 }
 
-/// A hash map that preserves insertion order of the key-value pairs.
+/// A hash map with consistent order of the key-value pairs.
 ///
 /// The key-value pairs have a consistent order that is determined by
 /// the sequence of insertion and removal calls on the map. The order does
