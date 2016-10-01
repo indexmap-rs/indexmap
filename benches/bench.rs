@@ -197,6 +197,30 @@ fn insert_orderedmap_150(b: &mut Bencher) {
 }
 
 #[bench]
+fn entry_hashmap_150(b: &mut Bencher) {
+    let c = 150;
+    b.iter(|| {
+        let mut map = HashMap::with_capacity(c);
+        for x in 0..c {
+            map.entry(x).or_insert(());
+        }
+        map
+    });
+}
+
+#[bench]
+fn entry_orderedmap_150(b: &mut Bencher) {
+    let c = 150;
+    b.iter(|| {
+        let mut map = OrderMap::with_capacity(c);
+        for x in 0..c {
+            map.entry(x).or_insert(());
+        }
+        map
+    });
+}
+
+#[bench]
 fn iterate_hashmap_10_000(b: &mut Bencher) {
     let c = 10_000;
     let mut map = HashMap::with_capacity(c);
