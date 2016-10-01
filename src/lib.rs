@@ -480,7 +480,7 @@ impl<'a, K, V> OccupiedEntry<'a, K, V> {
 impl<K, V> OrderMap<K, V>
     where K: Hash + Eq
 {
-    /// FIXME Bucket support is not finished
+    /// FIXME Entry support is not finished
     pub fn entry(&mut self, key: K) -> Entry<K, V> {
         self.reserve_one();
         dispatch_32_vs_64!(self.entry_phase_1(key))
