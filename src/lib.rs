@@ -408,6 +408,15 @@ impl<'a, K, V> InsertEntry<'a, K, V> {
             InsertEntry::Vacant(entry) => entry.insert(default),
         }
     }
+
+    pub fn or_insert_with<F>(self, call: F) -> &'a mut V
+        where F: FnOnce() -> V,
+    {
+        match self {
+            InsertEntry::Occupied(entry) => entry.into_mut(),
+            InsertEntry::Vacant(entry) => entry.insert(call()),
+        }
+    }
 }
 
 pub struct OccupiedEntry<'a, K: 'a, V: 'a> {
@@ -532,6 +541,11 @@ impl<K, V, S> OrderMap<K, V, S>
         for pos in &mut self.indices {
             *pos = Pos::none();
         }
+    }
+
+    pub fn reserve(&mut self, additional: usize) {
+        let _ = additional;
+        /* no op for now */
     }
 
     // First phase: Look for the preferred location for key.
@@ -703,6 +717,13 @@ impl<K, V, S> OrderMap<K, V, S>
         }
     }
 
+    pub fn contains_key<Q: ?Sized>(&self, key: &Q) -> bool
+        where K: Borrow<Q>,
+              Q: Eq + Hash,
+    {
+        self.get(key).is_some()
+    }
+
     pub fn get<Q: ?Sized>(&self, key: &Q) -> Option<&V>
         where K: Borrow<Q>,
               Q: Eq + Hash,
@@ -791,6 +812,13 @@ impl<K, V, S> OrderMap<K, V, S>
               Q: Eq + Hash,
     {
         self.swap_remove_pair(key).map(second)
+    }
+
+    pub fn remove<Q: ?Sized>(&mut self, key: &Q) -> Option<V>
+        where K: Borrow<Q>,
+              Q: Eq + Hash,
+    {
+        self.swap_remove(key)
     }
 
     /// Remove the key-value pair equivalent to `key` and return it.
