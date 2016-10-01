@@ -15,6 +15,7 @@ use std::collections::HashMap;
 use std::hash::Hash;
 use std::fmt::Debug;
 use std::ops::Deref;
+use std::cmp::min;
 
 fn set<'a, T: 'a, I>(iter: I) -> HashSet<T>
     where I: IntoIterator<Item=&'a T>,
@@ -90,6 +91,7 @@ use Op::*;
 #[derive(Copy, Clone, Debug)]
 enum Op<K, V> {
     Add(K, V),
+    AddEntry(K, V),
     Remove(K),
 }
 
@@ -99,7 +101,11 @@ impl<K, V> Arbitrary for Op<K, V>
 {
     fn arbitrary<G: Gen>(g: &mut G) -> Self {
         if g.gen() {
-            Add(K::arbitrary(g), V::arbitrary(g))
+            if g.gen() {
+                Add(K::arbitrary(g), V::arbitrary(g))
+            } else {
+                AddEntry(K::arbitrary(g), V::arbitrary(g))
+            }
         } else {
             Remove(K::arbitrary(g))
         }
@@ -116,11 +122,16 @@ fn do_ops<K, V>(ops: &[Op<K, V>], a: &mut OrderMap<K, V>, b: &mut HashMap<K, V>)
                 a.insert(k.clone(), v.clone());
                 b.insert(k.clone(), v.clone());
             }
+            AddEntry(ref k, ref v) => {
+                a.entry(k.clone()).or_insert(v.clone());
+                b.entry(k.clone()).or_insert(v.clone());
+            }
             Remove(ref k) => {
                 a.swap_remove(k);
                 b.remove(k);
             }
         }
+        //println!("{:?}", a);
     }
 }
 
@@ -140,18 +151,42 @@ fn assert_maps_equivalent<K, V>(a: &OrderMap<K, V>, b: &HashMap<K, V>) -> bool
 }
 
 quickcheck! {
-    fn operations_i8(ops: Large<Vec<Op<i8, String>>>) -> bool {
+    fn operations_i8(ops: Large<Vec<Op<i8, i8>>>) -> bool {
         let mut map = OrderMap::new();
         let mut reference = HashMap::new();
         do_ops(&ops, &mut map, &mut reference);
         assert_maps_equivalent(&map, &reference)
     }
 
-    fn operations_string(ops: Large<Vec<Op<String, String>>>) -> bool {
+    fn operations_string(ops: Vec<Op<Alpha, i8>>) -> bool {
         let mut map = OrderMap::new();
         let mut reference = HashMap::new();
         do_ops(&ops, &mut map, &mut reference);
         assert_maps_equivalent(&map, &reference)
+    }
+}
+
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+struct Alpha(String);
+
+impl Deref for Alpha {
+    type Target = String;
+    fn deref(&self) -> &String { &self.0 }
+}
+
+const ALPHABET: &'static [u8] = b"abcdefghijklmnopqrstuvwxyz";
+
+impl Arbitrary for Alpha {
+    fn arbitrary<G: Gen>(g: &mut G) -> Self {
+        let len = g.next_u32() % g.size() as u32;
+        let len = min(len, 16);
+        Alpha((0..len).map(|_| {
+            ALPHABET[g.next_u32() as usize % ALPHABET.len()] as char
+        }).collect())
+    }
+
+    fn shrink(&self) -> Box<Iterator<Item=Self>> {
+        Box::new((**self).shrink().map(Alpha))
     }
 }
 
