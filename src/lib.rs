@@ -451,7 +451,7 @@ impl<'a, K, V> VacantEntry<'a, K, V> {
         }
     }
 
-    fn insert_impl<Sz>(self, value: V) -> &'a mut V 
+    fn insert_impl<Sz>(self, value: V) -> &'a mut V
         where Sz: Size
     {
         let index = self.map.entries.len();
@@ -485,7 +485,7 @@ impl<K, V> OrderMap<K, V>
         self.reserve_one();
         dispatch_32_vs_64!(self.entry_phase_1(key))
     }
-    
+
     // Warning, this is a code duplication zone Entry is not yet finished
     fn entry_phase_1<Sz>(&mut self, key: K) -> Entry<K, V>
         where Sz: Size
