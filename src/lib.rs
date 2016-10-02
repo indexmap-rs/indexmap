@@ -399,12 +399,14 @@ macro_rules! dispatch_32_vs_64 {
     };
 }
 
-pub enum Entry<'a, K: 'a, V: 'a> {
-    Occupied(OccupiedEntry<'a, K, V>),
-    Vacant(VacantEntry<'a, K, V>),
+/// FIXME: Remove dependence on the `S` parameter
+/// (to match HashMap).
+pub enum Entry<'a, K: 'a, V: 'a, S: 'a = RandomState> {
+    Occupied(OccupiedEntry<'a, K, V, S>),
+    Vacant(VacantEntry<'a, K, V, S>),
 }
 
-impl<'a, K, V> Entry<'a, K, V> {
+impl<'a, K, V, S> Entry<'a, K, V, S> {
     pub fn or_insert(self, default: V) -> &'a mut V {
         match self {
             Entry::Occupied(entry) => entry.into_mut(),
@@ -422,8 +424,8 @@ impl<'a, K, V> Entry<'a, K, V> {
     }
 }
 
-pub struct OccupiedEntry<'a, K: 'a, V: 'a> {
-    map: &'a mut OrderMap<K, V>,
+pub struct OccupiedEntry<'a, K: 'a, V: 'a, S: 'a = RandomState> {
+    map: &'a mut OrderMap<K, V, S>,
     key: K,
     #[allow(dead_code)]
     hash: HashValue,
@@ -432,8 +434,8 @@ pub struct OccupiedEntry<'a, K: 'a, V: 'a> {
     index: usize,
 }
 
-pub struct VacantEntry<'a, K: 'a, V: 'a> {
-    map: &'a mut OrderMap<K, V>,
+pub struct VacantEntry<'a, K: 'a, V: 'a, S: 'a = RandomState> {
+    map: &'a mut OrderMap<K, V, S>,
     key: K,
     hash: HashValue,
     probe: usize,
@@ -443,7 +445,7 @@ pub struct VacantEntry<'a, K: 'a, V: 'a> {
     stealing_bucket: bool,
 }
 
-impl<'a, K, V> VacantEntry<'a, K, V> {
+impl<'a, K, V, S> VacantEntry<'a, K, V, S> {
     pub fn key(&self) -> &K { &self.key }
     pub fn into_key(self) -> K { self.key }
     pub fn insert(self, value: V) -> &'a mut V {
@@ -468,7 +470,7 @@ impl<'a, K, V> VacantEntry<'a, K, V> {
     }
 }
 
-impl<'a, K, V> OccupiedEntry<'a, K, V> {
+impl<'a, K, V, S> OccupiedEntry<'a, K, V, S> {
     pub fn key(&self) -> &K { &self.key }
     pub fn into_mut(self) -> &'a mut V {
         &mut self.map.entries[self.index].value
@@ -480,17 +482,18 @@ impl<'a, K, V> OccupiedEntry<'a, K, V> {
     }
 }
 
-impl<K, V> OrderMap<K, V>
-    where K: Hash + Eq
+impl<K, V, S> OrderMap<K, V, S>
+    where K: Hash + Eq,
+          S: BuildHasher,
 {
-    /// FIXME Entry support is not finished
-    pub fn entry(&mut self, key: K) -> Entry<K, V> {
+    /// FIXME Entry API does not implement all hash map's methods yet.
+    pub fn entry(&mut self, key: K) -> Entry<K, V, S> {
         self.reserve_one();
         dispatch_32_vs_64!(self.entry_phase_1(key))
     }
 
     // Warning, this is a code duplication zone Entry is not yet finished
-    fn entry_phase_1<Sz>(&mut self, key: K) -> Entry<K, V>
+    fn entry_phase_1<Sz>(&mut self, key: K) -> Entry<K, V, S>
         where Sz: Size
     {
         let hash = hash_elem_using(&self.hash_builder, &key);
@@ -537,12 +540,7 @@ impl<K, V> OrderMap<K, V>
             dist += 1;
         });
     }
-}
 
-impl<K, V, S> OrderMap<K, V, S>
-    where K: Eq + Hash,
-          S: BuildHasher,
-{
     pub fn clear(&mut self) {
         self.entries.clear();
         for pos in &mut self.indices {
