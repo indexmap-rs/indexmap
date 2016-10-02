@@ -66,6 +66,10 @@ Where to go from here?
 Recent Changes
 --------------
 
+- 0.2.1
+
+  - Fix doc links and clarify docs
+
 - 0.2.0
 
   - Add more HashMap methods & compat with its API
