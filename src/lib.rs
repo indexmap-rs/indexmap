@@ -249,6 +249,9 @@ impl<K, V, S> fmt::Debug for OrderMap<K, V, S>
 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         try!(f.debug_map().entries(self.iter()).finish());
+        if cfg!(not(feature = "test_debug")) {
+            return Ok(());
+        }
         try!(writeln!(f, ""));
         for (i, index) in enumerate(&self.indices) {
             try!(write!(f, "{}: {:?}", i, index));
