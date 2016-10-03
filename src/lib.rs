@@ -12,7 +12,6 @@ use std::borrow::Borrow;
 
 use std::cmp::max;
 use std::fmt;
-use std::mem;
 use std::mem::{swap, replace};
 use std::marker::PhantomData;
 
@@ -361,10 +360,8 @@ impl<K, V, S> OrderMap<K, V, S>
 /// size needed to address an entry's indes in self.entries.
 trait Size {
     fn is_64_bit() -> bool;
-    fn is_same_size<T>() -> bool
-        where Self: Sized
-    {
-        mem::size_of::<T>() == mem::size_of::<Self>()
+    fn is_same_size<T: Size>() -> bool {
+        Self::is_64_bit() == T::is_64_bit()
     }
 }
 
