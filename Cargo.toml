@@ -1,6 +1,6 @@
 [package]
 name = "ordermap"
-version = "0.2.2"
+version = "0.2.3"
 authors = ["bluss"]
 documentation = "https://docs.rs/ordermap/"
 repository = "https://github.com/bluss/ordermap"

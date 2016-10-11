@@ -66,6 +66,13 @@ Where to go from here?
 Recent Changes
 --------------
 
+- 0.2.3
+
+  - Generalize ``Entry`` for now, so that it works on hashmaps with non-default
+    hasher. However, there's a lingering compat issue since libstd HashMap
+    does not parameterize its entries by the hasher (``S`` typarm).
+  - Special case some iterator methods like ``.nth()``
+
 - 0.2.2
 
   - Disable the verbose Debug impl by default.
