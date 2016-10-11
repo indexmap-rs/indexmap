@@ -1039,6 +1039,18 @@ impl<'a, K, V> Iterator for Keys<'a, K, V> {
     fn size_hint(&self) -> (usize, Option<usize>) {
         self.iter.size_hint()
     }
+
+    fn count(self) -> usize {
+        self.iter.len()
+    }
+
+    fn nth(&mut self, n: usize) -> Option<Self::Item> {
+        self.iter.nth(n).map(|ent| &ent.key)
+    }
+
+    fn last(mut self) -> Option<Self::Item> {
+        self.next_back()
+    }
 }
 
 impl<'a, K, V> DoubleEndedIterator for Keys<'a, K, V> {
@@ -1060,6 +1072,18 @@ impl<'a, K, V> Iterator for Iter<'a, K, V> {
 
     fn size_hint(&self) -> (usize, Option<usize>) {
         self.iter.size_hint()
+    }
+
+    fn count(self) -> usize {
+        self.iter.len()
+    }
+
+    fn nth(&mut self, n: usize) -> Option<Self::Item> {
+        self.iter.nth(n).map(|e| (&e.key, &e.value))
+    }
+
+    fn last(mut self) -> Option<Self::Item> {
+        self.next_back()
     }
 }
 
@@ -1083,6 +1107,18 @@ impl<'a, K, V> Iterator for IterMut<'a, K, V> {
     fn size_hint(&self) -> (usize, Option<usize>) {
         self.iter.size_hint()
     }
+    
+    fn count(self) -> usize {
+        self.iter.len()
+    }
+
+    fn nth(&mut self, n: usize) -> Option<Self::Item> {
+        self.iter.nth(n).map(|e| (&e.key, &mut e.value))
+    }
+
+    fn last(mut self) -> Option<Self::Item> {
+        self.next_back()
+    }
 }
 
 impl<'a, K, V> DoubleEndedIterator for IterMut<'a, K, V> {
@@ -1104,6 +1140,18 @@ impl<K, V> Iterator for IntoIter<K, V> {
 
     fn size_hint(&self) -> (usize, Option<usize>) {
         self.iter.size_hint()
+    }
+
+    fn count(self) -> usize {
+        self.iter.len()
+    }
+
+    fn nth(&mut self, n: usize) -> Option<Self::Item> {
+        self.iter.nth(n).map(|e| (e.key, e.value))
+    }
+
+    fn last(mut self) -> Option<Self::Item> {
+        self.next_back()
     }
 }
 
