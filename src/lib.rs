@@ -232,7 +232,6 @@ fn probe_distance(mask: usize, hash: HashValue, current: usize) -> usize {
 }
 
 enum Inserted<V> {
-    Done,
     Swapped { prev_value: V },
     RobinHood {
         probe: usize,
@@ -577,8 +576,10 @@ impl<K, V, S> OrderMap<K, V, S>
             } else {
                 // empty bucket, insert here
                 let index = self.entries.len();
-                *pos = Pos::with_hash::<Sz>(index, hash);
-                insert_kind = Inserted::Done;
+                insert_kind = Inserted::RobinHood {
+                    probe: probe,
+                    old_pos: Pos::with_hash::<Sz>(index, hash),
+                };
                 break;
             }
             dist += 1;
@@ -675,7 +676,6 @@ impl<K, V, S> OrderMap<K, V, S>
         if self.size_class_is_64bit() {
             match self.insert_phase_1::<u64>(key, value) {
                 Inserted::Swapped { prev_value } => Some(prev_value),
-                Inserted::Done => None,
                 Inserted::RobinHood { probe, old_pos } => {
                     self.insert_phase_2::<u64>(probe, old_pos);
                     None
@@ -684,7 +684,6 @@ impl<K, V, S> OrderMap<K, V, S>
         } else {
             match self.insert_phase_1::<u32>(key, value) {
                 Inserted::Swapped { prev_value } => Some(prev_value),
-                Inserted::Done => None,
                 Inserted::RobinHood { probe, old_pos } => {
                     self.insert_phase_2::<u32>(probe, old_pos);
                     None
