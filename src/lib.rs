@@ -552,7 +552,6 @@ impl<K, V, S> OrderMap<K, V, S>
         let hash = hash_elem_using(&self.hash_builder, &key);
         let mut probe = desired_pos(self.mask, hash);
         let mut dist = 0;
-        let insert_kind;
         debug_assert!(self.len() < self.raw_capacity());
         probe_loop!(probe < self.indices.len(), {
             let pos = &mut self.indices[probe];
@@ -562,11 +561,6 @@ impl<K, V, S> OrderMap<K, V, S>
                 let their_dist = probe_distance(self.mask, entry_hash.into_hash(), probe);
                 if their_dist < dist {
                     // robin hood: steal the spot if it's better for us
-                    let index = self.entries.len();
-                    insert_kind = Inserted::RobinHood {
-                        probe: probe,
-                        old_pos: Pos::with_hash::<Sz>(index, hash),
-                    };
                     break;
                 } else if entry_hash == hash && self.entries[i].key == key {
                     return Inserted::Swapped {
@@ -575,17 +569,16 @@ impl<K, V, S> OrderMap<K, V, S>
                 }
             } else {
                 // empty bucket, insert here
-                let index = self.entries.len();
-                insert_kind = Inserted::RobinHood {
-                    probe: probe,
-                    old_pos: Pos::with_hash::<Sz>(index, hash),
-                };
                 break;
             }
             dist += 1;
         });
+        let index = self.entries.len();
         self.entries.push(Bucket { hash: hash, key: key, value: value });
-        insert_kind
+        Inserted::RobinHood {
+            probe: probe,
+            old_pos: Pos::with_hash::<Sz>(index, hash),
+        }
     }
 
     fn first_allocation(&mut self) {
