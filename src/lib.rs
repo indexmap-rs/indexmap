@@ -237,7 +237,6 @@ enum Inserted<V> {
     RobinHood {
         probe: usize,
         old_pos: Pos,
-        dist: usize,
     }
 }
 
@@ -438,7 +437,6 @@ pub struct VacantEntry<'a, K: 'a, V: 'a, S: 'a = RandomState> {
     probe: usize,
     #[allow(dead_code)]
     index: usize,
-    dist: usize,
     stealing_bucket: bool,
 }
 
@@ -458,10 +456,11 @@ impl<'a, K, V, S> VacantEntry<'a, K, V, S> {
     {
         let index = self.map.entries.len();
         self.map.entries.push(Bucket { hash: self.hash, key: self.key, value: value });
-        let old_pos = replace(&mut self.map.indices[self.probe],
-                              Pos::with_hash::<Sz>(index, self.hash));
         if self.stealing_bucket {
-            self.map.insert_phase_2::<Sz>(self.probe, old_pos, self.dist);
+            let old_pos = Pos::with_hash::<Sz>(index, self.hash);
+            self.map.insert_phase_2::<Sz>(self.probe, old_pos);
+        } else {
+            self.map.indices[self.probe] = Pos::with_hash::<Sz>(index, self.hash);
         }
         &mut {self.map}.entries[index].value
     }
@@ -511,7 +510,6 @@ impl<K, V, S> OrderMap<K, V, S>
                         probe: probe,
                         stealing_bucket: true,
                         index: i,
-                        dist: their_dist,
                     });
                 } else if entry_hash == hash && self.entries[i].key == key {
                     return Entry::Occupied(OccupiedEntry {
@@ -531,7 +529,6 @@ impl<K, V, S> OrderMap<K, V, S>
                     probe: probe,
                     stealing_bucket: false,
                     index: 0,
-                    dist: 0,
                 });
             }
             dist += 1;
@@ -574,11 +571,9 @@ impl<K, V, S> OrderMap<K, V, S>
                 if their_dist < dist {
                     // robin hood: steal the spot if it's better for us
                     let index = self.entries.len();
-                    let old_pos = replace(pos, Pos::with_hash::<Sz>(index, hash));
                     insert_kind = Inserted::RobinHood {
                         probe: probe,
-                        old_pos: old_pos,
-                        dist: their_dist,
+                        old_pos: Pos::with_hash::<Sz>(index, hash),
                     };
                     break;
                 } else if entry_hash == hash && self.entries[i].key == key {
@@ -688,8 +683,8 @@ impl<K, V, S> OrderMap<K, V, S>
             match self.insert_phase_1::<u64>(key, value) {
                 Inserted::Swapped { prev_value } => Some(prev_value),
                 Inserted::Done => None,
-                Inserted::RobinHood { probe, old_pos, dist } => {
-                    self.insert_phase_2::<u64>(probe, old_pos, dist);
+                Inserted::RobinHood { probe, old_pos } => {
+                    self.insert_phase_2::<u64>(probe, old_pos);
                     None
                 }
             }
@@ -697,8 +692,8 @@ impl<K, V, S> OrderMap<K, V, S>
             match self.insert_phase_1::<u32>(key, value) {
                 Inserted::Swapped { prev_value } => Some(prev_value),
                 Inserted::Done => None,
-                Inserted::RobinHood { probe, old_pos, dist } => {
-                    self.insert_phase_2::<u32>(probe, old_pos, dist);
+                Inserted::RobinHood { probe, old_pos } => {
+                    self.insert_phase_2::<u32>(probe, old_pos);
                     None
                 }
             }
@@ -902,26 +897,18 @@ impl<K, V, S> OrderMap<K, V, S> {
         self.remove_found(probe, found)
     }
 
-    /// phase 2 is post-insert where we swap `Pos` in the indices around to
-    /// adjust after a bucket was stolen.
-    fn insert_phase_2<Sz>(&mut self, mut probe: usize, mut old_pos: Pos, mut dist: usize)
+    /// phase 2 is post-insert where we forward-shift `Pos` in the indices.
+    fn insert_phase_2<Sz>(&mut self, mut probe: usize, mut old_pos: Pos)
         where Sz: Size
     {
         probe_loop!(probe < self.indices.len(), {
             let pos = &mut self.indices[probe];
-            if let Some((i, hash_proxy)) = pos.resolve::<Sz>() {
-                let entry_hash = hash_proxy.get_short_hash(&self.entries, i);
-                // if existing element probed less than us, swap
-                let their_dist = probe_distance(self.mask, entry_hash.into_hash(), probe);
-                if their_dist < dist {
-                    swap(&mut old_pos, pos);
-                    dist = their_dist;
-                }
-            } else {
+            if pos.is_none() {
                 *pos = old_pos;
                 break;
+            } else {
+                old_pos = replace(pos, old_pos);
             }
-            dist += 1;
         });
     }
 
