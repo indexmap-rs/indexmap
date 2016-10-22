@@ -434,8 +434,6 @@ pub struct VacantEntry<'a, K: 'a, V: 'a, S: 'a = RandomState> {
     key: K,
     hash: HashValue,
     probe: usize,
-    #[allow(dead_code)]
-    index: usize,
 }
 
 impl<'a, K, V, S> VacantEntry<'a, K, V, S> {
@@ -497,13 +495,7 @@ impl<K, V, S> OrderMap<K, V, S>
                 let their_dist = probe_distance(self.mask, entry_hash.into_hash(), probe);
                 if their_dist < dist {
                     // robin hood: steal the spot if it's better for us
-                    return Entry::Vacant(VacantEntry {
-                        map: self,
-                        hash: hash,
-                        key: key,
-                        probe: probe,
-                        index: i,
-                    });
+                    break;
                 } else if entry_hash == hash && self.entries[i].key == key {
                     return Entry::Occupied(OccupiedEntry {
                         map: self,
@@ -515,16 +507,16 @@ impl<K, V, S> OrderMap<K, V, S>
                 }
             } else {
                 // empty bucket, insert here
-                return Entry::Vacant(VacantEntry {
-                    map: self,
-                    hash: hash,
-                    key: key,
-                    probe: probe,
-                    index: 0,
-                });
+                break;
             }
             dist += 1;
         });
+        Entry::Vacant(VacantEntry {
+            map: self,
+            hash: hash,
+            key: key,
+            probe: probe,
+        })
     }
 
     pub fn clear(&mut self) {
