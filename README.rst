@@ -66,6 +66,10 @@ Where to go from here?
 Recent Changes
 --------------
 
+- 0.2.4
+
+  - Improved performance of .insert() (#3) by pczarn
+
 - 0.2.3
 
   - Generalize ``Entry`` for now, so that it works on hashmaps with non-default
