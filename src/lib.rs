@@ -437,7 +437,6 @@ pub struct VacantEntry<'a, K: 'a, V: 'a, S: 'a = RandomState> {
     probe: usize,
     #[allow(dead_code)]
     index: usize,
-    stealing_bucket: bool,
 }
 
 impl<'a, K, V, S> VacantEntry<'a, K, V, S> {
@@ -456,12 +455,8 @@ impl<'a, K, V, S> VacantEntry<'a, K, V, S> {
     {
         let index = self.map.entries.len();
         self.map.entries.push(Bucket { hash: self.hash, key: self.key, value: value });
-        if self.stealing_bucket {
-            let old_pos = Pos::with_hash::<Sz>(index, self.hash);
-            self.map.insert_phase_2::<Sz>(self.probe, old_pos);
-        } else {
-            self.map.indices[self.probe] = Pos::with_hash::<Sz>(index, self.hash);
-        }
+        let old_pos = Pos::with_hash::<Sz>(index, self.hash);
+        self.map.insert_phase_2::<Sz>(self.probe, old_pos);
         &mut {self.map}.entries[index].value
     }
 }
@@ -508,7 +503,6 @@ impl<K, V, S> OrderMap<K, V, S>
                         hash: hash,
                         key: key,
                         probe: probe,
-                        stealing_bucket: true,
                         index: i,
                     });
                 } else if entry_hash == hash && self.entries[i].key == key {
@@ -527,7 +521,6 @@ impl<K, V, S> OrderMap<K, V, S>
                     hash: hash,
                     key: key,
                     probe: probe,
-                    stealing_bucket: false,
                     index: 0,
                 });
             }
