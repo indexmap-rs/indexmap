@@ -718,7 +718,7 @@ impl<K, V, S> OrderMap<K, V, S>
         where K: Borrow<Q>,
               Q: Eq + Hash,
     {
-        self.get(key).is_some()
+        self.find(key).is_some()
     }
 
     pub fn get<Q: ?Sized>(&self, key: &Q) -> Option<&V>
