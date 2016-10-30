@@ -528,6 +528,9 @@ impl<K, V, S> OrderMap<K, V, S>
         });
     }
 
+    /// Remove all key-value pairs in the map, while preserving its capacity.
+    ///
+    /// Computes in **O(n)** time.
     pub fn clear(&mut self) {
         self.entries.clear();
         for pos in &mut self.indices {
@@ -670,6 +673,12 @@ impl<K, V, S> OrderMap<K, V, S>
         }
     }
 
+    /// Insert they key-value pair into the map.
+    ///
+    /// If a value already existed for `key`, that old value is returned
+    /// in `Some`; otherwise, return `None`.
+    ///
+    /// Computes in **O(1)** time (amortized).
     pub fn insert(&mut self, key: K, value: V) -> Option<V> {
         self.reserve_one();
         if self.size_class_is_64bit() {
@@ -721,6 +730,10 @@ impl<K, V, S> OrderMap<K, V, S>
         self.find(key).is_some()
     }
 
+    /// Return a reference to the value stored for `key`, if it is present,
+    /// else `None`.
+    ///
+    /// Computes in **O(1)** time (average).
     pub fn get<Q: ?Sized>(&self, key: &Q) -> Option<&V>
         where K: Borrow<Q>,
               Q: Eq + Hash,
@@ -812,6 +825,8 @@ impl<K, V, S> OrderMap<K, V, S>
     }
 
     /// FIXME Same as .swap_remove
+    ///
+    /// Computes in **O(1)** time (average).
     pub fn remove<Q: ?Sized>(&mut self, key: &Q) -> Option<V>
         where K: Borrow<Q>,
               Q: Eq + Hash,
@@ -838,6 +853,8 @@ impl<K, V, S> OrderMap<K, V, S>
     }
 
     /// Remove the last key-value pair
+    ///
+    /// Computes in **O(1)** time (average).
     pub fn pop(&mut self) -> Option<(K, V)> {
         self.pop_impl()
     }
@@ -861,6 +878,8 @@ impl<K, V, S> OrderMap<K, V, S> {
     /// Remove the key-value pair by index
     ///
     /// Valid indices are *0 <= index < self.len()*
+    ///
+    /// Computes in **O(1)** time (average).
     pub fn swap_remove_index(&mut self, index: usize) -> Option<(K, V)> {
         let (probe, found) = match self.entries.get(index)
             .map(|e| self.find_existing_entry(e))
