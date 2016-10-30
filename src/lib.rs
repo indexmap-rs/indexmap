@@ -936,9 +936,11 @@ impl<K, V, S> OrderMap<K, V, S> {
         });
     }
 
+    /// Find `entry` which is already placed inside self.entries;
+    /// return its probe and entry index.
     fn find_existing_entry(&self, entry: &Bucket<K, V>) -> Option<(usize, usize)>
     {
-        if self.len() == 0 { return None; }
+        debug_assert!(self.len() > 0);
         self.find_using(entry.hash, move |other_ent| ptr_eq(entry, other_ent))
     }
 
