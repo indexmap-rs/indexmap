@@ -514,3 +514,19 @@ fn ordermap_merge_shuffle(b: &mut Bencher) {
         merged
     });
 }
+
+#[bench]
+fn remove_ordermap_100_000(b: &mut Bencher) {
+    let map = OMAP_100K.clone();
+    let mut keys = Vec::from_iter(map.keys().cloned());
+    weak_rng().shuffle(&mut keys);
+
+    b.iter(|| {
+        let mut map = map.clone();
+        for key in &keys {
+            map.remove(&key).is_some();
+        }
+        assert_eq!(map.len(), 0);
+        map
+    });
+}
