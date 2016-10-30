@@ -15,7 +15,7 @@ bench = false
 [dev-dependencies]
 itertools = "0.5.1"
 rand = "0.3"
-quickcheck = "0.3.1"
+quickcheck = { version = "0.4", default-features = false }
 fnv = "1.0"
 lazy_static = "0.2"
 
