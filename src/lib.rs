@@ -863,7 +863,7 @@ impl<K, V, S> OrderMap<K, V, S> {
     /// Valid indices are *0 <= index < self.len()*
     pub fn swap_remove_index(&mut self, index: usize) -> Option<(K, V)> {
         let (probe, found) = match self.entries.get(index)
-            .and_then(|e| self.find_existing_entry(e))
+            .map(|e| self.find_existing_entry(e))
         {
             None => return None,
             Some(t) => t,
@@ -881,7 +881,7 @@ impl<K, V, S> OrderMap<K, V, S> {
 impl<K, V, S> OrderMap<K, V, S> {
     fn pop_impl(&mut self) -> Option<(K, V)> {
         let (probe, found) = match self.entries.last()
-            .and_then(|e| self.find_existing_entry(e))
+            .map(|e| self.find_existing_entry(e))
         {
             None => return None,
             Some(t) => t,
@@ -938,12 +938,12 @@ impl<K, V, S> OrderMap<K, V, S> {
 
     /// Find `entry` which is already placed inside self.entries;
     /// return its probe and entry index.
-    fn find_existing_entry(&self, entry: &Bucket<K, V>) -> Option<(usize, usize)>
+    fn find_existing_entry(&self, entry: &Bucket<K, V>) -> (usize, usize)
     {
         dispatch_32_vs_64!(self.find_existing_entry_impl(entry))
     }
 
-    fn find_existing_entry_impl<Sz>(&self, entry: &Bucket<K, V>) -> Option<(usize, usize)>
+    fn find_existing_entry_impl<Sz>(&self, entry: &Bucket<K, V>) -> (usize, usize)
         where Sz: Size,
     {
         debug_assert!(self.len() > 0);
@@ -953,7 +953,7 @@ impl<K, V, S> OrderMap<K, V, S> {
         probe_loop!(probe < self.indices.len(), {
             if let Some((i, _)) = self.indices[probe].resolve::<Sz>() {
                 if i == actual_pos {
-                    return Some((probe, actual_pos));
+                    return (probe, actual_pos);
                 }
             } else {
                 debug_assert!(false, "the entry does not exist");
