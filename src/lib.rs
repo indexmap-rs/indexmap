@@ -15,7 +15,7 @@ use std::fmt;
 use std::mem::{swap, replace};
 use std::marker::PhantomData;
 
-use util::{second, ptr_eq, enumerate};
+use util::{second, ptrdistance, enumerate};
 
 fn hash_elem_using<B: BuildHasher, K: ?Sized + Hash>(build: &B, k: &K) -> HashValue {
     let mut h = build.build_hasher();
@@ -940,8 +940,25 @@ impl<K, V, S> OrderMap<K, V, S> {
     /// return its probe and entry index.
     fn find_existing_entry(&self, entry: &Bucket<K, V>) -> Option<(usize, usize)>
     {
+        dispatch_32_vs_64!(self.find_existing_entry_impl(entry))
+    }
+
+    fn find_existing_entry_impl<Sz>(&self, entry: &Bucket<K, V>) -> Option<(usize, usize)>
+        where Sz: Size,
+    {
         debug_assert!(self.len() > 0);
-        self.find_using(entry.hash, move |other_ent| ptr_eq(entry, other_ent))
+        let hash = entry.hash;
+        let actual_pos = ptrdistance(&self.entries[0], entry);
+        let mut probe = desired_pos(self.mask, hash);
+        probe_loop!(probe < self.indices.len(), {
+            if let Some((i, _)) = self.indices[probe].resolve::<Sz>() {
+                if i == actual_pos {
+                    return Some((probe, actual_pos));
+                }
+            } else {
+                debug_assert!(false, "the entry does not exist");
+            }
+        });
     }
 
     fn remove_found(&mut self, probe: usize, found: usize) -> Option<(K, V)> {
