@@ -530,3 +530,17 @@ fn remove_ordermap_100_000(b: &mut Bencher) {
         map
     });
 }
+
+#[bench]
+fn pop_ordermap_100_000(b: &mut Bencher) {
+    let map = OMAP_100K.clone();
+
+    b.iter(|| {
+        let mut map = map.clone();
+        while map.len() > 0 {
+            map.pop();
+        }
+        assert_eq!(map.len(), 0);
+        map
+    });
+}
