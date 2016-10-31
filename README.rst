@@ -66,6 +66,10 @@ Where to go from here?
 Recent Changes
 --------------
 
+- 0.2.5
+
+  - Improved .pop() slightly
+
 - 0.2.4
 
   - Improved performance of .insert() (#3) by pczarn
