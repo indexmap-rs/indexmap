@@ -805,7 +805,7 @@ impl<K, V, S> OrderMap<K, V, S>
               Q: Eq + Hash,
     {
         if self.len() == 0 { return None; }
-        let h = hash_elem_using(&self.hash_builder, &key);
+        let h = hash_elem_using(&self.hash_builder, key);
         self.find_using(h, move |entry| { *entry.key.borrow() == *key })
     }
 
