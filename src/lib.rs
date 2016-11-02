@@ -897,18 +897,19 @@ impl<K, V, S> OrderMap<K, V, S>
     pub fn retain<F>(&mut self, mut keep: F)
         where F: FnMut(&mut K, &mut V) -> bool,
     {
-        // Use a reverse scan, then we know that each element will be visited
-        // exactly once.
-        let mut i = self.len();
-        while i > 0 {
-            i -= 1;
-            let should_keep = {
+        // We can use either forward or reverse scan, but forward was
+        // faster in a microbenchmark
+        let mut i = 0;
+        while i < self.len() {
+            {
                 let entry = &mut self.entries[i];
-                keep(&mut entry.key, &mut entry.value)
-            };
-            if !should_keep {
-                self.swap_remove_index(i);
+                if keep(&mut entry.key, &mut entry.value) {
+                    i += 1;
+                    continue;
+                }
             }
+            self.swap_remove_index(i);
+            // skip increment on remove
         }
     }
 }
