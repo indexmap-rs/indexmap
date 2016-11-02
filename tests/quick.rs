@@ -17,6 +17,10 @@ use std::fmt::Debug;
 use std::ops::Deref;
 use std::cmp::min;
 
+use ordermap::Entry as OEntry;
+use std::collections::hash_map::Entry as HEntry;
+
+
 fn set<'a, T: 'a, I>(iter: I) -> HashSet<T>
     where I: IntoIterator<Item=&'a T>,
     T: Copy + Hash + Eq
@@ -91,8 +95,9 @@ use Op::*;
 #[derive(Copy, Clone, Debug)]
 enum Op<K, V> {
     Add(K, V),
-    AddEntry(K, V),
     Remove(K),
+    AddEntry(K, V),
+    RemoveEntry(K),
 }
 
 impl<K, V> Arbitrary for Op<K, V>
@@ -100,14 +105,11 @@ impl<K, V> Arbitrary for Op<K, V>
           V: Arbitrary,
 {
     fn arbitrary<G: Gen>(g: &mut G) -> Self {
-        if g.gen() {
-            if g.gen() {
-                Add(K::arbitrary(g), V::arbitrary(g))
-            } else {
-                AddEntry(K::arbitrary(g), V::arbitrary(g))
-            }
-        } else {
-            Remove(K::arbitrary(g))
+        match g.gen::<u32>() % 4 {
+            0 => Add(K::arbitrary(g), V::arbitrary(g)),
+            1 => AddEntry(K::arbitrary(g), V::arbitrary(g)),
+            2 => Remove(K::arbitrary(g)),
+            _ => RemoveEntry(K::arbitrary(g)),
         }
     }
 }
@@ -129,6 +131,16 @@ fn do_ops<K, V>(ops: &[Op<K, V>], a: &mut OrderMap<K, V>, b: &mut HashMap<K, V>)
             Remove(ref k) => {
                 a.swap_remove(k);
                 b.remove(k);
+            }
+            RemoveEntry(ref k) => {
+                match a.entry(k.clone()) {
+                    OEntry::Occupied(ent) => { ent.remove_entry(); },
+                    _ => { }
+                }
+                match b.entry(k.clone()) {
+                    HEntry::Occupied(ent) => { ent.remove_entry(); },
+                    _ => { }
+                }
             }
         }
         //println!("{:?}", a);

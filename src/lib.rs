@@ -12,7 +12,7 @@ use std::borrow::Borrow;
 
 use std::cmp::max;
 use std::fmt;
-use std::mem::{swap, replace};
+use std::mem::{replace};
 use std::marker::PhantomData;
 
 use util::{second, ptrdistance, enumerate};
@@ -203,6 +203,23 @@ impl<Sz> ShortHashProxy<Sz>
 /// not depend on the keys or the hash function at all.
 ///
 /// All iterators traverse the map in the same order.
+///
+/// # Examples
+///
+/// ```
+/// use ordermap::OrderMap;
+///
+/// // count the frequency of each letter in a sentence.
+/// let mut letters = OrderMap::new();
+/// for ch in "a short treatise on fungi".chars() {
+///     *letters.entry(ch).or_insert(0) += 1;
+/// }
+/// 
+/// assert_eq!(letters[&'s'], 2);
+/// assert_eq!(letters[&'t'], 3);
+/// assert_eq!(letters[&'u'], 1);
+/// assert_eq!(letters.get(&'y'), None);
+/// ```
 #[derive(Clone)]
 pub struct OrderMap<K, V, S = RandomState> {
     mask: usize,
@@ -418,25 +435,54 @@ impl<'a, K, V, S> Entry<'a, K, V, S> {
             Entry::Vacant(entry) => entry.insert(call()),
         }
     }
+
+    pub fn key(&self) -> &K {
+        match *self {
+            Entry::Occupied(ref entry) => entry.key(),
+            Entry::Vacant(ref entry) => entry.key(),
+        }
+    }
 }
 
 pub struct OccupiedEntry<'a, K: 'a, V: 'a, S: 'a = RandomState> {
     map: &'a mut OrderMap<K, V, S>,
     key: K,
-    #[allow(dead_code)]
-    hash: HashValue,
-    #[allow(dead_code)]
     probe: usize,
     index: usize,
 }
+
+impl<'a, K, V, S> OccupiedEntry<'a, K, V, S> {
+    pub fn key(&self) -> &K { &self.key }
+    pub fn get(&self) -> &V {
+        &self.map.entries[self.index].value
+    }
+    pub fn get_mut(&mut self) -> &mut V {
+        &mut self.map.entries[self.index].value
+    }
+    pub fn into_mut(self) -> &'a mut V {
+        &mut self.map.entries[self.index].value
+    }
+
+    pub fn insert(self, value: V) -> V {
+        replace(&mut self.into_mut(), value)
+    }
+
+    pub fn remove(self) -> V {
+        self.remove_entry().1
+    }
+
+    /// Remove and return the key, value pair stored in the map for this entry
+    pub fn remove_entry(self) -> (K, V) {
+        self.map.remove_found(self.probe, self.index)
+    }
+}
+
 
 pub struct VacantEntry<'a, K: 'a, V: 'a, S: 'a = RandomState> {
     map: &'a mut OrderMap<K, V, S>,
     key: K,
     hash: HashValue,
     probe: usize,
-    #[allow(dead_code)]
-    index: usize,
 }
 
 impl<'a, K, V, S> VacantEntry<'a, K, V, S> {
@@ -461,23 +507,11 @@ impl<'a, K, V, S> VacantEntry<'a, K, V, S> {
     }
 }
 
-impl<'a, K, V, S> OccupiedEntry<'a, K, V, S> {
-    pub fn key(&self) -> &K { &self.key }
-    pub fn into_mut(self) -> &'a mut V {
-        &mut self.map.entries[self.index].value
-    }
-    pub fn insert(self, mut value: V) -> V {
-        swap(&mut self.map.entries[self.index].value, &mut value);
-        value
-
-    }
-}
-
 impl<K, V, S> OrderMap<K, V, S>
     where K: Hash + Eq,
           S: BuildHasher,
 {
-    /// FIXME Entry API does not implement all hash map's methods yet.
+    /// Get the given key’s corresponding entry in the map for in-place manipulation.
     pub fn entry(&mut self, key: K) -> Entry<K, V, S> {
         self.reserve_one();
         dispatch_32_vs_64!(self.entry_phase_1(key))
@@ -503,12 +537,10 @@ impl<K, V, S> OrderMap<K, V, S>
                         hash: hash,
                         key: key,
                         probe: probe,
-                        index: i,
                     });
                 } else if entry_hash == hash && self.entries[i].key == key {
                     return Entry::Occupied(OccupiedEntry {
                         map: self,
-                        hash: hash,
                         key: key,
                         probe: probe,
                         index: i,
@@ -521,7 +553,6 @@ impl<K, V, S> OrderMap<K, V, S>
                     hash: hash,
                     key: key,
                     probe: probe,
-                    index: 0,
                 });
             }
             dist += 1;
@@ -805,7 +836,7 @@ impl<K, V, S> OrderMap<K, V, S>
               Q: Eq + Hash,
     {
         if self.len() == 0 { return None; }
-        let h = hash_elem_using(&self.hash_builder, &key);
+        let h = hash_elem_using(&self.hash_builder, key);
         self.find_using(h, move |entry| { *entry.key.borrow() == *key })
     }
 
@@ -849,7 +880,7 @@ impl<K, V, S> OrderMap<K, V, S>
             None => return None,
             Some(t) => t,
         };
-        self.remove_found(probe, found)
+        Some(self.remove_found(probe, found))
     }
 
     /// Remove the last key-value pair
@@ -887,7 +918,7 @@ impl<K, V, S> OrderMap<K, V, S> {
             None => return None,
             Some(t) => t,
         };
-        self.remove_found(probe, found)
+        Some(self.remove_found(probe, found))
     }
 }
 
@@ -906,7 +937,7 @@ impl<K, V, S> OrderMap<K, V, S> {
             Some(t) => t,
         };
         debug_assert_eq!(found, self.entries.len() - 1);
-        self.remove_found(probe, found)
+        Some(self.remove_found(probe, found))
     }
 
     /// phase 2 is post-insert where we forward-shift `Pos` in the indices.
@@ -980,11 +1011,11 @@ impl<K, V, S> OrderMap<K, V, S> {
         });
     }
 
-    fn remove_found(&mut self, probe: usize, found: usize) -> Option<(K, V)> {
+    fn remove_found(&mut self, probe: usize, found: usize) -> (K, V) {
         dispatch_32_vs_64!(self.remove_found_impl(probe, found))
     }
 
-    fn remove_found_impl<Sz>(&mut self, probe: usize, found: usize) -> Option<(K, V)>
+    fn remove_found_impl<Sz>(&mut self, probe: usize, found: usize) -> (K, V)
         where Sz: Size
     {
         // index `probe` and entry `found` is to be removed
@@ -1029,7 +1060,7 @@ impl<K, V, S> OrderMap<K, V, S> {
             });
         }
 
-        Some((entry.key, entry.value))
+        (entry.key, entry.value)
     }
 
 }
