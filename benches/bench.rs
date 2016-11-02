@@ -10,6 +10,7 @@ use std::hash::BuildHasherDefault;
 type FnvBuilder = BuildHasherDefault<FnvHasher>;
 
 use test::Bencher;
+use test::black_box;
 
 extern crate ordermap;
 
@@ -221,7 +222,7 @@ fn entry_orderedmap_150(b: &mut Bencher) {
 }
 
 #[bench]
-fn iterate_hashmap_10_000(b: &mut Bencher) {
+fn iter_sum_hashmap_10_000(b: &mut Bencher) {
     let c = 10_000;
     let mut map = HashMap::with_capacity(c);
     let len = c - c/10;
@@ -235,7 +236,7 @@ fn iterate_hashmap_10_000(b: &mut Bencher) {
 }
 
 #[bench]
-fn iterate_orderedmap_10_000(b: &mut Bencher) {
+fn iter_sum_orderedmap_10_000(b: &mut Bencher) {
     let c = 10_000;
     let mut map = OrderMap::with_capacity(c);
     let len = c - c/10;
@@ -245,6 +246,38 @@ fn iterate_orderedmap_10_000(b: &mut Bencher) {
     assert_eq!(map.len(), len);
     b.iter(|| {
         map.keys().sum::<usize>()
+    });
+}
+
+#[bench]
+fn iter_black_box_hashmap_10_000(b: &mut Bencher) {
+    let c = 10_000;
+    let mut map = HashMap::with_capacity(c);
+    let len = c - c/10;
+    for x in 0..len {
+        map.insert(x, ());
+    }
+    assert_eq!(map.len(), len);
+    b.iter(|| {
+        for &key in map.keys() {
+            black_box(key);
+        }
+    });
+}
+
+#[bench]
+fn iter_black_box_orderedmap_10_000(b: &mut Bencher) {
+    let c = 10_000;
+    let mut map = OrderMap::with_capacity(c);
+    let len = c - c/10;
+    for x in 0..len {
+        map.insert(x, ());
+    }
+    assert_eq!(map.len(), len);
+    b.iter(|| {
+        for &key in map.keys() {
+            black_box(key);
+        }
     });
 }
 
