@@ -12,6 +12,7 @@ use quickcheck::Gen;
 
 use std::collections::HashSet;
 use std::collections::HashMap;
+use std::iter::FromIterator;
 use std::hash::Hash;
 use std::fmt::Debug;
 use std::ops::Deref;
@@ -26,6 +27,13 @@ fn set<'a, T: 'a, I>(iter: I) -> HashSet<T>
     T: Copy + Hash + Eq
 {
     iter.into_iter().cloned().collect()
+}
+
+fn ordermap<'a, T: 'a, I>(iter: I) -> OrderMap<T, ()>
+    where I: IntoIterator<Item=&'a T>,
+    T: Copy + Hash + Eq
+{
+    OrderMap::from_iter(iter.into_iter().cloned().map(|k| (k, ())))
 }
 
 quickcheck! {
@@ -178,6 +186,37 @@ quickcheck! {
         let mut reference = HashMap::new();
         do_ops(&ops, &mut map, &mut reference);
         assert_maps_equivalent(&map, &reference)
+    }
+
+    fn retain(keys: Large<Vec<i8>>, remove: Large<Vec<i8>>) -> bool {
+        let mut map = ordermap(keys.iter());
+        let remove_map = ordermap(remove.iter());
+        let keys_s = set(keys.iter());
+        let remove_s = set(remove.iter());
+        let answer = &keys_s - &remove_s;
+        map.retain(|k, _| !remove_map.contains_key(k));
+        assert_eq!(map.len(), answer.len());
+        for key in &answer {
+            assert!(map.contains_key(key));
+        }
+        true
+
+    }
+
+    // Check that retain visits each key exactly once
+    fn retain_visit(keys: Large<Vec<i8>>, remove: Large<Vec<i8>>) -> bool {
+        let mut map = ordermap(keys.iter());
+        let initial_map = map.clone();
+        let mut visit = OrderMap::with_capacity(map.len());
+        let remove_map = ordermap(remove.iter());
+        map.retain(|k, _| {
+            *visit.entry(*k).or_insert(0) += 1;
+            !remove_map.contains_key(k)
+        });
+
+        assert_eq!(visit.len(), initial_map.len());
+        assert!(visit.iter().all(|(_, v)| *v == 1));
+        true
     }
 }
 

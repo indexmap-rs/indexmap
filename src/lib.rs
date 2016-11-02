@@ -198,11 +198,23 @@ impl<Sz> ShortHashProxy<Sz>
 
 /// A hash map with consistent order of the key-value pairs.
 ///
+/// # Order
+///
 /// The key-value pairs have a consistent order that is determined by
 /// the sequence of insertion and removal calls on the map. The order does
 /// not depend on the keys or the hash function at all.
 ///
-/// All iterators traverse the map in the same order.
+/// All iterators traverse the map in *the order*.
+///
+/// # Mutable Keys
+///
+/// Some methods expose `&mut K`, mutable references to the key as it is stored
+/// in the map. The key is allowed to be modified, but *only in a way that
+/// preserves its hash and equality* (it is only useful for composite key
+/// structs).
+///
+/// This is sound (memory safe) but a logical error hazard (just like
+/// implementing PartialEq, Eq, or Hash incorrectly would be).
 ///
 /// # Examples
 ///
@@ -314,10 +326,15 @@ macro_rules! probe_loop {
 }
 
 impl<K, V> OrderMap<K, V> {
+    /// Create a new map. (Does not allocate.)
     pub fn new() -> Self {
         Self::with_capacity(0)
     }
 
+    /// Create a new map with capacity for `n` key-value pairs. (Does not
+    /// allocate if `n` is zero.)
+    ///
+    /// Computes in **O(n)** time.
     pub fn with_capacity(n: usize) -> Self {
         Self::with_capacity_and_hasher(n, <_>::default())
     }
@@ -325,6 +342,10 @@ impl<K, V> OrderMap<K, V> {
 
 impl<K, V, S> OrderMap<K, V, S>
 {
+    /// Create a new map with capacity for `n` key-value pairs. (Does not
+    /// allocate if `n` is zero.)
+    ///
+    /// Computes in **O(n)** time.
     pub fn with_capacity_and_hasher(n: usize, hash_builder: S) -> Self
         where S: BuildHasher
     {
@@ -347,6 +368,9 @@ impl<K, V, S> OrderMap<K, V, S>
         }
     }
 
+    /// Return the number of key-value pairs in the map.
+    ///
+    /// Computes in **O(1)** time.
     pub fn len(&self) -> usize { self.entries.len() }
 
     // Return whether we need 32 or 64 bits to specify a bucket or entry index
@@ -367,6 +391,7 @@ impl<K, V, S> OrderMap<K, V, S>
         self.indices.len()
     }
 
+    /// Computes in **O(1)** time.
     pub fn capacity(&self) -> usize {
         usable_capacity(self.raw_capacity())
     }
@@ -420,6 +445,7 @@ pub enum Entry<'a, K: 'a, V: 'a, S: 'a = RandomState> {
 }
 
 impl<'a, K, V, S> Entry<'a, K, V, S> {
+    /// Computes in **O(1)** time (amortized average).
     pub fn or_insert(self, default: V) -> &'a mut V {
         match self {
             Entry::Occupied(entry) => entry.into_mut(),
@@ -427,6 +453,7 @@ impl<'a, K, V, S> Entry<'a, K, V, S> {
         }
     }
 
+    /// Computes in **O(1)** time (amortized average).
     pub fn or_insert_with<F>(self, call: F) -> &'a mut V
         where F: FnOnce() -> V,
     {
@@ -512,6 +539,8 @@ impl<K, V, S> OrderMap<K, V, S>
           S: BuildHasher,
 {
     /// Get the given key’s corresponding entry in the map for in-place manipulation.
+    ///
+    /// Computes in **O(1)** time (amortized average).
     pub fn entry(&mut self, key: K) -> Entry<K, V, S> {
         self.reserve_one();
         dispatch_32_vs_64!(self.entry_phase_1(key))
@@ -709,7 +738,7 @@ impl<K, V, S> OrderMap<K, V, S>
     /// If a value already existed for `key`, that old value is returned
     /// in `Some`; otherwise, return `None`.
     ///
-    /// Computes in **O(1)** time (amortized).
+    /// Computes in **O(1)** time (amortized average).
     pub fn insert(&mut self, key: K, value: V) -> Option<V> {
         self.reserve_one();
         if self.size_class_is_64bit() {
@@ -754,6 +783,9 @@ impl<K, V, S> OrderMap<K, V, S>
         }
     }
 
+    /// Return `true` if and equivalent to `key` exists in the map.
+    ///
+    /// Computes in **O(1)** time (average).
     pub fn contains_key<Q: ?Sized>(&self, key: &Q) -> bool
         where K: Borrow<Q>,
               Q: Eq + Hash,
@@ -848,6 +880,8 @@ impl<K, V, S> OrderMap<K, V, S>
     /// the postion of what used to be the last element!**
     ///
     /// Return `None` if `key` is not in map.
+    ///
+    /// Computes in **O(1)** time (average).
     pub fn swap_remove<Q: ?Sized>(&mut self, key: &Q) -> Option<V>
         where K: Borrow<Q>,
               Q: Eq + Hash,
@@ -889,12 +923,39 @@ impl<K, V, S> OrderMap<K, V, S>
     pub fn pop(&mut self) -> Option<(K, V)> {
         self.pop_impl()
     }
+
+    /// Scan through each key-value pair in the map and keep those where the
+    /// closure `keep` returns `true`.
+    ///
+    /// The order the elements are visited is not specified.
+    ///
+    /// Computes in **O(n)** time (average).
+    pub fn retain<F>(&mut self, mut keep: F)
+        where F: FnMut(&mut K, &mut V) -> bool,
+    {
+        // We can use either forward or reverse scan, but forward was
+        // faster in a microbenchmark
+        let mut i = 0;
+        while i < self.len() {
+            {
+                let entry = &mut self.entries[i];
+                if keep(&mut entry.key, &mut entry.value) {
+                    i += 1;
+                    continue;
+                }
+            }
+            self.swap_remove_index(i);
+            // skip increment on remove
+        }
+    }
 }
 
 impl<K, V, S> OrderMap<K, V, S> {
     /// Get a key-value pair by index
     ///
     /// Valid indices are *0 <= index < self.len()*
+    ///
+    /// Computes in **O(1)** time.
     pub fn get_index(&self, index: usize) -> Option<(&K, &V)> {
         self.entries.get(index).map(|ent| (&ent.key, &ent.value))
     }
@@ -902,6 +963,8 @@ impl<K, V, S> OrderMap<K, V, S> {
     /// Get a key-value pair by index
     ///
     /// Valid indices are *0 <= index < self.len()*
+    ///
+    /// Computes in **O(1)** time.
     pub fn get_index_mut(&mut self, index: usize) -> Option<(&mut K, &mut V)> {
         self.entries.get_mut(index).map(|ent| (&mut ent.key, &mut ent.value))
     }
