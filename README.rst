@@ -1,8 +1,8 @@
 
 Experimental hash table implementation in just Rust (stable, no unsafe code).
 
-This is inpired by Python 3.6's new dict implementation which remembers
-the insertion order and is fast to iterate.
+This is inpired by Python 3.6's new dict implementation (which remembers
+the insertion order and is fast to iterate, and is compact in memory).
 
 This implementation corresponds to their "compact hash map" idea as it is now,
 and has consistent order.
@@ -65,6 +65,11 @@ Where to go from here?
 
 Recent Changes
 --------------
+
+- 0.2.6
+
+  - Add ``OccupiedEntry::remove_entry`` and other minor entry methods,
+    so that it now has all the features of ``HashMap``'s entries.
 
 - 0.2.5
 
