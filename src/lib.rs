@@ -889,6 +889,28 @@ impl<K, V, S> OrderMap<K, V, S>
     pub fn pop(&mut self) -> Option<(K, V)> {
         self.pop_impl()
     }
+
+    /// Scan through the map and keep those key-value pairs where the
+    /// closure returns `true`.
+    ///
+    /// The order the elements are visited is not specified.
+    pub fn retain<F>(&mut self, mut keep: F)
+        where F: FnMut(&mut K, &mut V) -> bool,
+    {
+        // Use a reverse scan, then we know that each element will be visited
+        // exactly once.
+        let mut i = self.len();
+        while i > 0 {
+            i -= 1;
+            let should_keep = {
+                let entry = &mut self.entries[i];
+                keep(&mut entry.key, &mut entry.value)
+            };
+            if !should_keep {
+                self.swap_remove_index(i);
+            }
+        }
+    }
 }
 
 impl<K, V, S> OrderMap<K, V, S> {
