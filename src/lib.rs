@@ -430,6 +430,29 @@ pub struct OccupiedEntry<'a, K: 'a, V: 'a, S: 'a = RandomState> {
     index: usize,
 }
 
+impl<'a, K, V, S> OccupiedEntry<'a, K, V, S> {
+    pub fn key(&self) -> &K { &self.key }
+    pub fn into_mut(self) -> &'a mut V {
+        &mut self.map.entries[self.index].value
+    }
+    pub fn insert(self, mut value: V) -> V {
+        swap(&mut self.map.entries[self.index].value, &mut value);
+        value
+
+    }
+
+    pub fn remove(self) -> V {
+        self.remove_entry().1
+    }
+
+    /// Remove and return the key, value pair stored in the map for this entry
+    pub fn remove_entry(self) -> (K, V) {
+        self.map.remove_found(self.probe, self.index)
+    }
+
+}
+
+
 pub struct VacantEntry<'a, K: 'a, V: 'a, S: 'a = RandomState> {
     map: &'a mut OrderMap<K, V, S>,
     key: K,
@@ -458,18 +481,6 @@ impl<'a, K, V, S> VacantEntry<'a, K, V, S> {
         let old_pos = Pos::with_hash::<Sz>(index, self.hash);
         self.map.insert_phase_2::<Sz>(self.probe, old_pos);
         &mut {self.map}.entries[index].value
-    }
-}
-
-impl<'a, K, V, S> OccupiedEntry<'a, K, V, S> {
-    pub fn key(&self) -> &K { &self.key }
-    pub fn into_mut(self) -> &'a mut V {
-        &mut self.map.entries[self.index].value
-    }
-    pub fn insert(self, mut value: V) -> V {
-        swap(&mut self.map.entries[self.index].value, &mut value);
-        value
-
     }
 }
 
@@ -849,7 +860,7 @@ impl<K, V, S> OrderMap<K, V, S>
             None => return None,
             Some(t) => t,
         };
-        self.remove_found(probe, found)
+        Some(self.remove_found(probe, found))
     }
 
     /// Remove the last key-value pair
@@ -887,7 +898,7 @@ impl<K, V, S> OrderMap<K, V, S> {
             None => return None,
             Some(t) => t,
         };
-        self.remove_found(probe, found)
+        Some(self.remove_found(probe, found))
     }
 }
 
@@ -906,7 +917,7 @@ impl<K, V, S> OrderMap<K, V, S> {
             Some(t) => t,
         };
         debug_assert_eq!(found, self.entries.len() - 1);
-        self.remove_found(probe, found)
+        Some(self.remove_found(probe, found))
     }
 
     /// phase 2 is post-insert where we forward-shift `Pos` in the indices.
@@ -980,11 +991,11 @@ impl<K, V, S> OrderMap<K, V, S> {
         });
     }
 
-    fn remove_found(&mut self, probe: usize, found: usize) -> Option<(K, V)> {
+    fn remove_found(&mut self, probe: usize, found: usize) -> (K, V) {
         dispatch_32_vs_64!(self.remove_found_impl(probe, found))
     }
 
-    fn remove_found_impl<Sz>(&mut self, probe: usize, found: usize) -> Option<(K, V)>
+    fn remove_found_impl<Sz>(&mut self, probe: usize, found: usize) -> (K, V)
         where Sz: Size
     {
         // index `probe` and entry `found` is to be removed
@@ -1029,7 +1040,7 @@ impl<K, V, S> OrderMap<K, V, S> {
             });
         }
 
-        Some((entry.key, entry.value))
+        (entry.key, entry.value)
     }
 
 }
