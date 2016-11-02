@@ -66,6 +66,10 @@ Where to go from here?
 Recent Changes
 --------------
 
+- 0.2.7
+
+  - Add ``.retain()``
+
 - 0.2.6
 
   - Add ``OccupiedEntry::remove_entry`` and other minor entry methods,
