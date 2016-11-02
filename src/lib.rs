@@ -198,11 +198,23 @@ impl<Sz> ShortHashProxy<Sz>
 
 /// A hash map with consistent order of the key-value pairs.
 ///
+/// # Order
+///
 /// The key-value pairs have a consistent order that is determined by
 /// the sequence of insertion and removal calls on the map. The order does
 /// not depend on the keys or the hash function at all.
 ///
-/// All iterators traverse the map in the same order.
+/// All iterators traverse the map in *the order*.
+///
+/// # Mutable Keys
+///
+/// Some methods expose `&mut K`, mutable references to the key as it is stored
+/// in the map. The key is allowed to be modified, but *only in a way that
+/// preserves its hash and equality* (it is only useful for composite key
+/// structs).
+///
+/// This is sound (memory safe) but a logical error hazard (just like
+/// implementing PartialEq, Eq, or Hash incorrectly would be).
 ///
 /// # Examples
 ///
