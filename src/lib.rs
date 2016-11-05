@@ -1312,6 +1312,8 @@ impl<'a, K, V, Q: ?Sized, S> Index<&'a Q> for OrderMap<K, V, S>
           S: BuildHasher,
 {
     type Output = V;
+
+    /// ***Panics*** if `key` is not present in the map.
     fn index(&self, key: &'a Q) -> &V {
         if let Some(v) = self.get(key) {
             v
@@ -1331,6 +1333,7 @@ impl<'a, K, V, Q: ?Sized, S> IndexMut<&'a Q> for OrderMap<K, V, S>
           Q: Eq + Hash,
           S: BuildHasher,
 {
+    /// ***Panics*** if `key` is not present in the map.
     fn index_mut(&mut self, key: &'a Q) -> &mut V {
         if let Some(v) = self.get_mut(key) {
             v
