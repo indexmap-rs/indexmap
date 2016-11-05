@@ -26,8 +26,8 @@ Using robin hood hashing just like Rust's libstd HashMap.
 - Remove is implemented, but it perturbs the insertion order.
   It's the usual backwards shift deletion, but only on the index vector, so
   it's cheaper.
-  Order-preserving removal would want to be implemented with tombstones,
-  but I'm hesitant and not sure if it can be performant.
+- original-insertion-order-preserving removal would want to be implemented with
+  tombstones, but I'm hesitant and not sure if it can be performant.
 
 Performance:
 
@@ -45,6 +45,7 @@ Interesting Features:
 - OrderMap::new() is empty and uses no allocation until you insert something
 - Lookup key-value pairs by index and vice versa
 - No ``unsafe``.
+- Supports ``IndexMut``.
 
 
 Where to go from here?
