@@ -557,7 +557,7 @@ fn remove_ordermap_100_000(b: &mut Bencher) {
     b.iter(|| {
         let mut map = map.clone();
         for key in &keys {
-            map.remove(&key).is_some();
+            map.remove(key).is_some();
         }
         assert_eq!(map.len(), 0);
         map
