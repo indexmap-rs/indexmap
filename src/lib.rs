@@ -226,7 +226,7 @@ impl<Sz> ShortHashProxy<Sz>
 /// for ch in "a short treatise on fungi".chars() {
 ///     *letters.entry(ch).or_insert(0) += 1;
 /// }
-/// 
+///
 /// assert_eq!(letters[&'s'], 2);
 /// assert_eq!(letters[&'t'], 3);
 /// assert_eq!(letters[&'u'], 1);
@@ -930,22 +930,15 @@ impl<K, V, S> OrderMap<K, V, S>
     /// The order the elements are visited is not specified.
     ///
     /// Computes in **O(n)** time (average).
-    pub fn retain<F>(&mut self, mut keep: F)
-        where F: FnMut(&mut K, &mut V) -> bool,
+    pub fn retain<F>(&mut self, keep: F) -> Retain<K, V, S, F>
+        where F: FnMut(&mut K, &mut V) -> bool
     {
         // We can use either forward or reverse scan, but forward was
         // faster in a microbenchmark
-        let mut i = 0;
-        while i < self.len() {
-            {
-                let entry = &mut self.entries[i];
-                if keep(&mut entry.key, &mut entry.value) {
-                    i += 1;
-                    continue;
-                }
-            }
-            self.swap_remove_index(i);
-            // skip increment on remove
+        Retain {
+            i: 0,
+            map: self,
+            keep: keep,
         }
     }
 }
@@ -975,11 +968,9 @@ impl<K, V, S> OrderMap<K, V, S> {
     ///
     /// Computes in **O(1)** time (average).
     pub fn swap_remove_index(&mut self, index: usize) -> Option<(K, V)> {
-        let (probe, found) = match self.entries.get(index)
-            .map(|e| self.find_existing_entry(e))
-        {
+        let (probe, found) = match self.entries.get(index) {
             None => return None,
-            Some(t) => t,
+            Some(e) => self.find_existing_entry(e),
         };
         Some(self.remove_found(probe, found))
     }
@@ -993,11 +984,9 @@ impl<K, V, S> OrderMap<K, V, S> {
 // However, we should probably not let this show in the public API or docs.
 impl<K, V, S> OrderMap<K, V, S> {
     fn pop_impl(&mut self) -> Option<(K, V)> {
-        let (probe, found) = match self.entries.last()
-            .map(|e| self.find_existing_entry(e))
-        {
+        let (probe, found) = match self.entries.last() {
             None => return None,
-            Some(t) => t,
+            Some(e) => self.find_existing_entry(e),
         };
         debug_assert_eq!(found, self.entries.len() - 1);
         Some(self.remove_found(probe, found))
@@ -1166,6 +1155,47 @@ impl<'a, K, V> DoubleEndedIterator for Keys<'a, K, V> {
     }
 }
 
+pub struct Retain<'a, K: 'a, V: 'a, S: 'a, F: FnMut(&mut K, &mut V) -> bool> {
+    map: &'a mut OrderMap<K, V, S>,
+    keep: F,
+    i: usize,
+}
+
+impl<'a, K, V, S, F> Drop for Retain<'a, K, V, S, F>
+    where F: FnMut(&mut K, &mut V) -> bool
+{
+    fn drop(&mut self) {
+        for _ in self {}
+    }
+}
+
+
+impl<'a, K, V, S, F> Iterator for Retain<'a, K, V, S, F>
+    where F: FnMut(&mut K, &mut V) -> bool
+{
+    type Item = (K, V);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        while self.i < self.map.len() {
+            let keep = {
+                let entry = &mut self.map.entries[self.i];
+                (self.keep)(&mut entry.key, &mut entry.value)
+            };
+            if keep {
+                self.i += 1;
+            } else {
+                // skip increment on remove
+                return self.map.swap_remove_index(self.i);
+            }
+        }
+        None
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        (0, Some(self.map.len() - self.i))
+    }
+}
+
 pub struct Iter<'a, K: 'a, V: 'a> {
     iter: SliceIter<'a, Bucket<K, V>>,
 }
@@ -1214,7 +1244,7 @@ impl<'a, K, V> Iterator for IterMut<'a, K, V> {
     fn size_hint(&self) -> (usize, Option<usize>) {
         self.iter.size_hint()
     }
-    
+
     fn count(self) -> usize {
         self.iter.len()
     }
@@ -1489,6 +1519,51 @@ mod tests {
         println!("{:?}", map);
         for &elt in &not_present {
             assert!(map.get(&elt).is_none());
+        }
+    }
+
+    #[test]
+    fn retain() {
+        let mut insert = vec![0, 4, 2, 12, 8, 7, 11, 5, 3, 17, 19, 22, 23];
+        let mut map = OrderMap::new();
+
+        for &elt in &insert {
+            map.insert(elt, elt);
+        }
+
+        assert_eq!(map.keys().count(), map.len());
+        assert_eq!(map.keys().count(), insert.len());
+        for (a, b) in insert.iter().zip(map.keys()) {
+            assert_eq!(a, b);
+        }
+
+        let mut removed_ex = Vec::new();
+        for i in 0.. {
+            while insert.get(i).iter().filter(|&v| **v >= 10).next().is_some() {
+                removed_ex.push(insert.swap_remove(i));
+            }
+            if i > insert.len() {
+                break;
+            }
+        }
+        println!("{:?}", removed_ex);
+
+        {
+            let removed: Vec<_> = map.retain(|k, _| *k < 10).collect();
+            assert_eq!(removed.len(), removed_ex.len());
+            for (&a, (b, _)) in removed_ex.iter().zip(removed) {
+                assert_eq!(a, b);
+            }
+        }
+
+        println!("{:?}", insert);
+        println!("{:?}", map);
+
+        assert_eq!(map.keys().count(), insert.len());
+        assert_eq!(map.keys().count(), insert.len());
+
+        for (&a, &b) in insert.iter().zip(map.keys()) {
+            assert_eq!(a, b);
         }
     }
 
