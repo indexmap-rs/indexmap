@@ -123,8 +123,8 @@ impl<K, V> Arbitrary for Op<K, V>
 }
 
 fn do_ops<K, V>(ops: &[Op<K, V>], a: &mut OrderMap<K, V>, b: &mut HashMap<K, V>)
-    where K: Hash + Eq + Clone,
-          V: Clone,
+    where K: Hash + Eq + Clone + Debug,
+          V: Clone + Debug,
 {
     for op in ops {
         match *op {
@@ -151,7 +151,7 @@ fn do_ops<K, V>(ops: &[Op<K, V>], a: &mut OrderMap<K, V>, b: &mut HashMap<K, V>)
                 }
             }
         }
-        //println!("{:?}", a);
+        assert_eq!(a.len(), b.len(), "last operation was {:?}", op);
     }
 }
 
@@ -200,7 +200,6 @@ quickcheck! {
             assert!(map.contains_key(key));
         }
         true
-
     }
 
     // Check that retain visits each key exactly once
