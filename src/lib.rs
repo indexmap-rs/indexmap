@@ -1545,6 +1545,8 @@ impl<K, V, S> OrderMap<K, V, S> {
         let mut removed = 0;
         let mut index = 0;
 
+        if self.entry_tombstones == 0 { return }
+
         self.entries.retain(|e| {
             index += 1;
             if let Some(e) = e.as_ref() {
