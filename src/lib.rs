@@ -1,6 +1,9 @@
 
 #![doc(html_root_url = "https://docs.rs/ordermap/0.2/")]
 
+#[cfg(feature="test_efficient_enum")]
+extern crate efficient_enum;
+
 mod macros;
 mod util;
 
@@ -15,18 +18,33 @@ use std::fmt;
 use std::mem::replace;
 use std::marker::PhantomData;
 
-use util::{enumerate};
+use util::enumerate;
 
 fn hash_elem_using<B: BuildHasher, K: ?Sized + Hash>(build: &B, k: &K) -> HashValue {
     let mut h = build.build_hasher();
     k.hash(&mut h);
-    HashValue(h.finish() as usize)
+    HashValue::new(h.finish() as usize)
 }
+
+#[cfg(not(feature="test_unsafe_index"))]
+macro_rules! i {
+    ($e:ident$(.$e2:ident)*[$i:expr]) => {$e$(.$e2)*[$i]};
+    (&$e:ident$(.$e2:ident)*[$i:expr]) => {&$e$(.$e2)*[$i]};
+}
+
+#[cfg(not(feature="test_unsafe_index"))]
+macro_rules! im {
+    ($e:ident$(.$e2:ident)*[$i:expr]) => {$e$(.$e2)*[$i]};
+    (&mut $e:ident$(.$e2:ident)*[$i:expr]) => {&mut $e(.$e2)+[$i]};
+}
+
+#[cfg(feature="unsafe")]
+include!("unsafe.rs");
 
 /// Hash value newtype. Not larger than usize, since anything larger
 /// isn't used for selecting position anyway.
 #[derive(Copy, Debug)]
-struct HashValue(usize);
+pub struct HashValue(usize);
 
 impl Clone for HashValue {
     #[inline]
@@ -38,11 +56,145 @@ impl PartialEq for HashValue {
         self.0 == rhs.0
     }
 }
+impl HashValue {
+    #[cfg(not(feature="test_efficient_enum"))]
+    pub fn new(v: usize) -> HashValue {
+        HashValue(v)
+    }
+
+    pub fn eq_lo32(&self, rhs: &HashValue) -> bool {
+        lo32(self.0 as u64) == lo32(rhs.0 as u64)
+    }
+
+    pub fn desired_pos(self, mask: usize) -> usize {
+        self.0 & mask
+    }
+
+    pub fn combine_pos(self, i: usize) -> u64 {
+        i as u64 | (lo32(self.0 as u64) << 32) as u64
+    }
+}
+
+#[cfg(not(feature="test_efficient_enum"))]
+#[derive(Copy,Clone,Debug)]
+pub struct Bucket<K, V> {
+    hash: HashValue,
+    option: Option<(K, V)>,
+}
+
+/// A type which can take values from a Bucket, leaving the bucket empty
+#[cfg(not(feature="test_efficient_enum"))]
+pub struct BucketTaker<'a, K: 'a, V: 'a>(&'a mut Bucket<K, V>);
+
+#[cfg(not(feature="test_efficient_enum"))]
+impl<K, V> Bucket<K, V> {
+    pub fn new(hash: HashValue, key: K, value: V) -> Self {
+        Bucket { hash: hash, option: Some((key, value)) }
+    }
+
+    pub fn unwrap_hash_key(&self) -> (HashValue, &K) {
+        debug_assert!(self.option.is_some());
+        (self.hash, &self.option.as_ref().unwrap().0)
+    }
+
+    // if the bucket is none, gives a meaningless hash in release and panics in debug
+    pub fn hash(&self) -> Option<HashValue> {
+        if self.option.is_some() {
+            Some(self.hash)
+        } else { None }
+    }
+
+    // if the bucket is none, gives a meaningless hash in release and panics in debug
+    pub fn unwrap_hash(&self) -> HashValue {
+        debug_assert!(self.option.is_some());
+        self.hash
+    }
+
+    pub fn kv(&self) -> Option<(&K, &V)> {
+        self.option.as_ref().map(|e| (&e.0, &e.1))
+    }
+
+    pub fn unwrap_kv(&self) -> (&K, &V) {
+        debug_assert!(self.option.is_some());
+        let kv = self.option.as_ref().unwrap();
+        (&kv.0, &kv.1)
+    }
+
+    pub fn kv_mut(&mut self) -> Option<(&mut K, &mut V)> {
+        self.option.as_mut().map(|e| (&mut e.0, &mut e.1))
+    }
+
+    pub fn unwrap_kv_mut(&mut self) -> (&mut K, &mut V) {
+        debug_assert!(self.option.is_some());
+        let kv = self.option.as_mut().unwrap();
+        (&mut kv.0, &mut kv.1)
+    }
+
+    pub fn taker<'a>(&'a mut self) -> Option<BucketTaker<'a, K, V>> {
+        if self.option.is_some() {
+            Some(BucketTaker(self))
+        } else { None }
+    }
+
+    pub fn unwrap_taker<'a>(&'a mut self) -> BucketTaker<'a, K, V> {
+        debug_assert!(self.option.is_some());
+        BucketTaker(self)
+    }
+
+    pub fn take(&mut self) -> Option<(K, V)> {
+        self.option.take()
+    }
+
+    pub fn into_kv(self) -> Option<(K, V)> {
+        debug_assert!(self.option.is_some());
+        self.option
+    }
+
+    pub fn unwrap_into_kv(self) -> (K, V) {
+        debug_assert!(self.option.is_some());
+        self.option.unwrap()
+    }
+}
+
+#[cfg(not(feature="test_efficient_enum"))]
+impl<'a, K, V> BucketTaker<'a, K, V> {
+    pub fn hash(&self) -> HashValue {
+        debug_assert!(self.0.option.is_some());
+        self.0.hash
+    }
+    pub fn key(&self) -> &K {
+        debug_assert!(self.0.option.is_some());
+        &self.0.option.as_ref().unwrap().0
+    }
+    pub fn value(&self) -> &V {
+        debug_assert!(self.0.option.is_some());
+        &self.0.option.as_ref().unwrap().1
+    }
+    pub fn value_mut(&mut self) -> &mut V {
+        debug_assert!(self.0.option.is_some());
+        &mut self.0.option.as_mut().unwrap().1
+    }
+    pub fn into_value_mut(self) -> &'a mut V {
+        debug_assert!(self.0.option.is_some());
+        &mut self.0.option.as_mut().unwrap().1
+    }
+    pub fn kv_mut(&mut self) -> (&mut K, &mut V) {
+        debug_assert!(self.0.option.is_some());
+        let e = self.0.option.as_mut().unwrap();
+        (&mut e.0, &mut e.1)
+    }
+    pub fn take(self) -> (K, V) {
+        debug_assert!(self.0.option.is_some());
+        self.0.option.take().unwrap()
+    }
+}
+
+
 
 /// A possibly truncated hash value.
 ///
 #[derive(Debug)]
-struct ShortHash<Sz>(usize, PhantomData<Sz>);
+struct ShortHash<Sz>(HashValue, PhantomData<Sz>);
 
 impl<Sz> ShortHash<Sz> {
     /// Pretend this is a full HashValue, which
@@ -51,7 +203,7 @@ impl<Sz> ShortHash<Sz> {
     /// - Sz = u32: 32-bit hash is enough to select bucket index
     /// - Sz = u64: hash is not truncated
     fn into_hash(self) -> HashValue {
-        HashValue(self.0)
+        self.0
     }
 }
 
@@ -74,14 +226,11 @@ impl<Sz> PartialEq<HashValue> for ShortHash<Sz> where Sz: Size {
     #[inline]
     fn eq(&self, rhs: &HashValue) -> bool {
         if Sz::is_64_bit() {
-            self.0 == rhs.0
+            self.0 == *rhs
         } else {
-            lo32(self.0 as u64) == lo32(rhs.0 as u64)
+            self.0.eq_lo32(rhs)
         }
     }
-}
-impl<Sz> From<ShortHash<Sz>> for HashValue {
-    fn from(x: ShortHash<Sz>) -> Self { HashValue(x.0) }
 }
 
 /// `Pos` is stored in the `indices` array and it points to the index of a
@@ -141,14 +290,14 @@ impl Pos {
     fn with_hash<Sz>(i: usize, hash: HashValue) -> Self
         where Sz: Size
     {
-        let index = if Sz::is_64_bit() {
+        let i = if Sz::is_64_bit() {
             i as u64
         } else {
-            (i | (lo32(hash.0 as u64) << 32)) as u64
+            hash.combine_pos(i)
         };
-        debug_assert!(index as u64 != POS_NONE);
-        debug_assert!(index as u64 != POS_TOMBSTONE);
-        Pos { index: index as u64 }
+        debug_assert!(i != POS_NONE);
+        debug_assert!(i != POS_TOMBSTONE);
+        Pos { index: i }
     }
 
     #[inline]
@@ -158,6 +307,15 @@ impl Pos {
         Pos { index: i as u64 }
     }
 
+    #[inline]
+    fn is_none(&self) -> bool {
+        self.index == POS_NONE
+    }
+
+    #[inline]
+    fn is_tombstone(&self) -> bool {
+        self.index == POS_TOMBSTONE
+    }
 
     #[inline]
     fn state(&self) -> PosState<()> {
@@ -171,7 +329,7 @@ impl Pos {
     #[inline]
     fn link_pos(&self) -> Option<usize> {
         debug_assert!(self.index != POS_TOMBSTONE);
-        if self.index == POS_NONE {
+        if self.index != POS_NONE {
             Some(self.index as usize)
         } else {
             None
@@ -255,11 +413,11 @@ impl<Sz> ShortHashProxy<Sz>
 
     /// Get the hash from either `self` or from a lookup into `entries`,
     /// depending on `Sz`.
-    fn get_short_hash<K, V>(&self, entries: &[Option<Bucket<K, V>>], index: usize) -> ShortHash<Sz> {
+    fn get_short_hash<K, V>(&self, entries: &[Bucket<K, V>], index: usize) -> ShortHash<Sz> {
         if Sz::is_64_bit() {
-            ShortHash(entries[index].unwrap_hash().0, PhantomData)
+            ShortHash(entries[index].unwrap_hash(), PhantomData)
         } else {
-            ShortHash(self.0, PhantomData)
+            ShortHash(HashValue::new(self.0), PhantomData)
         }
     }
 }
@@ -306,36 +464,12 @@ pub struct OrderMap<K, V, S = RandomState> {
     /// indices are the buckets. indices.len() == raw capacity
     indices: Vec<Pos>,
     /// entries is a dense vec of entries in their order. entries.len() == len
-    entries: Vec<Option<Bucket<K, V>>>,
+    entries: Vec<Bucket<K, V>>,
     /// the number of tombstones in `indices` waiting to be cleaned up
     index_tombstones: usize,
     /// the number of tombstones in `entries` waiting to be cleaned up
     entry_tombstones: usize,
     hash_builder: S,
-}
-
-#[derive(Copy, Clone, Debug)]
-struct Bucket<K, V> {
-    hash: HashValue,
-    key: K,
-    value: V,
-}
-
-trait BucketHelper {
-    fn unwrap_hash(&self) -> HashValue;
-}
-
-impl<K, V> BucketHelper for Option<Bucket<K, V>> {
-    // if the bucket is none, gives a hash of 0 in release and panics in debug
-    fn unwrap_hash(&self) -> HashValue {
-        debug_assert!(self.is_some());
-        self.as_ref().map_or(HashValue(0), |e| e.hash)
-    }
-}
-
-#[inline(always)]
-fn desired_pos(mask: usize, hash: HashValue) -> usize {
-    hash.0 & mask
 }
 
 /// The number of steps that `current` is forward of the prev
@@ -347,7 +481,7 @@ fn probe_delta(mask: usize, prev: usize, current: usize) -> usize {
 /// The number of steps that `current` is forward of the desired position for hash
 #[inline(always)]
 fn probe_distance(mask: usize, hash: HashValue, current: usize) -> usize {
-    probe_delta(mask, desired_pos(mask, hash), current)
+    probe_delta(mask, hash.desired_pos(mask), current)
 }
 
 
@@ -374,14 +508,13 @@ impl<K, V, S> fmt::Debug for OrderMap<K, V, S>
         for (i, index) in enumerate(&self.indices) {
             write!(f, "{}: {:?}", i, index)?;
             if let PosState::Value(pos) = index.debug_pos() {
-                if let &Some(ref entry) = &self.entries[pos] {
-                    writeln!(f, ", desired={}, probe_distance={}, key={:?}",
-                                  desired_pos(self.mask, entry.hash),
-                                  probe_distance(self.mask, entry.hash, i),
-                                  entry.key)?;
-                } else {
-                    writeln!(f, ", tombstone")?;
-                }
+                let (hash, key) = self.entries[pos].unwrap_hash_key();
+                writeln!(f, ", desired={}, probe_distance={}, key={:?}",
+                              hash.desired_pos(self.mask),
+                              probe_distance(self.mask, hash, i),
+                              key)?;
+            } else {
+                writeln!(f, ", tombstone")?;
             }
             writeln!(f, "")?;
         }
@@ -413,6 +546,19 @@ macro_rules! probe_loop {
             } else {
                 $probe_var = 0;
             }
+        }
+    }
+}
+
+// this could not be captured in an efficient iterator
+macro_rules! rev_probe_loop {
+    ($probe_var: ident < $len: expr, $body: expr) => {
+        loop {
+            $body
+            if $probe_var == 0 {
+                $probe_var = $len;
+            }
+            $probe_var -= 1;
         }
     }
 }
@@ -581,25 +727,25 @@ pub struct OccupiedEntry<'a, K: 'a, V: 'a> {
     index_tombstones: &'a mut usize,
     entry_tombstones: &'a mut usize,
     pos: &'a mut Pos,
-    kv: &'a mut Option<Bucket<K, V>>,
+    bucket_taker: BucketTaker<'a, K, V>,
 }
 
 impl<'a, K, V> OccupiedEntry<'a, K, V> {
     pub fn key(&self) -> &K {
-        &self.kv.as_ref().unwrap().key
+        self.bucket_taker.key()
     }
     pub fn get(&self) -> &V {
-        &self.kv.as_ref().unwrap().value
+        self.bucket_taker.value()
     }
     pub fn get_mut(&mut self) -> &mut V {
-        &mut self.kv.as_mut().unwrap().value
+        self.bucket_taker.value_mut()
     }
     pub fn into_mut(self) -> &'a mut V {
-        &mut self.kv.as_mut().unwrap().value
+        self.bucket_taker.into_value_mut()
     }
 
     pub fn insert(self, value: V) -> V {
-        replace(&mut self.into_mut(), value)
+        replace(self.into_mut(), value)
     }
 
     pub fn remove(self) -> V {
@@ -614,15 +760,14 @@ impl<'a, K, V> OccupiedEntry<'a, K, V> {
         *self.index_tombstones +=1;
         *self.entry_tombstones += 1;
         *self.pos = Pos::tombstone();
-        let entry = self.kv.take().unwrap();
-        (entry.key, entry.value)
+        self.bucket_taker.take()
     }
 }
 
 
 pub struct VacantEntry<'a, K: 'a, V: 'a> {
     indices: &'a mut Vec<Pos>,
-    entries: &'a mut Vec<Option<Bucket<K, V>>>,
+    entries: &'a mut Vec<Bucket<K, V>>,
     index_tombstones: &'a mut usize,
     size_class_is_64bit: bool,
     key: K,
@@ -645,10 +790,10 @@ impl<'a, K, V> VacantEntry<'a, K, V> {
         where Sz: Size
     {
         let index = self.entries.len();
-        self.entries.push(Some(Bucket { hash: self.hash, key: self.key, value: value }));
+        self.entries.push(Bucket::new(self.hash, self.key, value));
         let old_pos = Pos::with_hash::<Sz>(index, self.hash);
         insert_phase_2::<Sz>(self.indices, self.index_tombstones, self.probe, old_pos);
-        &mut self.entries[index].as_mut().unwrap().value
+        self.entries[index].kv_mut().unwrap().1
     }
 }
 
@@ -669,7 +814,7 @@ impl<K, V, S> OrderMap<K, V, S>
         where Sz: Size
     {
         let hash = hash_elem_using(&self.hash_builder, &key);
-        let mut probe = desired_pos(self.mask, hash);
+        let mut probe = hash.desired_pos(self.mask);
         let mut dist = 0;
         let mut last_tombstone = None;
         let indices_len = self.indices.len();
@@ -704,18 +849,22 @@ impl<K, V, S> OrderMap<K, V, S>
                             key: key,
                             probe: probe,
                         });
-                    } else if entry_hash == hash && self.entries[i].as_ref().map_or(false, |e| e.key == key) {
-                        return Entry::Occupied(OccupiedEntry {
-                            entry_tombstones: &mut self.entry_tombstones,
-                            index_tombstones: &mut self.index_tombstones,
-                            kv: &mut self.entries[i],
-                            pos: &mut self.indices[probe],
-                        });
-                    } else if let Some(tprobe) = last_tombstone {
-                        let tdist = probe_delta(self.mask, tprobe, probe);
+                    } else if entry_hash == hash {
+                        if *self.entries[i].unwrap_kv().0 == key {
+                            let taker = self.entries[i].unwrap_taker();
+                            return Entry::Occupied(OccupiedEntry {
+                                entry_tombstones: &mut self.entry_tombstones,
+                                index_tombstones: &mut self.index_tombstones,
+                                bucket_taker: taker,
+                                pos: &mut self.indices[probe],
+                            });
+                        }
+                    }
 
-                        // We're already in the neighborhood,
-                        // If a bucket wants to steal from a tombstone. make it happen
+                    // We're already in the neighborhood,
+                    // If a bucket wants to steal from a tombstone. make it happen
+                    if let Some(tprobe) = last_tombstone {
+                        let tdist = probe_delta(self.mask, tprobe, probe);
                         if tdist < their_dist {
                             self.indices.swap(tprobe, probe);
                             last_tombstone = Some(probe);
@@ -783,7 +932,7 @@ impl<K, V, S> OrderMap<K, V, S>
         where Sz: Size
     {
         let hash = hash_elem_using(&self.hash_builder, &key);
-        let mut probe = desired_pos(self.mask, hash);
+        let mut probe = hash.desired_pos(self.mask);
         let mut dist = 0;
         let mut last_tombstone = None;
         let indices_len = self.indices.len();
@@ -813,17 +962,18 @@ impl<K, V, S> OrderMap<K, V, S>
                         };
                         break;
                     } else if entry_hash == hash {
-                        if let Some(entry) = self.entries[i].as_mut() {
-                            if entry.key == key {
-                                return Inserted::Swapped {
-                                    prev_value: replace(&mut entry.value, value),
-                                };
-                            }
+                        let (entry_key, entry_value) = self.entries[i].unwrap_kv_mut();
+                        if *entry_key == key {
+                            return Inserted::Swapped {
+                                prev_value: replace(entry_value, value),
+                            };
                         }
-                    } else if let Some(tprobe) = last_tombstone {
+                    }
+
+                    // We're already in the neighborhood,
+                    // If a bucket wants to steal from a tombstone. make it happen
+                    if let Some(tprobe) = last_tombstone {
                         let tdist = probe_delta(self.mask, tprobe, probe);
-                        // We're already in the neighborhood,
-                        // If a bucket wants to steal from a tombstone. make it happen
                         if tdist < their_dist {
                             self.indices.swap(tprobe, probe);
                             last_tombstone = Some(probe);
@@ -860,7 +1010,7 @@ impl<K, V, S> OrderMap<K, V, S>
             }
             dist += 1;
         });
-        self.entries.push(Some(Bucket { hash: hash, key: key, value: value }));
+        self.entries.push(Bucket::new(hash, key, value));
         insert_kind
     }
 
@@ -984,7 +1134,7 @@ impl<K, V, S> OrderMap<K, V, S>
         if self.len() <= 0 { return None; }
 
         let h = hash_elem_using(&self.hash_builder, key);
-        self.find_using(h, move |e| { *e.key.borrow() == *key })
+        self.find_using(h, move |k, _| { *k.borrow() == *key })
     }
 
     /// Return probe (indices), position (entries), and key-value pairs by
@@ -996,7 +1146,7 @@ impl<K, V, S> OrderMap<K, V, S>
         if self.len() <= 0 { return None; }
 
         let h = hash_elem_using(&self.hash_builder, key);
-        self.find_mut_using(h, move |e| { *e.key.borrow() == *key })
+        self.find_mut_using(h, move |k, _| { *k.borrow() == *key })
     }
 
     /// Return probe (indices), position (entries), and key-value pairs by
@@ -1008,7 +1158,7 @@ impl<K, V, S> OrderMap<K, V, S>
         if self.len() <= 0 { return None; }
 
         let h = hash_elem_using(&self.hash_builder, key);
-        self.find_remove_using(h, move |e| { *e.key.borrow() == *key })
+        self.find_remove_using(h, move |k, _| { *k.borrow() == *key })
     }
 
     /// Remove the key-value pair equivalent to `key` and return the `value`.
@@ -1136,8 +1286,7 @@ impl<K, V, S> OrderMap<K, V, S> {
     ///
     /// Computes in **O(1)** time.
     pub fn get_index(&self, index: usize) -> Option<(&K, &V)> {
-        self.entries.get(index).and_then(|e| e.as_ref())
-            .map(|e| (&e.key, &e.value))
+        self.entries.get(index).and_then(|e| e.kv())
     }
 
     /// Get a key-value pair by index
@@ -1146,8 +1295,7 @@ impl<K, V, S> OrderMap<K, V, S> {
     ///
     /// Computes in **O(1)** time.
     pub fn get_index_mut(&mut self, index: usize) -> Option<(&mut K, &mut V)> {
-        self.entries.get_mut(index).and_then(|e| e.as_mut())
-            .map(|e| (&mut e.key, &mut e.value))
+        self.entries.get_mut(index).and_then(|e| e.kv_mut())
     }
 
     /// Remove the key-value pair by index
@@ -1156,8 +1304,8 @@ impl<K, V, S> OrderMap<K, V, S> {
     ///
     /// Computes in **O(1)** time (average).
     pub fn swap_remove_index(&mut self, index: usize) -> Option<(K, V)> {
-        self.entries.get(index).and_then(|e| e.as_ref())
-            .map(|e| self.find_existing_entry(index, e.hash))
+        self.entries.get(index).and_then(|e| e.hash())
+            .map(|hash| self.find_existing_entry_mut(index, hash, false))
             .and_then(|probe| self.swap_remove_found(probe, index))
     }
 
@@ -1266,6 +1414,13 @@ impl<K, V, S> OrderMap<K, V, S> {
     /// Removes all the index tombstones
     ///
     /// Computes in **O(n)** time.
+    fn remove_cheap_index_tombstones(&mut self) {
+        dispatch_32_vs_64!(self.remove_cheap_index_tombstones_impl())
+    }
+
+    /// Removes all the index tombstones
+    ///
+    /// Computes in **O(n)** time.
     fn remove_index_tombstones(&mut self) {
         dispatch_32_vs_64!(self.remove_index_tombstones_impl())
     }
@@ -1277,17 +1432,63 @@ impl<K, V, S> OrderMap<K, V, S> {
         // if there entries are empty, just return
         // otherwise, try to get the hash (last entry might be a tombstone)
         let hash = if let Some(e) = self.entries.last() {
-            e.as_ref().map(|e| e.hash)
+            e.hash()
         } else { return None };
 
         let index = self.entries.len()-1;
         if let Some(hash) = hash {
-            let probe = self.find_existing_entry(index, hash);
-            self.swap_remove_found(probe, index)
+            let probe = self.find_existing_entry_mut(index, hash, false);
+            im!(self.indices[probe]) = Pos::tombstone();
+            self.index_tombstones += 1;
+            let v = self.entries.pop().unwrap().take();
+            v
+            //self.swap_remove_found(probe, index)
         } else {
             self.entries.pop();
             None
         }
+    }
+
+    /// Removes cheap the index tombstones
+    ///
+    /// Computes in **O(n)** time.
+    fn remove_cheap_index_tombstones_impl<Sz>(&mut self)
+        where Sz: Size
+    {
+        if self.index_tombstones == 0 { return }
+
+        // Find the first ideal or none (looking backwards)
+        let mut probe = enumerate(&self.indices).rev().find(|&(i, index)| match index.pos::<Sz>() {
+            PosState::Value(pos) => 0 == probe_distance(self.mask, self.entries[pos].unwrap_hash(), i),
+            PosState::IsTombstone => false,
+            PosState::IsNone => true,
+        }).map_or(0, |(i, _)| i);
+
+        let mut need_processing = self.len() + self.index_tombstones;
+        rev_probe_loop!(probe < self.indices.len(), {
+            match i!(self.indices[probe]).state() {
+                PosState::Value(()) => {
+                    need_processing -= 1;
+                    if need_processing == 0 { return }
+
+                    rev_probe_loop!(probe < self.indices.len(), {
+                        if i!(self.indices[probe]).is_none() { break }
+                        need_processing -= 1;
+                        if need_processing == 0 { return }
+                    });
+                },
+                PosState::IsTombstone => {
+                    im!(self.indices[probe]) = Pos::none();
+
+                    self.index_tombstones -= 1;
+                    if self.index_tombstones == 0 { return }
+
+                    need_processing -= 1;
+                    if need_processing == 0 { return }
+                },
+                PosState::IsNone => {},
+            }
+        });
     }
 
     /// Removes all the index tombstones
@@ -1298,22 +1499,16 @@ impl<K, V, S> OrderMap<K, V, S> {
     {
         if self.index_tombstones == 0 { return }
 
-        // Find the first tombstone after an ideal
+        // Find the first tombstone after an ideal or none
         let mut tombstone_head = enumerate(&self.indices).find(|&(i, index)| match index.pos::<Sz>() {
             PosState::Value(pos) => 0 == probe_distance(self.mask, self.entries[pos].unwrap_hash(), i),
             PosState::IsTombstone => false,
-            PosState::IsNone => false,
+            PosState::IsNone => true,
         }).map_or(0, |(i, _)| i);
         probe_loop!(tombstone_head < self.indices.len(), {
-            if self.indices[tombstone_head].state() != PosState::Value(()) {
-                break;
-            }
-            tombstone_head += 1;
+            if i!(self.indices[tombstone_head]).is_tombstone() { break }
         });
-
-        if self.indices[tombstone_head].state() == PosState::IsTombstone {
-            self.index_tombstones -= 1;
-        }
+        self.index_tombstones -= 1;
         self.indices[tombstone_head] = Pos::none();
 
         let mut tombstone_tail = tombstone_head;
@@ -1321,13 +1516,14 @@ impl<K, V, S> OrderMap<K, V, S> {
         probe_loop!(probe < self.indices.len(), {
             match self.indices[probe].resolve::<Sz>() {
                 PosState::Value((i, hash_proxy)) => {
+                    //println!("value");
                     let entry_hash = hash_proxy.get_short_hash(&self.entries, i);
                     let dist = probe_distance(self.mask, entry_hash.into_hash(), probe);
                     if dist == 0 {
                         // clear the linked list
                         let mut iter = tombstone_head;
-                        while let Some(next) = self.indices[iter].link_pos() {
-                            self.indices[iter] = Pos::none();
+                        while let Some(next) = im!(self.indices[iter]).link_pos() {
+                            im!(self.indices[iter]) = Pos::none();
                             iter = next;
                         }
 
@@ -1337,22 +1533,27 @@ impl<K, V, S> OrderMap<K, V, S> {
                         // find a new tombstone_tail
                         tombstone_head = probe + 1;
                         probe_loop!(tombstone_head < self.indices.len(), {
-                            if self.indices[tombstone_head].state() != PosState::Value(()) {
-                                break;
+                            if i!(self.indices[tombstone_head]).is_tombstone() {
+                                break
                             }
                         });
+                        self.index_tombstones -= 1;
+                        self.indices[tombstone_head] = Pos::none();
                         tombstone_tail = tombstone_head;
                     } else {
                         loop {
                             let empty_dist = probe_delta(self.mask, tombstone_head, probe);
                             if dist >= empty_dist {
-                                // move the value up
-                                self.indices[tombstone_head] = self.indices[probe];
-                                self.indices[probe] = Pos::none();
+                                // record the next link
+                                let next = i!(self.indices[tombstone_head]).link_pos();
 
-                                if let Some(next) = self.indices[tombstone_head].link_pos() {
+                                // move the value up
+                                im!(self.indices[tombstone_head]) = self.indices[probe];
+                                im!(self.indices[probe]) = Pos::none();
+
+                                if let Some(next) = next {
                                     // add the value's old space to our linked list
-                                    self.indices[tombstone_tail] = Pos::link(probe);
+                                    im!(self.indices[tombstone_tail]) = Pos::link(probe);
                                     // move the head of the linked list forward
                                     tombstone_head = next;
                                 } else {
@@ -1361,23 +1562,26 @@ impl<K, V, S> OrderMap<K, V, S> {
                                     tombstone_head = probe;
                                     tombstone_tail = probe;
                                 }
+                                break
+                            } else if let Some(next) = self.indices[tombstone_head].link_pos() {
+                                // pop off the head and clear it
+                                im!(self.indices[tombstone_head]) = Pos::none();
+                                tombstone_head = next;
                             } else {
-                                if let Some(next) = self.indices[tombstone_head].link_pos() {
-                                    // pop off the head and clear it
-                                    self.indices[tombstone_head] = Pos::none();
-                                    tombstone_head = next;
-                                } else {
-                                    // if we're out of tombstones, return
-                                    if self.index_tombstones == 0 { return }
+                                // if we're out of tombstones, return
+                                if self.index_tombstones == 0 { return }
 
-                                    // find a new tombstone for the list
-                                    tombstone_head = probe + 1;
-                                    probe_loop!(tombstone_head < self.indices.len(), {
-                                        if self.indices[tombstone_head].state() != PosState::Value(()) {
-                                            break;
-                                        }
-                                    })
-                                }
+                                // find a new tombstone for the list
+                                tombstone_head = probe + 1;
+                                probe_loop!(tombstone_head < self.indices.len(), {
+                                    if i!(self.indices[tombstone_head]).is_tombstone() {
+                                        break
+                                    }
+                                });
+                                self.index_tombstones -= 1;
+                                im!(self.indices[tombstone_head]) = Pos::none();
+                                tombstone_tail = tombstone_head;
+                                break
                             }
                         }
                     }
@@ -1385,15 +1589,15 @@ impl<K, V, S> OrderMap<K, V, S> {
                 PosState::IsTombstone => {
                     self.index_tombstones -= 1;
                     // push it onto the back of the linked list
-                    self.indices[probe] = Pos::none();
-                    self.indices[tombstone_tail] = Pos::link(probe);
+                    im!(self.indices[probe]) = Pos::none();
+                    im!(self.indices[tombstone_tail]) = Pos::link(probe);
                     tombstone_tail = probe;
                 },
                 PosState::IsNone => {
                     // clear the tombstone list
                     let mut iter = tombstone_head;
-                    while let Some(next) = self.indices[iter].link_pos() {
-                        self.indices[iter] = Pos::none();
+                    while let Some(next) = i!(self.indices[iter]).link_pos() {
+                        im!(self.indices[iter]) = Pos::none();
                         iter = next;
                     }
 
@@ -1403,10 +1607,13 @@ impl<K, V, S> OrderMap<K, V, S> {
                     // find a new tombstone for the list
                     tombstone_head = probe + 1;
                     probe_loop!(tombstone_head < self.indices.len(), {
-                        if self.indices[tombstone_head].state() != PosState::Value(()) {
-                            break;
+                        if i!(self.indices[tombstone_head]).is_tombstone() {
+                            break
                         }
-                    })
+                    });
+                    self.index_tombstones -= 1;
+                    im!(self.indices[tombstone_head]) = Pos::none();
+                    tombstone_tail = tombstone_head;
                 },
             }
         });
@@ -1426,17 +1633,16 @@ impl<K, V, S> OrderMap<K, V, S> {
             let entry_hash = if SzOld::is_same_size::<SzNew>() {
                 hash_proxy.get_short_hash(&self.entries, i).into_hash()
             } else {
-                debug_assert!(self.entries[i].is_some());
-                self.entries[i].unwrap_hash()
+                i!(self.entries[i]).unwrap_hash()
             };
             // find first empty bucket or tombstone and insert there
-            let mut probe = desired_pos(self.mask, entry_hash);
+            let mut probe = entry_hash.desired_pos(self.mask);
             probe_loop!(probe < self.indices.len(), {
-                match self.indices[probe].state() {
+                match i!(self.indices[probe]).state() {
                     // skip values
                     PosState::Value(()) => {},
                     PosState::IsNone => {
-                        self.indices[probe] = Pos::with_hash::<SzNew>(i, entry_hash);
+                        im!(self.indices[probe]) = Pos::with_hash::<SzNew>(i, entry_hash);
                         return
                     },
                     PosState::IsTombstone => debug_assert!(false, "reinserting into tombstones"),
@@ -1464,12 +1670,13 @@ impl<K, V, S> OrderMap<K, V, S> {
         Sz: Size,
     {
         for (i, e) in self.entries.iter_mut().enumerate() {
-            let hash = if let Some(e) = e.as_mut() {
-                if keep(&mut e.key, &mut e.value) { continue } else { e.hash }
+            if let Some((key, value)) = e.kv_mut() {
+                if keep(key, value) { continue }
             } else { continue };
 
+            let hash = e.unwrap_hash();
             let probe = find_existing_entry_impl::<Sz>(self.mask, &self.indices, i, hash);
-            self.indices[probe] = Pos::tombstone();
+            im!(self.indices[probe]) = Pos::tombstone();
             self.index_tombstones += 1;
             self.entry_tombstones += 1;
             e.take();
@@ -1492,13 +1699,15 @@ impl<K, V, S> OrderMap<K, V, S> {
         let entry_tombstones = &mut self.entry_tombstones;
         let index_tombstones = &mut self.index_tombstones;
         self.entries.get_mut(index).and_then(|e| {
-            if let Some(e) = e.as_ref() {
-                let probe = find_existing_entry_impl::<Sz>(mask, indices, index, e.hash);
-                indices[probe] = Pos::tombstone();
+            if let Some(e) = e.taker() {
+                let probe = find_existing_entry_impl::<Sz>(mask, indices, index, e.hash());
+                im!(indices[probe]) = Pos::tombstone();
                 *entry_tombstones += 1;
                 *index_tombstones += 1;
+                Some(e.take())
+            } else {
+                None
             }
-            e.take().map(|e| (e.key, e.value))
         })
     }
 
@@ -1512,19 +1721,19 @@ impl<K, V, S> OrderMap<K, V, S> {
     {
         if a == b { return }
 
-        match (self.entries[a].as_ref(), self.entries[b].as_ref()) {
+        match (self.entries[a].hash(), self.entries[b].hash()) {
             (None, None) => {},
-            (None, Some(b_ref)) => {
-                let probe_b = self.find_existing_entry(b, b_ref.hash);
-                self.indices[probe_b] = Pos::with_hash::<Sz>(a, b_ref.hash)
+            (None, Some(b_hash)) => {
+                let probe_b = self.find_existing_entry_mut(b, b_hash, true);
+                self.indices[probe_b] = Pos::with_hash::<Sz>(a, b_hash)
             },
-            (Some(a_ref), None) => {
-                let probe_a = self.find_existing_entry(a, a_ref.hash);
-                self.indices[probe_a] = Pos::with_hash::<Sz>(b, a_ref.hash)
+            (Some(a_hash), None) => {
+                let probe_a = self.find_existing_entry_mut(a, a_hash, true);
+                self.indices[probe_a] = Pos::with_hash::<Sz>(b, a_hash)
             },
-            (Some(a_ref), Some(b_ref)) => {
-                let probe_a = self.find_existing_entry(a, a_ref.hash);
-                let probe_b = self.find_existing_entry(b, b_ref.hash);
+            (Some(a_hash), Some(b_hash)) => {
+                let probe_a = self.find_existing_entry_mut(a, a_hash, true);
+                let probe_b = self.find_existing_entry_mut(b, b_hash, true);
                 self.indices.swap(probe_a, probe_b);
             }
         }
@@ -1540,19 +1749,19 @@ impl<K, V, S> OrderMap<K, V, S> {
     fn remove_tombstones_impl<Sz>(&mut self)
         where Sz: Size
     {
+        if self.entry_tombstones == 0 { return }
+
         let mask = self.mask;
         let indices = &mut self.indices;
         let mut removed = 0;
         let mut index = 0;
 
-        if self.entry_tombstones == 0 { return }
-
         self.entries.retain(|e| {
             index += 1;
-            if let Some(e) = e.as_ref() {
+            if let Some(hash) = e.hash() {
                 if removed != 0 {
-                    let probe = find_existing_entry_impl::<Sz>(mask, indices, index-1, e.hash);
-                    indices[probe].sub_eq::<Sz>(removed);
+                    let probe = find_existing_entry_impl::<Sz>(mask, indices, index-1, hash);
+                    im!(indices[probe]).sub_eq::<Sz>(removed);
                 }
                 true
             } else {
@@ -1566,28 +1775,29 @@ impl<K, V, S> OrderMap<K, V, S> {
 
     /// Return probe (indices) and position (entries), and kv reference
     fn find_using<F>(&self, hash: HashValue, key_eq: F) -> Option<(usize, usize, &K, &V)>
-        where F: Fn(&Bucket<K, V>) -> bool,
+        where F: Fn(&K, &V) -> bool,
     {
         dispatch_32_vs_64!(self.find_using_impl::<_>(hash, key_eq))
     }
 
     fn find_using_impl<Sz, F>(&self, hash: HashValue, key_eq: F) -> Option<(usize, usize, &K, &V)>
-        where F: Fn(&Bucket<K, V>) -> bool,
+        where F: Fn(&K, &V) -> bool,
               Sz: Size,
     {
         debug_assert!(self.len() > 0);
-        let mut probe = desired_pos(self.mask, hash);
+        let mut probe = hash.desired_pos(self.mask);
         let mut dist = 0;
         probe_loop!(probe < self.indices.len(), {
-            match self.indices[probe].resolve::<Sz>() {
+            match i!(self.indices[probe]).resolve::<Sz>() {
                 PosState::Value((i, hash_proxy)) => {
                     let entry_hash = hash_proxy.get_short_hash(&self.entries, i);
                     if dist > probe_distance(self.mask, entry_hash.into_hash(), probe) {
                         // give up when probe distance is too long
                         return None;
                     } else if entry_hash == hash {
-                        if let Some(e) = self.entries[i].as_ref() {
-                            if key_eq(e) { return Some((probe, i, &e.key, &e.value)); }
+                        let (key, value) = i!(self.entries[i]).unwrap_kv();
+                        if key_eq(key, value) {
+                            return Some((probe, i, key, value));
                         }
                     }
                 },
@@ -1600,29 +1810,30 @@ impl<K, V, S> OrderMap<K, V, S> {
 
     /// Return probe (indices), position (entries), and kv reference
     fn find_mut_using<F>(&mut self, hash: HashValue, key_eq: F) -> Option<(usize, usize, &mut K, &mut V)>
-        where F: Fn(&Bucket<K, V>) -> bool,
+        where F: Fn(&K, &V) -> bool,
     {
         dispatch_32_vs_64!(self.find_mut_using_impl::<_>(hash, key_eq))
     }
 
     fn find_mut_using_impl<Sz, F>(&mut self, hash: HashValue, key_eq: F) -> Option<(usize, usize, &mut K, &mut V)>
-        where F: Fn(&Bucket<K, V>) -> bool,
+        where F: Fn(&K, &V) -> bool,
               Sz: Size,
     {
         debug_assert!(self.len() > 0);
-        let mut probe = desired_pos(self.mask, hash);
+        let mut probe = hash.desired_pos(self.mask);
         let mut dist = 0;
         probe_loop!(probe < self.indices.len(), {
-            match self.indices[probe].resolve::<Sz>() {
+            match i!(self.indices[probe]).resolve::<Sz>() {
                 PosState::Value((i, hash_proxy)) => {
                     let entry_hash = hash_proxy.get_short_hash(&self.entries, i);
                     if dist > probe_distance(self.mask, entry_hash.into_hash(), probe) {
                         // give up when probe distance is too long
                         return None;
-                    } else if entry_hash == hash && self.entries[i].as_ref().map_or(false, &key_eq) {
-                        // TODO: We shouldn't need unwrap here, blocked on rust-lang/rfcs#811
-                        let e = self.entries[i].as_mut().unwrap();
-                        return Some((probe, i, &mut e.key, &mut e.value));
+                    } else if entry_hash == hash {
+                        if { let (key, value) = im!(self.entries[i]).unwrap_kv_mut(); key_eq(key, value) } {
+                            let (key, value) = im!(self.entries[i]).unwrap_kv_mut();
+                            return Some((probe, i, key, value));
+                        }
                     }
                 },
                 PosState::IsTombstone => {},
@@ -1634,31 +1845,34 @@ impl<K, V, S> OrderMap<K, V, S> {
 
     /// Return probe (indices) and position (entries)
     fn find_remove_using<F>(&mut self, hash: HashValue, key_eq: F) -> Option<(usize, usize, K, V)>
-        where F: Fn(&Bucket<K, V>) -> bool,
+        where F: Fn(&K, &V) -> bool,
     {
         dispatch_32_vs_64!(self.find_remove_using_impl::<_>(hash, key_eq))
     }
 
     fn find_remove_using_impl<Sz, F>(&mut self, hash: HashValue, key_eq: F) -> Option<(usize, usize, K, V)>
-        where F: Fn(&Bucket<K, V>) -> bool,
+        where F: Fn(&K, &V) -> bool,
               Sz: Size,
     {
         debug_assert!(self.len() > 0);
-        let mut probe = desired_pos(self.mask, hash);
+        let mut probe = hash.desired_pos(self.mask);
         let mut dist = 0;
         probe_loop!(probe < self.indices.len(), {
-            match self.indices[probe].resolve::<Sz>() {
+            match i!(self.indices[probe]).resolve::<Sz>() {
                 PosState::Value((i, hash_proxy)) => {
                     let entry_hash = hash_proxy.get_short_hash(&self.entries, i);
                     if dist > probe_distance(self.mask, entry_hash.into_hash(), probe) {
                         // give up when probe distance is too long
                         return None;
-                    } else if entry_hash == hash && self.entries[i].as_ref().map_or(false, &key_eq) {
-                        self.index_tombstones += 1;
-                        self.entry_tombstones += 1;
-                        self.indices[probe] = Pos::tombstone();
-                        let e = self.entries[i].take().unwrap();
-                        return Some((probe, i, e.key, e.value));
+                    } else if entry_hash == hash {
+                        let mut taker = im!(self.entries[i]).unwrap_taker();
+                        if { let (key, value) = taker.kv_mut(); key_eq(key, value) } {
+                            self.index_tombstones += 1;
+                            self.entry_tombstones += 1;
+                            self.indices[probe] = Pos::tombstone();
+                            let (key, value) = taker.take();
+                            return Some((probe, i, key, value));
+                        }
                     }
                 },
                 PosState::IsTombstone => {},
@@ -1688,6 +1902,26 @@ impl<K, V, S> OrderMap<K, V, S> {
         find_existing_entry_impl::<Sz>(self.mask, &self.indices, actual_pos, hash)
     }
 
+    /// Find an entry already placed inside `self.entries` given its position and hash.
+    /// Return the probe for the entry.
+    ///
+    /// Computes in **O(1)** time (average).
+    fn find_existing_entry_mut(&mut self, actual_pos: usize, hash: HashValue, move_found: bool) -> usize
+    {
+        dispatch_32_vs_64!(self.find_existing_entry_mut_impl(actual_pos, hash, move_found))
+    }
+
+    /// Find an entry already placed inside `self.entries` given its position and hash.
+    /// Return the probe for the entry.
+    ///
+    /// Computes in **O(1)** time (average).
+    fn find_existing_entry_mut_impl<Sz>(&mut self, actual_pos: usize, hash: HashValue, move_found: bool) -> usize
+        where Sz: Size,
+    {
+        debug_assert!(self.len() > actual_pos);
+        find_existing_entry_mut_impl::<Sz, _, _>(self.mask, &self.entries, &mut self.indices, actual_pos, hash, move_found)
+    }
+
     fn swap_remove_found(&mut self, probe: usize, found: usize) -> Option<(K, V)> {
         dispatch_32_vs_64!(self.swap_remove_found_impl(probe, found))
     }
@@ -1699,19 +1933,19 @@ impl<K, V, S> OrderMap<K, V, S> {
         // use swap_remove, but then we need to update the index that points
         // to the other entry that has to move
         self.indices[probe] = Pos::none();
-        let kv = self.entries.swap_remove(found).map(|e| (e.key, e.value));
+        let kv = self.entries.swap_remove(found).take();
 
 
         // correct index that points to the entry that had to swap places
         // check if it was the last element or a tombstone
-        if let Some(e) = self.entries.get(found).and_then(|e| e.as_ref()) {
+        if let Some(hash) = self.entries.get(found).and_then(Bucket::hash) {
             // examine new element in `found` and find it in indices
-            let mut probe = desired_pos(self.mask, e.hash);
+            let mut probe = hash.desired_pos(self.mask);
             probe_loop!(probe < self.indices.len(), {
-                if let PosState::Value(i) = self.indices[probe].pos::<Sz>() {
+                if let PosState::Value(i) = i!(self.indices[probe]).pos::<Sz>() {
                     if i >= self.entries.len() {
                         // found it
-                        self.indices[probe] = Pos::with_hash::<Sz>(found, e.hash);
+                        im!(self.indices[probe]) = Pos::with_hash::<Sz>(found, hash);
                         break;
                     }
                 }
@@ -1730,16 +1964,16 @@ impl<K, V, S> OrderMap<K, V, S> {
                 PosState::Value((i, hash_proxy)) => {
                     let entry_hash = hash_proxy.get_short_hash(&self.entries, i);
                     if probe_distance(self.mask, entry_hash.into_hash(), probe) > 0 {
-                        self.indices[last_probe] = self.indices[probe];
-                        self.indices[probe] = Pos::none();
+                        im!(self.indices[last_probe]) = self.indices[probe];
+                        im!(self.indices[probe]) = Pos::none();
                     } else {
                         break;
                     }
                 },
                 // Always move tombstones
                 PosState::IsTombstone => {
-                    self.indices[last_probe] = Pos::tombstone();
-                    self.indices[probe] = Pos::none();
+                    im!(self.indices[last_probe]) = Pos::tombstone();
+                    im!(self.indices[probe]) = Pos::none();
                 },
                 PosState::IsNone => break,
             }
@@ -1778,11 +2012,48 @@ fn insert_phase_2<Sz>(indices: &mut Vec<Pos>, index_tombstones: &mut usize, mut 
 fn find_existing_entry_impl<Sz>(mask: usize, indices: &Vec<Pos>, actual_pos: usize, hash: HashValue) -> usize
     where Sz: Size,
 {
-    let mut probe = desired_pos(mask, hash);
+    let mut probe = hash.desired_pos(mask);
     probe_loop!(probe < indices.len(), {
         match indices[probe].pos::<Sz>() {
             PosState::Value(i) => if i == actual_pos { return probe },
             PosState::IsTombstone => {},
+            PosState::IsNone => debug_assert!(false, "the entry does not exist"),
+        }
+    });
+}
+
+/// Find an entry already placed inside `self.entries` given its position and hash.
+/// Return the probe for the entry.
+///
+/// This method does will steal from tombstones where possible
+///
+/// Computes in **O(1)** time (average).
+fn find_existing_entry_mut_impl<Sz, K, V>(mask: usize, entries: &Vec<Bucket<K, V>>, indices: &mut Vec<Pos>, actual_pos: usize, hash: HashValue, move_found: bool) -> usize
+    where Sz: Size,
+{
+    let mut probe = hash.desired_pos(mask);
+    let mut last_tombstone = None;
+    probe_loop!(probe < indices.len(), {
+        match i!(indices[probe]).resolve::<Sz>() {
+            PosState::Value((i, hash_proxy)) => {
+                if !move_found && i == actual_pos { return probe }
+
+                // We're already in the neighborhood,
+                // If a bucket wants to steal from a tombstone. make it happen
+                if let Some(tprobe) = last_tombstone {
+                    let entry_hash = hash_proxy.get_short_hash(entries, i);
+                    let dist = probe_distance(mask, entry_hash.into_hash(), probe);
+                    let tdist = probe_delta(mask, tprobe, probe);
+                    if tdist < dist {
+                        indices.swap(tprobe, probe);
+                        if i == actual_pos { return tprobe }
+                        last_tombstone = Some(probe);
+                    }
+                }
+
+                if i == actual_pos { return probe }
+            },
+            PosState::IsTombstone => last_tombstone = Some(probe),
             PosState::IsNone => debug_assert!(false, "the entry does not exist"),
         }
     });
@@ -1793,7 +2064,7 @@ use std::slice::IterMut as SliceIterMut;
 use std::vec::IntoIter as VecIntoIter;
 
 pub struct Keys<'a, K: 'a, V: 'a> {
-    iter: SliceIter<'a, Option<Bucket<K, V>>>,
+    iter: SliceIter<'a, Bucket<K, V>>,
     tombstones: usize,
 }
 
@@ -1803,8 +2074,8 @@ impl<'a, K, V> Iterator for Keys<'a, K, V> {
     fn next(&mut self) -> Option<&'a K> {
         let tombstones = &mut self.tombstones;
         self.iter.by_ref().filter_map(move |e| {
-            if let Some(e) = e.as_ref() {
-                Some(&e.key)
+            if let Some((key, _)) = e.kv() {
+                Some(key)
             } else {
                 *tombstones -= 1;
                 None
@@ -1824,14 +2095,13 @@ impl<'a, K, V> Iterator for Keys<'a, K, V> {
     fn nth(&mut self, n: usize) -> Option<Self::Item> {
         if self.tombstones == 0 {
             self.iter.nth(n).map(|e| {
-                let e = e.as_ref().unwrap();
-                &e.key
+                e.unwrap_kv().0
             })
         } else {
             let tombstones = &mut self.tombstones;
             self.iter.by_ref().filter_map(move |e| {
-                if let Some(e) = e.as_ref() {
-                    Some(&e.key)
+                if let Some((key, _)) = e.kv() {
+                    Some(key)
                 } else {
                     *tombstones -= 1;
                     None
@@ -1849,8 +2119,8 @@ impl<'a, K, V> DoubleEndedIterator for Keys<'a, K, V> {
     fn next_back(&mut self) -> Option<&'a K> {
         let tombstones = &mut self.tombstones;
         self.iter.by_ref().filter_map(move |e| {
-            if let Some(e) = e.as_ref() {
-                Some(&e.key)
+            if let Some((key, _)) = e.kv() {
+                Some(key)
             } else {
                 *tombstones -= 1;
                 None
@@ -1867,7 +2137,7 @@ impl<'a, K, V> ExactSizeIterator for Keys<'a, K, V> {
 
 
 pub struct Iter<'a, K: 'a, V: 'a> {
-    iter: SliceIter<'a, Option<Bucket<K, V>>>,
+    iter: SliceIter<'a, Bucket<K, V>>,
     tombstones: usize,
 }
 
@@ -1877,8 +2147,8 @@ impl<'a, K, V> Iterator for Iter<'a, K, V> {
     fn next(&mut self) -> Option<Self::Item> {
         let tombstones = &mut self.tombstones;
         self.iter.by_ref().filter_map(move |e| {
-            if let Some(e) = e.as_ref() {
-                Some((&e.key, &e.value))
+            if let Some((key, value)) = e.kv() {
+                Some((key, value))
             } else {
                 *tombstones -= 1;
                 None
@@ -1898,14 +2168,13 @@ impl<'a, K, V> Iterator for Iter<'a, K, V> {
     fn nth(&mut self, n: usize) -> Option<Self::Item> {
         if self.tombstones == 0 {
             self.iter.nth(n).map(|e| {
-                let e = e.as_ref().unwrap();
-                (&e.key, &e.value)
+                e.unwrap_kv()
             })
         } else {
             let tombstones = &mut self.tombstones;
             self.iter.by_ref().filter_map(move |e| {
-                if let Some(e) = e.as_ref() {
-                    Some((&e.key, &e.value))
+                if let Some((key, value)) = e.kv() {
+                    Some((key, value))
                 } else {
                     *tombstones -= 1;
                     None
@@ -1923,8 +2192,8 @@ impl<'a, K, V> DoubleEndedIterator for Iter<'a, K, V> {
     fn next_back(&mut self) -> Option<Self::Item> {
         let tombstones = &mut self.tombstones;
         self.iter.by_ref().filter_map(move |e| {
-            if let Some(e) = e.as_ref() {
-                Some((&e.key, &e.value))
+            if let Some((key, value)) = e.kv() {
+                Some((key, value))
             } else {
                 *tombstones -= 1;
                 None
@@ -1940,7 +2209,7 @@ impl<'a, K, V> ExactSizeIterator for Iter<'a, K, V> {
 }
 
 pub struct IterMut<'a, K: 'a, V: 'a> {
-    iter: SliceIterMut<'a, Option<Bucket<K, V>>>,
+    iter: SliceIterMut<'a, Bucket<K, V>>,
     tombstones: usize,
 }
 
@@ -1950,8 +2219,8 @@ impl<'a, K, V> Iterator for IterMut<'a, K, V> {
     fn next(&mut self) -> Option<Self::Item> {
         let tombstones = &mut self.tombstones;
         self.iter.by_ref().filter_map(move |e| {
-            if let Some(e) = e.as_mut() {
-                Some((&e.key, &mut e.value))
+            if let Some((key, value)) = e.kv_mut() {
+                Some((&*key, value))
             } else {
                 *tombstones -= 1;
                 None
@@ -1971,14 +2240,14 @@ impl<'a, K, V> Iterator for IterMut<'a, K, V> {
     fn nth(&mut self, n: usize) -> Option<Self::Item> {
         if self.tombstones == 0 {
             self.iter.nth(n).map(|e| {
-                let e = e.as_mut().unwrap();
-                (&e.key, &mut e.value)
+                let (key, value) = e.unwrap_kv_mut();
+                (&*key, value)
             })
         } else {
             let tombstones = &mut self.tombstones;
             self.iter.by_ref().filter_map(move |e| {
-                if let Some(e) = e.as_mut() {
-                    Some((&e.key, &mut e.value))
+                if let Some((key, value)) = e.kv_mut() {
+                    Some((&*key, value))
                 } else {
                     *tombstones -= 1;
                     None
@@ -1996,8 +2265,8 @@ impl<'a, K, V> DoubleEndedIterator for IterMut<'a, K, V> {
     fn next_back(&mut self) -> Option<Self::Item> {
         let tombstones = &mut self.tombstones;
         self.iter.by_ref().filter_map(move |e| {
-            if let Some(e) = e.as_mut() {
-                Some((&e.key, &mut e.value))
+            if let Some((key, value)) = e.kv_mut() {
+                Some((&*key, value))
             } else {
                 *tombstones -= 1;
                 None
@@ -2013,7 +2282,7 @@ impl<'a, K, V> ExactSizeIterator for IterMut<'a, K, V> {
 }
 
 pub struct IntoIter<K, V> {
-    iter: VecIntoIter<Option<Bucket<K, V>>>,
+    iter: VecIntoIter<Bucket<K, V>>,
     tombstones: usize,
 }
 
@@ -2023,8 +2292,8 @@ impl<K, V> Iterator for IntoIter<K, V> {
     fn next(&mut self) -> Option<Self::Item> {
         let tombstones = &mut self.tombstones;
         self.iter.by_ref().filter_map(move |e| {
-            if let Some(e) = e {
-                Some((e.key, e.value))
+            if let Some((key, value)) = e.into_kv() {
+                Some((key, value))
             } else {
                 *tombstones -= 1;
                 None
@@ -2044,14 +2313,13 @@ impl<K, V> Iterator for IntoIter<K, V> {
     fn nth(&mut self, n: usize) -> Option<Self::Item> {
         if self.tombstones == 0 {
             self.iter.nth(n).map(|e| {
-                let e = e.unwrap();
-                (e.key, e.value)
+                e.unwrap_into_kv()
             })
         } else {
             let tombstones = &mut self.tombstones;
             self.iter.by_ref().filter_map(move |e| {
-                if let Some(e) = e {
-                    Some((e.key, e.value))
+                if let Some((key, value)) = e.into_kv() {
+                    Some((key, value))
                 } else {
                     *tombstones -= 1;
                     None
@@ -2075,8 +2343,8 @@ impl<K, V> DoubleEndedIterator for IntoIter<K, V> {
     fn next_back(&mut self) -> Option<Self::Item> {
         let tombstones = &mut self.tombstones;
         self.iter.by_ref().filter_map(|e| {
-            if let Some(e) = e {
-                Some((e.key, e.value))
+            if let Some((key, value)) = e.into_kv() {
+                Some((key, value))
             } else {
                 *tombstones -= 1;
                 None
@@ -2181,7 +2449,15 @@ impl<K, V, S> Extend<(K, V)> for OrderMap<K, V, S>
           S: BuildHasher,
 {
     fn extend<I: IntoIterator<Item=(K, V)>>(&mut self, iterable: I) {
-        for (k, v) in iterable { self.insert(k, v); }
+        let mut iterator = iterable.into_iter();
+        while let Some((k, v)) = iterator.next() {
+            let len = self.len();
+            if len == self.capacity() {
+                let (lower, _) = iterator.size_hint();
+                self.reserve(lower.saturating_add(1));
+            }
+            self.insert(k, v);
+        }
     }
 }
 
