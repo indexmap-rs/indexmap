@@ -610,3 +610,36 @@ fn retain_many_ordermap_100_000(b: &mut Bencher) {
         map
     });
 }
+
+#[bench]
+fn remove_index_tombstones_many_ordermap_100_000(b: &mut Bencher) {
+    let mut map = OMAP_100K.clone();
+    map.retain(|k, _| *k % 7 == 0);
+
+    b.iter(|| {
+        let mut map = map.clone();
+        map.remove_index_tombstones()
+    });
+}
+
+#[bench]
+fn remove_index_tombstones_half_ordermap_100_000(b: &mut Bencher) {
+    let mut map = OMAP_100K.clone();
+    map.retain(|k, _| *k % 2 == 0);
+
+    b.iter(|| {
+        let mut map = map.clone();
+        map.remove_index_tombstones()
+    });
+}
+
+#[bench]
+fn remove_index_tombstones_some_ordermap_100_000(b: &mut Bencher) {
+    let mut map = OMAP_100K.clone();
+    map.retain(|k, _| *k % 100 == 0);
+
+    b.iter(|| {
+        let mut map = map.clone();
+        map.remove_index_tombstones()
+    });
+}
