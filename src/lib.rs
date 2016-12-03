@@ -301,13 +301,6 @@ impl Pos {
     }
 
     #[inline]
-    fn link(i: usize) -> Self {
-        debug_assert!(i as u64 != POS_NONE);
-        debug_assert!(i as u64 != POS_TOMBSTONE);
-        Pos { index: i as u64 }
-    }
-
-    #[inline]
     fn is_none(&self) -> bool {
         self.index == POS_NONE
     }
@@ -323,16 +316,6 @@ impl Pos {
             POS_NONE => PosState::IsNone,
             POS_TOMBSTONE => PosState::IsTombstone,
             _ => PosState::Value(()),
-        }
-    }
-
-    #[inline]
-    fn link_pos(&self) -> Option<usize> {
-        debug_assert!(self.index != POS_TOMBSTONE);
-        if self.index != POS_NONE {
-            Some(self.index as usize)
-        } else {
-            None
         }
     }
 
@@ -865,6 +848,18 @@ impl<K, V, S> OrderMap<K, V, S>
                     });
                 },
                 PosState::IsTombstone => {
+                    if self.index_tombstones == self.indices.len() {
+                        return Entry::Vacant(VacantEntry {
+                            size_class_is_64bit: self.size_class_is_64bit(),
+                            indices: &mut self.indices,
+                            entries: &mut self.entries,
+                            index_tombstones: &mut self.index_tombstones,
+                            hash: hash,
+                            key: key,
+                            probe: probe,
+                        });
+                    }
+
                     first_tombstone = probe;
                     break;
                 },
@@ -904,7 +899,11 @@ impl<K, V, S> OrderMap<K, V, S>
                         // since their_dist >= dist and dist > tombstone_dist
                         // any bucket ahead of our target should be moved up
                         self.indices.swap(first_tombstone, probe);
-                        first_tombstone = probe;
+
+                        // Since we're compacting everything, the next
+                        // tombstone will always be directly after
+                        first_tombstone += 1;
+                        first_tombstone &= self.mask
                     }
                 },
                 PosState::IsNone => {
@@ -1442,112 +1441,85 @@ impl<K, V, S> OrderMap<K, V, S> {
         probe_loop!(tombstone_head < self.indices.len(), {
             if i!(self.indices[tombstone_head]).is_tombstone() { break }
         });
-        self.index_tombstones -= 1;
-        self.indices[tombstone_head] = Pos::none();
 
         let mut tombstone_tail = tombstone_head;
         let mut probe = tombstone_head + 1;
+        let mut tombstones = 1;
         probe_loop!(probe < self.indices.len(), {
             match i!(self.indices[probe]).resolve::<Sz>() {
                 PosState::Value((i, hash_proxy)) => {
-                    //println!("value");
                     let entry_hash = hash_proxy.get_short_hash(&self.entries, i);
                     let dist = probe_distance(self.mask, entry_hash.into_hash(), probe);
                     if dist == 0 {
-                        // clear the linked list
-                        let mut iter = tombstone_head;
-                        while let Some(next) = im!(self.indices[iter]).link_pos() {
-                            im!(self.indices[iter]) = Pos::none();
-                            iter = next;
+                        // clear the tombstone list
+                        while tombstone_head != tombstone_tail {
+                            im!(self.indices[tombstone_head]) = Pos::none();
+                            tombstone_head += 1;
+                            tombstone_head &= self.mask;
                         }
+                        im!(self.indices[tombstone_head]) = Pos::none();
+                        self.index_tombstones -= tombstones;
 
                         // if we're out of tombstones, return
                         if self.index_tombstones == 0 { return }
 
-                        // find a new tombstone_tail
+                        // find a new tombstone_head
                         probe_loop!(probe < self.indices.len(), {
                             if i!(self.indices[probe]).is_tombstone() {
                                 break
                             }
                         });
                         tombstone_head = probe;
-                        self.index_tombstones -= 1;
-                        self.indices[tombstone_head] = Pos::none();
                         tombstone_tail = tombstone_head;
+                        tombstones = 1;
                     } else {
-                        loop {
-                            let empty_dist = probe_delta(self.mask, tombstone_head, probe);
-                            if dist >= empty_dist {
-                                // record the next link
-                                let next = i!(self.indices[tombstone_head]).link_pos();
-
-                                // move the value up
-                                im!(self.indices[tombstone_head]) = i!(self.indices[probe]);
-                                im!(self.indices[probe]) = Pos::none();
-
-                                if let Some(next) = next {
-                                    // add the value's old space to our linked list
-                                    im!(self.indices[tombstone_tail]) = Pos::link(probe);
-                                    // move the head of the linked list forward
-                                    tombstone_head = next;
-                                } else {
-                                    // the list is empty, so just use the recently empied
-                                    // probe as our new list
-                                    tombstone_head = probe;
-                                    tombstone_tail = probe;
-                                }
-                                break
-                            } else if let Some(next) = i!(self.indices[tombstone_head]).link_pos() {
+                        if dist < tombstones {
+                            let delta = tombstones - dist;
+                            for _ in 0..delta {
                                 // pop off the head and clear it
                                 im!(self.indices[tombstone_head]) = Pos::none();
-                                tombstone_head = next;
-                            } else {
-                                // if we're out of tombstones, return
-                                if self.index_tombstones == 0 { return }
-
-                                // find a new tombstone for the list
-                                probe_loop!(probe < self.indices.len(), {
-                                    if i!(self.indices[probe]).is_tombstone() {
-                                        break
-                                    }
-                                });
-                                tombstone_head = probe;
-                                self.index_tombstones -= 1;
-                                im!(self.indices[tombstone_head]) = Pos::none();
-                                tombstone_tail = tombstone_head;
-                                break
+                                tombstone_head += 1;
+                                tombstone_head &= self.mask;
                             }
+                            self.index_tombstones -= delta;
+                            tombstones = dist;
                         }
+
+                        // move the value up
+                        self.indices.swap(tombstone_head, probe);
+
+                        tombstone_head += 1;
+                        tombstone_head &= self.mask;
+
+                        tombstone_tail = probe;
                     }
                 },
                 PosState::IsTombstone => {
-                    self.index_tombstones -= 1;
-                    // push it onto the back of the linked list
-                    im!(self.indices[probe]) = Pos::none();
-                    im!(self.indices[tombstone_tail]) = Pos::link(probe);
                     tombstone_tail = probe;
+                    tombstones += 1;
                 },
                 PosState::IsNone => {
                     // clear the tombstone list
-                    let mut iter = tombstone_head;
-                    while let Some(next) = i!(self.indices[iter]).link_pos() {
-                        im!(self.indices[iter]) = Pos::none();
-                        iter = next;
+                    while tombstone_head != tombstone_tail {
+                        im!(self.indices[tombstone_head]) = Pos::none();
+                        tombstone_head += 1;
+                        tombstone_head &= self.mask;
                     }
+                    im!(self.indices[tombstone_head]) = Pos::none();
+                    self.index_tombstones -= tombstones;
 
                     // if we're out of tombstones, return
                     if self.index_tombstones == 0 { return }
 
-                    // find a new tombstone for the list
+                    // find a new tombstone_head
                     probe_loop!(probe < self.indices.len(), {
                         if i!(self.indices[probe]).is_tombstone() {
                             break
                         }
                     });
                     tombstone_head = probe;
-                    self.index_tombstones -= 1;
-                    im!(self.indices[tombstone_head]) = Pos::none();
                     tombstone_tail = tombstone_head;
+                    tombstones = 1;
                 },
             }
         });
@@ -1982,7 +1954,8 @@ fn find_existing_entry_mut_impl<Sz>(mask: usize, indices: &mut Vec<Pos>, actual_
                 // any bucket ahead of our target should be moved up
                 indices.swap(first_tombstone, probe);
                 if i == actual_pos { return first_tombstone }
-                first_tombstone = probe;
+                first_tombstone += 1;
+                first_tombstone &= mask;
             },
             PosState::IsTombstone => {},
             PosState::IsNone => debug_assert!(false, "the entry does not exist"),
