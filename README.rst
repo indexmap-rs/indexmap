@@ -23,11 +23,16 @@ __ https://docs.rs/ordermap/
 Using robin hood hashing just like Rust's libstd HashMap.
 
 - Has insert, lookup, grow
-- Remove is implemented, but it perturbs the insertion order.
-  It's the usual backwards shift deletion, but only on the index vector, so
-  it's cheaper.
-- original-insertion-order-preserving removal would want to be implemented with
-  tombstones, but I'm hesitant and not sure if it can be performant.
+- Remove is implemented.
+  - It's the usual backwards shift deletion, but only on the index vector, so
+    it's cheaper.
+  - Remove does not respect the insertion order and this is by design
+  - The consistent iteration order (indepentent of hash function) is the main
+    feature and affords us fast iteration, no pathological slowdowns or
+    hash function/iteration order based attacks.
+  - original-insertion-order-preserving removal would want to be implemented
+    with tombstones, but I've decided this is going to be a separately named
+    hash map. So: fork time.
 
 Performance:
 
