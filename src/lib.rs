@@ -226,7 +226,7 @@ impl<Sz> ShortHashProxy<Sz>
 /// for ch in "a short treatise on fungi".chars() {
 ///     *letters.entry(ch).or_insert(0) += 1;
 /// }
-/// 
+///
 /// assert_eq!(letters[&'s'], 2);
 /// assert_eq!(letters[&'t'], 3);
 /// assert_eq!(letters[&'u'], 1);
@@ -598,11 +598,30 @@ impl<K, V, S> OrderMap<K, V, S>
         }
     }
 
-    /// FIXME Not implemented fully yet
+    /// Reserves capacity for at least `additional` more elements to be
+    /// inserted.
+    ///
+    /// The collection may reserve more space to avoid frequent reallocations.
+    ///
+    /// Computes in **O(n)** time.
     pub fn reserve(&mut self, additional: usize) {
-        if additional > 0 {
-            self.reserve_one();
+        let new_len = self.len() + additional;
+        if new_len > self.capacity() {
+            let raw = to_raw_capacity(new_len);
+            let raw_cap = max(raw.next_power_of_two(), 8);
+            dispatch_32_vs_64!(self.change_capacity(raw_cap));
         }
+    }
+
+    /// Shrinks the capacity as much as possible.
+    ///
+    /// The collection may leave some space in accordance with the resize policy.
+    ///
+    /// Computes in **O(n)** time.
+    pub fn shrink_to_fit(&mut self) {
+        let raw = to_raw_capacity(self.len());
+        let raw_cap = max(raw.next_power_of_two(), 8);
+        dispatch_32_vs_64!(self.change_capacity(raw_cap));
     }
 
     // First phase: Look for the preferred location for key.
@@ -650,55 +669,105 @@ impl<K, V, S> OrderMap<K, V, S>
         insert_kind
     }
 
-    fn first_allocation(&mut self) {
-        debug_assert_eq!(self.len(), 0);
-        let raw_cap = 8usize;
-        self.mask = raw_cap.wrapping_sub(1);
-        self.indices = vec![Pos::none(); raw_cap];
-        self.entries = Vec::with_capacity(usable_capacity(raw_cap));
-    }
 
-    #[inline(never)]
-    // `Sz` is *current* Size class, before grow
-    fn double_capacity<Sz>(&mut self)
+    /// Changes the capacity of to be `new_raw_cap`.
+    ///
+    /// 'new_raw_cap' must be a power of two, and '>= self.len()`.
+    ///
+    /// `Sz` is *current* Size class, before grow
+    /// Computes in **O(n)** time.
+    fn change_capacity<Sz>(&mut self, new_raw_cap: usize)
         where Sz: Size
     {
-        debug_assert!(self.raw_capacity() == 0 || self.len() > 0);
-        if self.raw_capacity() == 0 {
-            return self.first_allocation();
+        debug_assert!(new_raw_cap.is_power_of_two());
+        debug_assert!(new_raw_cap >= self.len());
+
+        // skip if this is a no-op
+        if new_raw_cap == self.raw_capacity() {
+            return;
         }
 
-        // find first ideally placed element -- start of cluster
-        let mut first_ideal = 0;
-        for (i, index) in enumerate(&self.indices) {
-            if let Some(pos) = index.pos() {
-                if 0 == probe_distance(self.mask, self.entries[pos].hash, i) {
-                    first_ideal = i;
-                    break;
-                }
-            }
-        }
+        // Never allocate less than 8
+        let new_raw_cap = max(new_raw_cap, 8);
 
-        // visit the entries in an order where we can simply reinsert them
-        // into self.indices without any bucket stealing.
-        let new_raw_cap = self.indices.len() * 2;
+        // Adjust the raw capacity (indices)
         let old_indices = replace(&mut self.indices, vec![Pos::none(); new_raw_cap]);
         self.mask = new_raw_cap.wrapping_sub(1);
 
-        // `Sz` is the old size class, and either u32 or u64 is the new
-        for &pos in &old_indices[first_ideal..] {
-            dispatch_32_vs_64!(self.reinsert_entry_in_order::<Sz>(pos));
+        if new_raw_cap < self.raw_capacity() {
+            // Reinsert everything
+            dispatch_32_vs_64!(self.reinsert_entries());
+        } else if self.raw_capacity() != 0 {
+            // find first ideally placed element -- start of cluster
+            let first_ideal = enumerate(&old_indices).position(|(i, index)| {
+                if let Some((pos, hash_proxy)) = index.resolve::<Sz>() {
+                    let entry_hash = hash_proxy.get_short_hash(&self.entries, pos).into_hash();
+                    0 == probe_distance(self.mask, entry_hash, i)
+                } else {
+                    true
+                }
+            }).unwrap_or(0);
+
+            // `Sz` is the old size class, and either u32 or u64 is the new
+            dispatch_32_vs_64!(self.reinsert_entries_in_order::<Sz>(first_ideal, old_indices));
         }
 
-        for &pos in &old_indices[..first_ideal] {
-            dispatch_32_vs_64!(self.reinsert_entry_in_order::<Sz>(pos));
-        }
-        let more = self.capacity() - self.len();
+        // adjust the capacity (entries)
+        let more = usable_capacity(new_raw_cap) - self.len();
         self.entries.reserve_exact(more);
     }
 
-    // write to self.indices
-    // read from self.entries at `pos`
+    // write to `self.indices`
+    fn reinsert_entries<Sz>(&mut self)
+        where Sz: Size
+    {
+        for (mut index, bucket) in enumerate(&self.entries) {
+            let mut hash = bucket.hash;
+            let mut dist = 0;
+
+            // find first empty bucket and insert there
+            let mut probe = desired_pos(self.mask, hash);
+            probe_loop!(probe < self.indices.len(), {
+                if let Some((i, hash_proxy)) = self.indices[probe].resolve::<Sz>() {
+                    let entry_hash = hash_proxy.get_short_hash(&self.entries, i).into_hash();
+                    // if existing element probed less than us, swap
+                    let their_dist = probe_distance(self.mask, entry_hash, probe);
+                    if their_dist < dist {
+                        self.indices[probe] = Pos::with_hash::<Sz>(index, hash);
+                        hash = entry_hash;
+                        index = i;
+                        dist = their_dist;
+                    }
+                } else {
+                    // empty bucket, insert here
+                    self.indices[probe] = Pos::with_hash::<Sz>(index, hash);
+                    break;
+                }
+            });
+        }
+    }
+    // write to `self.indices`
+    // read from `self.entries`
+    //
+    // reinserting rewrites all `Pos` entries anyway. This handles transitioning
+    // from u32 to u64 size class if needed by using the two type parameters.
+    fn reinsert_entries_in_order<SzNew, SzOld>(&mut self, first_ideal: usize, old_indices: Vec<Pos>)
+        where SzNew: Size,
+              SzOld: Size,
+    {
+        // visit the entries in an order where we can simply reinsert them
+        // into self.indices without any bucket stealing.
+        for &pos in &old_indices[first_ideal..] {
+            self.reinsert_entry_in_order::<SzNew, SzOld>(pos);
+        }
+
+        for &pos in &old_indices[..first_ideal] {
+            self.reinsert_entry_in_order::<SzNew, SzOld>(pos);
+        }
+    }
+
+    // write to `self.indices`
+    // read from `self.entries` at `pos`
     //
     // reinserting rewrites all `Pos` entries anyway. This handles transitioning
     // from u32 to u64 size class if needed by using the two type parameters.
@@ -707,18 +776,11 @@ impl<K, V, S> OrderMap<K, V, S>
               SzOld: Size,
     {
         if let Some((i, hash_proxy)) = pos.resolve::<SzOld>() {
-            // only if the size class is conserved can we use the short hash
-            let entry_hash = if SzOld::is_same_size::<SzNew>() {
-                hash_proxy.get_short_hash(&self.entries, i).into_hash()
-            } else {
-                self.entries[i].hash
-            };
+            let entry_hash = hash_proxy.get_short_hash(&self.entries, i).into_hash();
             // find first empty bucket and insert there
             let mut probe = desired_pos(self.mask, entry_hash);
             probe_loop!(probe < self.indices.len(), {
-                if let Some(_) = self.indices[probe].resolve::<SzNew>() {
-                    /* nothing */
-                } else {
+                if self.indices[probe].resolve::<SzNew>().is_none() {
                     // empty bucket, insert here
                     self.indices[probe] = Pos::with_hash::<SzNew>(i, entry_hash);
                     return;
@@ -729,7 +791,8 @@ impl<K, V, S> OrderMap<K, V, S>
 
     fn reserve_one(&mut self) {
         if self.len() == self.capacity() {
-            dispatch_32_vs_64!(self.double_capacity());
+            let raw_cap = max(self.raw_capacity()*2, 8);
+            dispatch_32_vs_64!(self.change_capacity(raw_cap));
         }
     }
 
@@ -1214,7 +1277,7 @@ impl<'a, K, V> Iterator for IterMut<'a, K, V> {
     fn size_hint(&self) -> (usize, Option<usize>) {
         self.iter.size_hint()
     }
-    
+
     fn count(self) -> usize {
         self.iter.len()
     }
@@ -1459,6 +1522,25 @@ mod tests {
         for (i, k) in (0..insert.len()).zip(map.keys()) {
             assert_eq!(map.get_index(i).unwrap().0, k);
         }
+    }
+
+    #[test]
+    fn reserve() {
+        let mut map = OrderMap::new();
+        map.reserve(90);
+        assert_eq!(map.capacity(), 96);
+        map.shrink_to_fit();
+        assert_eq!(map.capacity(), 6);
+
+        let insert = [0, 4, 2, 12];
+        for &elt in &insert {
+            map.insert(elt, ());
+        }
+        assert_eq!(map.capacity(), 6);
+        map.reserve(90);
+        assert_eq!(map.capacity(), 96);
+        map.shrink_to_fit();
+        assert_eq!(map.capacity(), 6);
     }
 
     #[test]
