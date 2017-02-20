@@ -67,6 +67,41 @@ quickcheck! {
             elements.iter().all(|k| map.get(k).is_some())
     }
 
+    fn insert_ordered_remove(insert: Vec<u8>, remove: Vec<u8>) -> bool {
+        let mut map = OrderMap::new();
+        for &key in &insert {
+            map.insert(key, ());
+        }
+        for &key in &remove {
+            map.ordered_remove_pair(&key);
+        }
+        let elements = &set(&insert) - &set(&remove);
+        map.len() == elements.len() && map.iter().count() == elements.len() &&
+            elements.iter().all(|k| map.get(k).is_some())
+    }
+
+    fn insert_ordered_remove_order(insert: Vec<u8>, remove: Vec<u8>, insert_more: Vec<u8>)
+            -> bool
+    {
+        let mut map = OrderMap::new();
+        for &key in &insert {
+            map.insert(key, ());
+        }
+        for &key in &remove {
+            map.ordered_remove(&key);
+        }
+        for &key in &insert_more {
+            map.insert(key, ());
+        }
+        let remove = set(&remove);
+
+        let mut vec = insert;
+        vec.retain(|x| !remove.contains(x));
+        vec.extend(insert_more);
+        itertools::assert_equal(vec.iter().unique(), map.keys());
+        true
+    }
+
     fn insertion_order(insert: Vec<u32>) -> bool {
         let mut map = OrderMap::new();
         for &key in &insert {
