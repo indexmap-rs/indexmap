@@ -188,6 +188,35 @@ quickcheck! {
         assert_maps_equivalent(&map, &reference)
     }
 
+    fn keys_values(ops: Large<Vec<Op<i8, i8>>>) -> bool {
+        let mut map = OrderMap::new();
+        let mut reference = HashMap::new();
+        do_ops(&ops, &mut map, &mut reference);
+        let mut visit = OrderMap::new();
+        for (k, v) in map.keys().zip(map.values()) {
+            assert_eq!(&map[k], v);
+            assert!(!visit.contains_key(k));
+            visit.insert(*k, *v);
+        }
+        assert_eq!(visit.len(), reference.len());
+        true
+    }
+
+    fn keys_values_mut(ops: Large<Vec<Op<i8, i8>>>) -> bool {
+        let mut map = OrderMap::new();
+        let mut reference = HashMap::new();
+        do_ops(&ops, &mut map, &mut reference);
+        let mut visit = OrderMap::new();
+        let keys = Vec::from_iter(map.keys().cloned());
+        for (k, v) in keys.iter().zip(map.values_mut()) {
+            assert_eq!(&reference[k], v);
+            assert!(!visit.contains_key(k));
+            visit.insert(*k, *v);
+        }
+        assert_eq!(visit.len(), reference.len());
+        true
+    }
+
     fn retain(keys: Large<Vec<i8>>, remove: Large<Vec<i8>>) -> bool {
         let mut map = ordermap(keys.iter());
         let remove_map = ordermap(remove.iter());
