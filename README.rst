@@ -72,6 +72,11 @@ Where to go from here?
 Recent Changes
 --------------
 
+- 0.2.8
+
+  - Add iterators ``values()`` and ``.values_mut()``
+  - Fix compatibility with 32-bit platforms
+
 - 0.2.7
 
   - Add ``.retain()``
