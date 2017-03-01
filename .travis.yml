@@ -5,6 +5,9 @@ matrix:
     - rust: stable
     - rust: beta
     - rust: nightly
+    - rust: nightly
+      env:
+       - FEATURES='test_low_transition_point'
 branches:
   only:
     - master

@@ -141,7 +141,7 @@ impl Pos {
             }
         } else {
             Pos {
-                index: (i | (lo32(hash.0 as u64) << 32)) as u64
+                index: i as u64 | ((hash.0 as u64) << 32)
             }
         }
     }
