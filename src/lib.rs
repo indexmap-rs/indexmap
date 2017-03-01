@@ -762,13 +762,6 @@ impl<K, V, S> OrderMap<K, V, S>
         }
     }
 
-    /// Return an iterator over the keys of the map, in their order
-    pub fn keys(&self) -> Keys<K, V> {
-        Keys {
-            iter: self.entries.iter()
-        }
-    }
-
     /// Return an iterator over the key-value pairs of the map, in their order
     pub fn iter(&self) -> Iter<K, V> {
         Iter {
@@ -779,6 +772,28 @@ impl<K, V, S> OrderMap<K, V, S>
     /// Return an iterator over the key-value pairs of the map, in their order
     pub fn iter_mut(&mut self) -> IterMut<K, V> {
         IterMut {
+            iter: self.entries.iter_mut()
+        }
+    }
+
+    /// Return an iterator over the keys of the map, in their order
+    pub fn keys(&self) -> Keys<K, V> {
+        Keys {
+            iter: self.entries.iter()
+        }
+    }
+
+    /// Return an iterator over the values of the map, in their order
+    pub fn values(&self) -> Values<K, V> {
+        Values {
+            iter: self.entries.iter()
+        }
+    }
+
+    /// Return an iterator over mutable references to the the values of the map,
+    /// in their order
+    pub fn values_mut(&mut self) -> ValuesMut<K, V> {
+        ValuesMut {
             iter: self.entries.iter_mut()
         }
     }
@@ -1163,6 +1178,74 @@ impl<'a, K, V> Iterator for Keys<'a, K, V> {
 impl<'a, K, V> DoubleEndedIterator for Keys<'a, K, V> {
     fn next_back(&mut self) -> Option<&'a K> {
         self.iter.next_back().map(|ent| &ent.key)
+    }
+}
+
+pub struct Values<'a, K: 'a, V: 'a> {
+    iter: SliceIter<'a, Bucket<K, V>>,
+}
+
+impl<'a, K, V> Iterator for Values<'a, K, V> {
+    type Item = &'a V;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.iter.next().map(|ent| &ent.value)
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.iter.size_hint()
+    }
+
+    fn count(self) -> usize {
+        self.iter.len()
+    }
+
+    fn nth(&mut self, n: usize) -> Option<Self::Item> {
+        self.iter.nth(n).map(|ent| &ent.value)
+    }
+
+    fn last(mut self) -> Option<Self::Item> {
+        self.next_back()
+    }
+}
+
+impl<'a, K, V> DoubleEndedIterator for Values<'a, K, V> {
+    fn next_back(&mut self) -> Option<Self::Item> {
+        self.iter.next_back().map(|ent| &ent.value)
+    }
+}
+
+pub struct ValuesMut<'a, K: 'a, V: 'a> {
+    iter: SliceIterMut<'a, Bucket<K, V>>,
+}
+
+impl<'a, K, V> Iterator for ValuesMut<'a, K, V> {
+    type Item = &'a mut V;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.iter.next().map(|ent| &mut ent.value)
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.iter.size_hint()
+    }
+
+    fn count(self) -> usize {
+        self.iter.len()
+    }
+
+    fn nth(&mut self, n: usize) -> Option<Self::Item> {
+        self.iter.nth(n).map(|ent| &mut ent.value)
+    }
+
+    fn last(mut self) -> Option<Self::Item> {
+        self.next_back()
+    }
+}
+
+impl<'a, K, V> DoubleEndedIterator for ValuesMut<'a, K, V> {
+    fn next_back(&mut self) -> Option<Self::Item> {
+        self.iter.next_back().map(|ent| &mut ent.value)
     }
 }
 
