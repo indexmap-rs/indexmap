@@ -373,6 +373,11 @@ impl<K, V, S> OrderMap<K, V, S>
     /// Computes in **O(1)** time.
     pub fn len(&self) -> usize { self.entries.len() }
 
+    /// Returns true if the map contains no elements.
+    ///
+    /// Computes in **O(1)** time.
+    pub fn is_empty(&self) -> bool { self.len() == 0 }
+
     // Return whether we need 32 or 64 bits to specify a bucket or entry index
     #[cfg(not(feature = "test_low_transition_point"))]
     fn size_class_is_64bit(&self) -> bool {
@@ -1466,10 +1471,12 @@ mod tests {
     #[test]
     fn it_works() {
         let mut map = OrderMap::new();
+        assert_eq!(map.is_empty(), true);
         map.insert(1, ());
         map.insert(1, ());
         assert_eq!(map.len(), 1);
         assert!(map.get(&1).is_some());
+        assert_eq!(map.is_empty(), false);
     }
 
     #[test]
@@ -1478,6 +1485,7 @@ mod tests {
         println!("{:?}", map);
         assert_eq!(map.capacity(), 0);
         assert_eq!(map.len(), 0);
+        assert_eq!(map.is_empty(), true);
     }
 
     #[test]
