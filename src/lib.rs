@@ -1463,12 +1463,13 @@ impl<K, V, S> Default for OrderMap<K, V, S>
     }
 }
 
-impl<K, V, S> PartialEq for OrderMap<K, V, S>
-    where K: Eq + Hash,
-          V: PartialEq,
-          S: BuildHasher
+impl<K, V1, S1, V2, S2> PartialEq<OrderMap<K, V2, S2>> for OrderMap<K, V1, S1>
+    where K: Hash + Eq,
+          V1: PartialEq<V2>,
+          S1: BuildHasher,
+          S2: BuildHasher
 {
-    fn eq(&self, other: &OrderMap<K, V, S>) -> bool {
+    fn eq(&self, other: &OrderMap<K, V2, S2>) -> bool {
         if self.len() != other.len() {
             return false;
         }
@@ -1667,11 +1668,15 @@ mod tests {
     #[test]
     fn partial_eq_and_eq() {
         let mut map_a = OrderMap::new();
-        map_a.insert(1, 1);
-        map_a.insert(2, 2);
+        map_a.insert(1, "1");
+        map_a.insert(2, "2");
         let mut map_b = map_a.clone();
         assert_eq!(map_a, map_b);
         map_b.remove(&1);
         assert_ne!(map_a, map_b);
+
+        let map_c: OrderMap<_, String> = map_b.into_iter().map(|(k, v)| (k, v.to_owned())).collect();
+        assert_ne!(map_a, map_c);
+        assert_ne!(map_c, map_a);
     }
 }
