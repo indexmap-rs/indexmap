@@ -1474,6 +1474,28 @@ impl<K, V, S> Default for OrderMap<K, V, S>
     }
 }
 
+impl<K, V1, S1, V2, S2> PartialEq<OrderMap<K, V2, S2>> for OrderMap<K, V1, S1>
+    where K: Hash + Eq,
+          V1: PartialEq<V2>,
+          S1: BuildHasher,
+          S2: BuildHasher
+{
+    fn eq(&self, other: &OrderMap<K, V2, S2>) -> bool {
+        if self.len() != other.len() {
+            return false;
+        }
+
+        self.iter().all(|(key, value)| other.get(key).map_or(false, |v| *value == *v))
+    }
+}
+
+impl<K, V, S> Eq for OrderMap<K, V, S>
+    where K: Eq + Hash,
+          V: Eq,
+          S: BuildHasher
+{
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1652,5 +1674,20 @@ mod tests {
         for (a, b) in vector.iter().zip(map.keys()) {
             assert_eq!(a, b);
         }
+    }
+
+    #[test]
+    fn partial_eq_and_eq() {
+        let mut map_a = OrderMap::new();
+        map_a.insert(1, "1");
+        map_a.insert(2, "2");
+        let mut map_b = map_a.clone();
+        assert_eq!(map_a, map_b);
+        map_b.remove(&1);
+        assert_ne!(map_a, map_b);
+
+        let map_c: OrderMap<_, String> = map_b.into_iter().map(|(k, v)| (k, v.to_owned())).collect();
+        assert_ne!(map_a, map_c);
+        assert_ne!(map_c, map_a);
     }
 }
