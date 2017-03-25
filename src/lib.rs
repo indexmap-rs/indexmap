@@ -10,7 +10,7 @@ use std::hash::Hasher;
 use std::collections::hash_map::RandomState;
 use std::borrow::Borrow;
 
-use std::cmp::max;
+use std::cmp::{max, Ordering};
 use std::fmt;
 use std::mem::{replace};
 use std::marker::PhantomData;
@@ -967,6 +967,17 @@ impl<K, V, S> OrderMap<K, V, S>
             self.swap_remove_index(i);
             // skip increment on remove
         }
+    }
+
+    /// Sort the key-value pairs of the map and return a by value iterator of
+    /// the key-value pairs with the result.
+    ///
+    /// The sort is stable.
+    pub fn sorted_by<F>(mut self, mut cmp: F) -> IntoIter<K, V>
+        where F: FnMut(&K, &V, &K, &V) -> Ordering
+    {
+        self.entries.sort_by(move |a, b| cmp(&a.key, &a.value, &b.key, &b.value));
+        self.into_iter()
     }
 }
 

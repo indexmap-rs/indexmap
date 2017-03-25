@@ -1,0 +1,20 @@
+
+#[macro_use]
+extern crate ordermap;
+extern crate itertools;
+
+
+#[test]
+fn test_sort() {
+    let m = ordermap! {
+        1 => 2,
+        7 => 1,
+        2 => 2,
+        3 => 3,
+    };
+
+    itertools::assert_equal(m.sorted_by(|_k1, v1, _k2, v2| v1.cmp(v2)),
+                            vec![(7, 1), (1, 2), (2, 2), (3, 3)]);
+}
+
+
