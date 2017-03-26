@@ -26,3 +26,6 @@ test_debug = []
 
 [profile.bench]
 debug = true
+
+[package.metadata.release]
+no-dev-version = true
