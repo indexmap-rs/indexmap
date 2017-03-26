@@ -72,6 +72,12 @@ Where to go from here?
 Recent Changes
 --------------
 
+- 0.2.9
+
+  - Add method ``.is_empty()`` by @overvenus
+  - Implement ``PartialEq, Eq`` by @overvenus
+  - Add method ``.sorted_by()``
+
 - 0.2.8
 
   - Add iterators ``values()`` and ``.values_mut()``
