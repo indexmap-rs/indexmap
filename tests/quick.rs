@@ -4,11 +4,18 @@ extern crate itertools;
 #[macro_use]
 extern crate quickcheck;
 
+extern crate fnv;
+
 use ordermap::OrderMap;
 use itertools::Itertools;
 
 use quickcheck::Arbitrary;
 use quickcheck::Gen;
+
+use fnv::FnvHasher;
+use std::hash::{BuildHasher, BuildHasherDefault};
+type FnvBuilder = BuildHasherDefault<FnvHasher>;
+type OrderMapFnv<K, V> = OrderMap<K, V, FnvBuilder>;
 
 use std::collections::HashSet;
 use std::collections::HashMap;
@@ -17,6 +24,7 @@ use std::hash::Hash;
 use std::fmt::Debug;
 use std::ops::Deref;
 use std::cmp::min;
+
 
 use ordermap::Entry as OEntry;
 use std::collections::hash_map::Entry as HEntry;
@@ -31,7 +39,7 @@ fn set<'a, T: 'a, I>(iter: I) -> HashSet<T>
 
 fn ordermap<'a, T: 'a, I>(iter: I) -> OrderMap<T, ()>
     where I: IntoIterator<Item=&'a T>,
-    T: Copy + Hash + Eq
+          T: Copy + Hash + Eq,
 {
     OrderMap::from_iter(iter.into_iter().cloned().map(|k| (k, ())))
 }
@@ -122,9 +130,10 @@ impl<K, V> Arbitrary for Op<K, V>
     }
 }
 
-fn do_ops<K, V>(ops: &[Op<K, V>], a: &mut OrderMap<K, V>, b: &mut HashMap<K, V>)
+fn do_ops<K, V, S>(ops: &[Op<K, V>], a: &mut OrderMap<K, V, S>, b: &mut HashMap<K, V>)
     where K: Hash + Eq + Clone,
           V: Clone,
+          S: BuildHasher,
 {
     for op in ops {
         match *op {
@@ -214,6 +223,17 @@ quickcheck! {
             visit.insert(*k, *v);
         }
         assert_eq!(visit.len(), reference.len());
+        true
+    }
+
+    fn equality(ops1: Vec<Op<i8, i8>>, ops2: Vec<Op<i8, i8>>) -> bool {
+        let mut map = OrderMap::new();
+        let mut reference = HashMap::new();
+        do_ops(&ops1, &mut map, &mut reference);
+        let mut map2 = OrderMapFnv::default();
+        let mut reference2 = HashMap::new();
+        do_ops(&ops1, &mut map2, &mut reference2);
+        assert_eq!(map == map2, reference == reference2);
         true
     }
 
