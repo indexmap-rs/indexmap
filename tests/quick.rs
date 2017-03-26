@@ -226,13 +226,20 @@ quickcheck! {
         true
     }
 
-    fn equality(ops1: Vec<Op<i8, i8>>, ops2: Vec<Op<i8, i8>>) -> bool {
+    fn equality(ops1: Vec<Op<i8, i8>>, removes: Vec<usize>) -> bool {
         let mut map = OrderMap::new();
         let mut reference = HashMap::new();
         do_ops(&ops1, &mut map, &mut reference);
+        let mut ops2 = ops1.clone();
+        for &r in &removes {
+            if !ops2.is_empty() {
+                let i = r % ops2.len();
+                ops2.remove(i);
+            }
+        }
         let mut map2 = OrderMapFnv::default();
         let mut reference2 = HashMap::new();
-        do_ops(&ops1, &mut map2, &mut reference2);
+        do_ops(&ops2, &mut map2, &mut reference2);
         assert_eq!(map == map2, reference == reference2);
         true
     }
