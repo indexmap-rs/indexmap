@@ -400,6 +400,18 @@ impl<K, V, S> OrderMap<K, V, S>
     pub fn capacity(&self) -> usize {
         usable_capacity(self.raw_capacity())
     }
+
+    /// Clears the `OrderMap`, returning all key-value pairs as a `Drain`.
+    /// Keeps the allocated memory for reuse.
+    pub fn drain(&mut self) -> Drain<K, V> {
+        for i in &mut self.indices {
+            *i = Pos::none();
+        }
+
+        Drain {
+            inner: self.entries.drain(..),
+        }
+    }
 }
 
 /// Trait for the "size class". Either u32 or u64 depending on the index
@@ -1496,6 +1508,17 @@ impl<K, V, S> Eq for OrderMap<K, V, S>
 {
 }
 
+pub struct Drain<'a, K, V> where K: 'a, V: 'a {
+    inner: ::std::vec::Drain<'a, Bucket<K, V>>
+}
+
+impl<'a, K, V> Iterator for Drain<'a, K, V> {
+    type Item = (K, V);
+    fn next(&mut self) -> Option<Self::Item> {
+        self.inner.next().map(|bucket| (bucket.key, bucket.value))
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1689,5 +1712,40 @@ mod tests {
         let map_c: OrderMap<_, String> = map_b.into_iter().map(|(k, v)| (k, v.to_owned())).collect();
         assert_ne!(map_a, map_c);
         assert_ne!(map_c, map_a);
+    }
+
+
+    #[test]
+    fn drain_basic() {
+        let mut map_a = OrderMap::new();
+        map_a.insert(1, "1");
+        map_a.insert(2, "2");
+        let entries: Vec<(u32, &str)> = map_a.drain().collect();
+        assert!(map_a.is_empty());
+        assert_eq!(entries.len(), 2);
+        assert!(map_a.is_empty());
+
+        map_a.insert(3, "3");
+        assert!(!map_a.is_empty());
+        assert_eq!(map_a.len(), 1);
+        assert!(map_a.get(&3).is_some());
+        assert!(map_a.get(&1).is_none());
+    }
+
+    #[test]
+    fn drain_after_resize() {
+        let mut map_a = OrderMap::with_capacity(2);
+        map_a.insert(1, "1");
+        map_a.insert(2, "2");
+        map_a.insert(3, "3");
+        let entries: Vec<(u32, &str)> = map_a.drain().collect();
+        assert!(map_a.is_empty());
+        assert_eq!(entries.len(), 3);
+
+        map_a.insert(4, "4");
+        assert!(!map_a.is_empty());
+        assert_eq!(map_a.len(), 1);
+        assert!(map_a.get(&4).is_some());
+        assert!(map_a.get(&1).is_none());
     }
 }
