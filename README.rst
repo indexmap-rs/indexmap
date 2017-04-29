@@ -72,6 +72,10 @@ Where to go from here?
 Recent Changes
 --------------
 
+- 0.2.10
+
+  - Add iterator ``.drain(..)`` by @stevej
+
 - 0.2.9
 
   - Add method ``.is_empty()`` by @overvenus
