@@ -105,6 +105,18 @@ quickcheck! {
         map.capacity() >= cap
     }
 
+    fn drain(insert: Vec<u8>) -> bool {
+        let mut map = OrderMap::new();
+        for &key in &insert {
+            map.insert(key, ());
+        }
+        let mut clone = map.clone();
+        let drained = clone.drain(..);
+        for (key, _) in drained {
+            map.remove(&key);
+        }
+        map.is_empty()
+    }
 }
 
 use Op::*;

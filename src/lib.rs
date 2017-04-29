@@ -9,6 +9,7 @@ use std::hash::BuildHasher;
 use std::hash::Hasher;
 use std::collections::hash_map::RandomState;
 use std::borrow::Borrow;
+use std::ops::RangeFull;
 
 use std::cmp::{max, Ordering};
 use std::fmt;
@@ -979,6 +980,17 @@ impl<K, V, S> OrderMap<K, V, S>
         self.entries.sort_by(move |a, b| cmp(&a.key, &a.value, &b.key, &b.value));
         self.into_iter()
     }
+    /// Clears the `OrderMap`, returning all key-value pairs as a drain iterator.
+    /// Keeps the allocated memory for reuse.
+    pub fn drain(&mut self, range: RangeFull) -> Drain<K, V> {
+        for i in &mut self.indices {
+            *i = Pos::none();
+        }
+
+        Drain {
+            inner: self.entries.drain(range),
+        }
+    }
 }
 
 impl<K, V, S> OrderMap<K, V, S> {
@@ -1494,6 +1506,20 @@ impl<K, V, S> Eq for OrderMap<K, V, S>
           V: Eq,
           S: BuildHasher
 {
+}
+
+pub struct Drain<'a, K, V> where K: 'a, V: 'a {
+    inner: ::std::vec::Drain<'a, Bucket<K, V>>
+}
+
+impl<'a, K, V> Iterator for Drain<'a, K, V> {
+    type Item = (K, V);
+    fn next(&mut self) -> Option<Self::Item> {
+        self.inner.next().map(|bucket| (bucket.key, bucket.value))
+    }
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.inner.size_hint()
+    }
 }
 
 #[cfg(test)]
