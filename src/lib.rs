@@ -1209,6 +1209,12 @@ impl<'a, K, V> DoubleEndedIterator for Keys<'a, K, V> {
     }
 }
 
+impl<'a, K, V> ExactSizeIterator for Keys<'a, K, V> {
+    fn len(&self) -> usize {
+        self.iter.len()
+    }
+}
+
 pub struct Values<'a, K: 'a, V: 'a> {
     iter: SliceIter<'a, Bucket<K, V>>,
 }
@@ -1240,6 +1246,12 @@ impl<'a, K, V> Iterator for Values<'a, K, V> {
 impl<'a, K, V> DoubleEndedIterator for Values<'a, K, V> {
     fn next_back(&mut self) -> Option<Self::Item> {
         self.iter.next_back().map(|ent| &ent.value)
+    }
+}
+
+impl<'a, K, V> ExactSizeIterator for Values<'a, K, V> {
+    fn len(&self) -> usize {
+        self.iter.len()
     }
 }
 
@@ -1277,6 +1289,12 @@ impl<'a, K, V> DoubleEndedIterator for ValuesMut<'a, K, V> {
     }
 }
 
+impl<'a, K, V> ExactSizeIterator for ValuesMut<'a, K, V> {
+    fn len(&self) -> usize {
+        self.iter.len()
+    }
+}
+
 pub struct Iter<'a, K: 'a, V: 'a> {
     iter: SliceIter<'a, Bucket<K, V>>,
 }
@@ -1308,6 +1326,12 @@ impl<'a, K, V> Iterator for Iter<'a, K, V> {
 impl<'a, K, V> DoubleEndedIterator for Iter<'a, K, V> {
     fn next_back(&mut self) -> Option<Self::Item> {
         self.iter.next_back().map(|e| (&e.key, &e.value))
+    }
+}
+
+impl<'a, K, V> ExactSizeIterator for Iter<'a, K, V> {
+    fn len(&self) -> usize {
+        self.iter.len()
     }
 }
 
@@ -1345,6 +1369,12 @@ impl<'a, K, V> DoubleEndedIterator for IterMut<'a, K, V> {
     }
 }
 
+impl<'a, K, V> ExactSizeIterator for IterMut<'a, K, V> {
+    fn len(&self) -> usize {
+        self.iter.len()
+    }
+}
+
 pub struct IntoIter<K, V> {
     iter: VecIntoIter<Bucket<K, V>>,
 }
@@ -1378,6 +1408,13 @@ impl<'a, K, V> DoubleEndedIterator for IntoIter<K, V> {
         self.iter.next_back().map(|e| (e.key, e.value))
     }
 }
+
+impl<K, V> ExactSizeIterator for IntoIter<K, V> {
+    fn len(&self) -> usize {
+        self.iter.len()
+    }
+}
+
 
 impl<'a, K, V, S> IntoIterator for &'a OrderMap<K, V, S>
     where K: Hash + Eq,
