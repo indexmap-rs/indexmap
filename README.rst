@@ -24,6 +24,7 @@ Using robin hood hashing just like Rust's libstd HashMap.
 
 - Has insert, lookup, grow
 - Remove is implemented.
+
   - It's the usual backwards shift deletion, but only on the index vector, so
     it's cheaper.
   - Remove does not respect the insertion order and this is by design
@@ -34,7 +35,7 @@ Using robin hood hashing just like Rust's libstd HashMap.
     with tombstones, but I've decided this is going to be a separately named
     hash map. So: fork time.
 
-Performance:
+Performance (Figures from late 2016)
 
 - Iteration is very fast
 - Lookup is faster than libstd HashMap for "small" tables (below something like
