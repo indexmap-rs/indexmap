@@ -2,7 +2,10 @@ language: rust
 sudo: false
 matrix:
   include:
+    - rust: 1.18.0
     - rust: stable
+      env:
+       - FEATURES='serde'
     - rust: beta
     - rust: nightly
     - rust: nightly
