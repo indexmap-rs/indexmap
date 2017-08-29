@@ -1517,6 +1517,16 @@ impl<K, V, S> Extend<(K, V)> for OrderMap<K, V, S>
     }
 }
 
+impl<'a, K, V, S> Extend<(&'a K, &'a V)> for OrderMap<K, V, S>
+    where K: Hash + Eq + Copy,
+          V: Copy,
+          S: BuildHasher,
+{
+    fn extend<I: IntoIterator<Item=(&'a K, &'a V)>>(&mut self, iterable: I) {
+        self.extend(iterable.into_iter().map(|(&key, &value)| (key, value)));
+    }
+}
+
 impl<K, V, S> Default for OrderMap<K, V, S>
     where S: BuildHasher + Default,
 {
