@@ -239,7 +239,7 @@ impl<Sz> ShortHashProxy<Sz>
 pub struct OrderMap<K, V, S = RandomState> {
     mask: usize,
     /// indices are the buckets. indices.len() == raw capacity
-    indices: Vec<Pos>,
+    indices: Box<[Pos]>,
     /// entries is a dense vec of entries in their order. entries.len() == len
     entries: Vec<Bucket<K, V>>,
     hash_builder: S,
@@ -283,7 +283,7 @@ impl<K, V, S> fmt::Debug for OrderMap<K, V, S>
             return Ok(());
         }
         try!(writeln!(f, ""));
-        for (i, index) in enumerate(&self.indices) {
+        for (i, index) in enumerate(&*self.indices) {
             try!(write!(f, "{}: {:?}", i, index));
             if let Some(pos) = index.pos() {
                 let hash = self.entries[pos].hash;
@@ -355,7 +355,7 @@ impl<K, V, S> OrderMap<K, V, S>
         if n == 0 {
             OrderMap {
                 mask: 0,
-                indices: Vec::new(),
+                indices: Box::new([]),
                 entries: Vec::new(),
                 hash_builder: hash_builder,
             }
@@ -364,7 +364,7 @@ impl<K, V, S> OrderMap<K, V, S>
             let raw_cap = max(raw.next_power_of_two(), 8);
             OrderMap {
                 mask: raw_cap.wrapping_sub(1),
-                indices: vec![Pos::none(); raw_cap],
+                indices: vec![Pos::none(); raw_cap].into_boxed_slice(),
                 entries: Vec::with_capacity(usable_capacity(raw_cap)),
                 hash_builder: hash_builder,
             }
@@ -601,7 +601,7 @@ impl<K, V, S> OrderMap<K, V, S>
     /// Computes in **O(n)** time.
     pub fn clear(&mut self) {
         self.entries.clear();
-        for pos in &mut self.indices {
+        for pos in &mut *self.indices {
             *pos = Pos::none();
         }
     }
@@ -662,7 +662,7 @@ impl<K, V, S> OrderMap<K, V, S>
         debug_assert_eq!(self.len(), 0);
         let raw_cap = 8usize;
         self.mask = raw_cap.wrapping_sub(1);
-        self.indices = vec![Pos::none(); raw_cap];
+        self.indices = vec![Pos::none(); raw_cap].into_boxed_slice();
         self.entries = Vec::with_capacity(usable_capacity(raw_cap));
     }
 
@@ -678,7 +678,7 @@ impl<K, V, S> OrderMap<K, V, S>
 
         // find first ideally placed element -- start of cluster
         let mut first_ideal = 0;
-        for (i, index) in enumerate(&self.indices) {
+        for (i, index) in enumerate(&*self.indices) {
             if let Some(pos) = index.pos() {
                 if 0 == probe_distance(self.mask, self.entries[pos].hash, i) {
                     first_ideal = i;
@@ -690,7 +690,7 @@ impl<K, V, S> OrderMap<K, V, S>
         // visit the entries in an order where we can simply reinsert them
         // into self.indices without any bucket stealing.
         let new_raw_cap = self.indices.len() * 2;
-        let old_indices = replace(&mut self.indices, vec![Pos::none(); new_raw_cap]);
+        let old_indices = replace(&mut self.indices, vec![Pos::none(); new_raw_cap].into_boxed_slice());
         self.mask = new_raw_cap.wrapping_sub(1);
 
         // `Sz` is the old size class, and either u32 or u64 is the new
@@ -985,7 +985,7 @@ impl<K, V, S> OrderMap<K, V, S>
     /// Clears the `OrderMap`, returning all key-value pairs as a drain iterator.
     /// Keeps the allocated memory for reuse.
     pub fn drain(&mut self, range: RangeFull) -> Drain<K, V> {
-        for i in &mut self.indices {
+        for i in &mut *self.indices {
             *i = Pos::none();
         }
 
