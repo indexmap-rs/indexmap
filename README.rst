@@ -73,6 +73,12 @@ Where to go from here?
 Recent Changes
 --------------
 
+- 0.2.11
+
+  - Support ``ExactSizeIterator`` for the iterators. By @Binero
+  - Use ``Box<[Pos]>`` internally, saving a word in the OrderMap struct.
+  - Serde support, with crate feature ``"serde-1"``. By @xfix
+
 - 0.2.10
 
   - Add iterator ``.drain(..)`` by @stevej
