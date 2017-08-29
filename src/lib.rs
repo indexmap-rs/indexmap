@@ -1765,4 +1765,12 @@ mod tests {
         assert_ne!(map_a, map_c);
         assert_ne!(map_c, map_a);
     }
+
+    #[test]
+    fn extend() {
+        let mut map = OrderMap::new();
+        map.extend(vec![(&1, &2), (&3, &4)]);
+        map.extend(vec![(5, 6)]);
+        assert_eq!(map.into_iter().collect::<Vec<_>>(), vec![(1, 2), (3, 4), (5, 6)]);
+    }
 }
