@@ -2,7 +2,7 @@
 #![doc(html_root_url = "https://docs.rs/ordermap/0.2/")]
 
 mod macros;
-#[cfg(feature = "serde")]
+#[cfg(feature = "serde-1")]
 mod serde;
 mod util;
 

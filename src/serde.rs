@@ -10,6 +10,7 @@ use std::marker::PhantomData;
 
 use OrderMap;
 
+/// Requires crate feature `"serde-1"`
 impl<K, V, S> Serialize for OrderMap<K, V, S>
     where K: Serialize + Hash + Eq,
           V: Serialize,
@@ -51,6 +52,7 @@ impl<'de, K, V> Visitor<'de> for OrderMapVisitor<K, V>
     }
 }
 
+/// Requires crate feature `"serde-1"`
 impl<'de, K, V> Deserialize<'de> for OrderMap<K, V>
     where K: Deserialize<'de> + Eq + Hash,
           V: Deserialize<'de>

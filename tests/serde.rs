@@ -1,4 +1,4 @@
-#![cfg(feature = "serde")]
+#![cfg(feature = "serde-1")]
 
 #[macro_use]
 extern crate ordermap;

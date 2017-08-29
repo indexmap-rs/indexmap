@@ -5,7 +5,7 @@ matrix:
     - rust: 1.18.0
     - rust: stable
       env:
-       - FEATURES='serde'
+       - FEATURES='serde-1'
     - rust: beta
     - rust: nightly
     - rust: nightly

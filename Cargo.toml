@@ -22,6 +22,9 @@ lazy_static = "0.2"
 serde_test = "1.0.5"
 
 [features]
+# Serialization with serde 1.0
+serde-1 = ["serde"]
+
 # for testing only, of course
 test_low_transition_point = []
 test_debug = []
@@ -31,3 +34,6 @@ debug = true
 
 [package.metadata.release]
 no-dev-version = true
+
+[package.metadata.docs.rs]
+features = ["serde-1"]
