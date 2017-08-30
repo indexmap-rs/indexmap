@@ -381,6 +381,20 @@ impl<K, V, S> OrderMap<K, V, S>
     /// Computes in **O(1)** time.
     pub fn is_empty(&self) -> bool { self.len() == 0 }
 
+    /// Create a new map with `hash_builder`
+    pub fn with_hasher(hash_builder: S) -> Self
+        where S: BuildHasher
+    {
+        Self::with_capacity_and_hasher(0, hash_builder)
+    }
+
+    /// Return a reference to the map's `BuildHasher`.
+    pub fn hasher(&self) -> &S
+        where S: BuildHasher
+    {
+        &self.hash_builder
+    }
+
     // Return whether we need 32 or 64 bits to specify a bucket or entry index
     #[cfg(not(feature = "test_low_transition_point"))]
     fn size_class_is_64bit(&self) -> bool {
