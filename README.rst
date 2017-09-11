@@ -73,6 +73,10 @@ Where to go from here?
 Recent Changes
 --------------
 
+- 0.2.12
+
+  - Add methods ``.with_hasher()``, ``.hasher()``
+
 - 0.2.11
 
   - Support ``ExactSizeIterator`` for the iterators. By @Binero
