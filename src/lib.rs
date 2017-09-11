@@ -168,6 +168,21 @@ impl Pos {
             }
         }
     }
+
+    #[inline]
+    fn update_index<Sz, F>(&mut self, updater: F)
+        where Sz: Size,
+              F: FnOnce(usize) -> usize
+    {
+        if !self.is_none() {
+            if Sz::is_64_bit() {
+                self.index = updater(self.index as usize) as u64;
+            } else {
+                let (index, hash) = split_lo_hi(self.index);
+                self.index = updater(index as usize) as u64 | ((hash as u64) << 32);
+            }
+        }
+    }
 }
 
 #[inline]
@@ -926,14 +941,17 @@ impl<K, V, S> OrderMap<K, V, S>
         self.swap_remove_pair(key).map(second)
     }
 
-    /// FIXME Same as .swap_remove
+    /// Remove the key-value pair equivalent to `key`, preserving order.
     ///
-    /// Computes in **O(1)** time (average).
-    pub fn remove<Q: ?Sized>(&mut self, key: &Q) -> Option<V>
+    /// To preserve order, this operation runs in linear time, so you
+    /// should use `swap_remove` if you don't need this invariant.
+    ///
+    /// Computes in **O(n)** time (average).
+    pub fn ordered_remove<Q: ?Sized>(&mut self, key: &Q) -> Option<V>
         where K: Borrow<Q>,
               Q: Eq + Hash,
     {
-        self.swap_remove(key)
+        self.ordered_remove_pair(key).map(second)
     }
 
     /// Remove the key-value pair equivalent to `key` and return it.
@@ -952,6 +970,23 @@ impl<K, V, S> OrderMap<K, V, S>
             Some(t) => t,
         };
         Some(self.remove_found(probe, found))
+    }
+
+    /// Remove the key-value pair equivalent to `key`, preserving order.
+    ///
+    /// To preserve order, this operation runs in linear time, so you
+    /// should use `swap_remove` if you don't need this invariant.
+    ///
+    /// Computes in **O(n)** time (average).
+    pub fn ordered_remove_pair<Q: ?Sized>(&mut self, key: &Q) -> Option<(K, V)>
+        where K: Borrow<Q>,
+              Q: Eq + Hash,
+    {
+        let (probe, found) = match self.find(key) {
+            None => return None,
+            Some(t) => t,
+        };
+        Some(self.ordered_remove_found(probe, found))
     }
 
     /// Remove the last key-value pair
@@ -1133,6 +1168,55 @@ impl<K, V, S> OrderMap<K, V, S> {
         });
     }
 
+    fn ordered_remove_found(&mut self, probe: usize, found: usize) -> (K, V) {
+        dispatch_32_vs_64!(self.ordered_remove_found_impl(probe, found))
+    }
+
+    fn ordered_remove_found_impl<Sz>(&mut self, probe: usize, found: usize) -> (K, V)
+        where Sz: Size
+    {
+        // index `probe` and entry `found` is to be removed
+        // use remove and then fix all the indices of the shifted entries
+        self.indices[probe] = Pos::none();
+        let entry = self.entries.remove(found);
+
+        for index in self.indices.iter_mut() {
+            index.update_index::<Sz, _>(|entry_index| {
+                if entry_index >= found {
+                    entry_index - 1
+                } else {
+                    entry_index
+                }
+            });
+        }
+
+        // backward shift deletion in self.indices
+        // after probe, shift all non-ideally placed indices backward
+        self.fix_indices_after::<Sz>(probe);
+        (entry.key, entry.value)
+    }
+
+    fn fix_indices_after<Sz: Size>(&mut self, probe: usize) {
+        if self.len() > 0 {
+            let mut last_probe = probe;
+            let mut probe = probe + 1;
+            probe_loop!(probe < self.indices.len(), {
+                if let Some((i, hash_proxy)) = self.indices[probe].resolve::<Sz>() {
+                    let entry_hash = hash_proxy.get_short_hash(&self.entries, i);
+                    if probe_distance(self.mask, entry_hash.into_hash(), probe) > 0 {
+                        self.indices[last_probe] = self.indices[probe];
+                        self.indices[probe] = Pos::none();
+                    } else {
+                        break;
+                    }
+                } else {
+                    break;
+                }
+                last_probe = probe;
+            });
+        }
+    }
+
     fn remove_found(&mut self, probe: usize, found: usize) -> (K, V) {
         dispatch_32_vs_64!(self.remove_found_impl(probe, found))
     }
@@ -1163,25 +1247,7 @@ impl<K, V, S> OrderMap<K, V, S> {
         }
         // backward shift deletion in self.indices
         // after probe, shift all non-ideally placed indices backward
-        if self.len() > 0 {
-            let mut last_probe = probe;
-            let mut probe = probe + 1;
-            probe_loop!(probe < self.indices.len(), {
-                if let Some((i, hash_proxy)) = self.indices[probe].resolve::<Sz>() {
-                    let entry_hash = hash_proxy.get_short_hash(&self.entries, i);
-                    if probe_distance(self.mask, entry_hash.into_hash(), probe) > 0 {
-                        self.indices[last_probe] = self.indices[probe];
-                        self.indices[probe] = Pos::none();
-                    } else {
-                        break;
-                    }
-                } else {
-                    break;
-                }
-                last_probe = probe;
-            });
-        }
-
+        self.fix_indices_after::<Sz>(probe);
         (entry.key, entry.value)
     }
 
@@ -1705,40 +1771,47 @@ mod tests {
         }
     }
 
-    #[test]
-    fn remove() {
-        let insert = [0, 4, 2, 12, 8, 7, 11, 5, 3, 17, 19, 22, 23];
-        let mut map = OrderMap::new();
+    macro_rules! test_remove {
+        ($test_name:ident, $method:ident) => {
+            #[test]
+            fn $test_name() {
+                let insert = [0, 4, 2, 12, 8, 7, 11, 5, 3, 17, 19, 22, 23];
+                let mut map = OrderMap::new();
 
-        for &elt in &insert {
-            map.insert(elt, elt);
-        }
+                for &elt in &insert {
+                    map.insert(elt, elt);
+                }
 
-        assert_eq!(map.keys().count(), map.len());
-        assert_eq!(map.keys().count(), insert.len());
-        for (a, b) in insert.iter().zip(map.keys()) {
-            assert_eq!(a, b);
-        }
+                assert_eq!(map.keys().count(), map.len());
+                assert_eq!(map.keys().count(), insert.len());
+                for (a, b) in insert.iter().zip(map.keys()) {
+                    assert_eq!(a, b);
+                }
 
-        let remove_fail = [99, 77];
-        let remove = [4, 12, 8, 7];
+                let remove_fail = [99, 77];
+                let remove = [4, 12, 8, 7];
 
-        for &key in &remove_fail {
-            assert!(map.swap_remove_pair(&key).is_none());
-        }
-        println!("{:?}", map);
-        for &key in &remove {
-        //println!("{:?}", map);
-            assert_eq!(map.swap_remove_pair(&key), Some((key, key)));
-        }
-        println!("{:?}", map);
+                for &key in &remove_fail {
+                    assert!(map.$method(&key).is_none());
+                }
+                println!("{:?}", map);
+                for &key in &remove {
+                //println!("{:?}", map);
+                    assert_eq!(map.$method(&key), Some((key, key)));
+                }
+                println!("{:?}", map);
 
-        for key in &insert {
-            assert_eq!(map.get(key).is_some(), !remove.contains(key));
+                for key in &insert {
+                    assert_eq!(map.get(key).is_some(), !remove.contains(key));
+                }
+                assert_eq!(map.len(), insert.len() - remove.len());
+                assert_eq!(map.keys().count(), insert.len() - remove.len());
+            }
         }
-        assert_eq!(map.len(), insert.len() - remove.len());
-        assert_eq!(map.keys().count(), insert.len() - remove.len());
     }
+
+    test_remove!(swap_remove, swap_remove_pair);
+    test_remove!(ordered_remove, ordered_remove_pair);
 
     #[test]
     fn swap_remove_index() {
