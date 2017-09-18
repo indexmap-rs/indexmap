@@ -40,3 +40,16 @@ fn test_lookup() {
     assert!(map.contains_key(&Pair("a", "b")));
     assert!(!map.contains_key(&Pair("b", "a")));
 }
+
+#[test]
+fn test_string_str() {
+    let s = String::from;
+    let mut map = ordermap! {
+        s("a") => 1, s("b") => 2,
+        s("x") => 3, s("y") => 4,
+    };
+
+    assert!(map.contains_key("a"));
+    assert!(!map.contains_key("z"));
+    assert_eq!(map.remove("b"), Some(2));
+}
