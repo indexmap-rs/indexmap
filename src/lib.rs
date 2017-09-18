@@ -1,3 +1,38 @@
+//! Experimental hash table implementation in just Rust (stable, no unsafe
+//! code).
+//!
+//! This is inpired by Python 3.6's new dict implementation (which remembers
+//! the insertion order and is fast to iterate, and is compact in memory).
+//!
+//! This implementation corresponds to their "compact hash map" idea as it is
+//! now, and has consistent order.
+//!
+//! # Examples
+//!
+//! ```
+//! #[macro_use] extern crate ordermap;
+//! # fn main() {
+//!
+//! let map = ordermap!{
+//!     "a" => 1,
+//!     "b" => 2,
+//!     "c" => 3,
+//! };
+//! assert_eq!(1, map["a"]);
+//!
+//! let mut last = ("Z", 0);
+//! assert!(map.iter().all(|(k, v)| {
+//!     if last.0 < *k && last.1 < *v {
+//!         last = (k.clone(), v.clone());
+//!         true
+//!     } else {
+//!         false
+//!     }
+//! }));
+//! # }
+//! ```
+
+
 
 #![doc(html_root_url = "https://docs.rs/ordermap/0.2/")]
 
