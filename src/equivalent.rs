@@ -10,7 +10,7 @@ use std::borrow::Borrow;
 ///
 /// # Contract
 ///
-/// The implementor must hash like `K`, if applicable.
+/// The implementor **must** hash like `K`, if it is hashable.
 pub trait Equivalent<K: ?Sized> {
     /// Compare self to `key` and return `true` if they are equal.
     fn equivalent(&self, key: &K) -> bool;
