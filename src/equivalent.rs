@@ -11,12 +11,12 @@ use std::borrow::Borrow;
 /// # Contract
 ///
 /// The implementor must hash like `K`, if applicable.
-pub trait Equivalent<K> {
+pub trait Equivalent<K: ?Sized> {
     /// Compare self to `key` and return `true` if they are equal.
     fn equivalent(&self, key: &K) -> bool;
 }
 
-impl<Q: ?Sized, K> Equivalent<K> for Q
+impl<Q: ?Sized, K: ?Sized> Equivalent<K> for Q
     where Q: Eq,
           K: Borrow<Q>,
 {
