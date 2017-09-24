@@ -6,6 +6,7 @@ mod macros;
 mod serde;
 mod util;
 mod equivalent;
+mod mutable_keys;
 
 use std::hash::Hash;
 use std::hash::BuildHasher;
@@ -18,8 +19,9 @@ use std::fmt;
 use std::mem::{replace};
 use std::marker::PhantomData;
 
-use util::{second, ptrdistance, enumerate};
+use util::{third, ptrdistance, enumerate};
 pub use equivalent::Equivalent;
+pub use mutable_keys::MutableKeys;
 
 fn hash_elem_using<B: BuildHasher, K: ?Sized + Hash>(build: &B, k: &K) -> HashValue {
     let mut h = build.build_hasher();
@@ -209,16 +211,6 @@ impl<Sz> ShortHashProxy<Sz>
 /// not depend on the keys or the hash function at all.
 ///
 /// All iterators traverse the map in *the order*.
-///
-/// # Mutable Keys
-///
-/// Some methods expose `&mut K`, mutable references to the key as it is stored
-/// in the map. The key is allowed to be modified, but *only in a way that
-/// preserves its hash and equality* (it is only useful for composite key
-/// structs).
-///
-/// This is sound (memory safe) but a logical error hazard (just like
-/// implementing PartialEq, Eq, or Hash incorrectly would be).
 ///
 /// # Examples
 ///
@@ -837,22 +829,11 @@ impl<K, V, S> OrderMap<K, V, S>
     pub fn get<Q: ?Sized>(&self, key: &Q) -> Option<&V>
         where Q: Hash + Equivalent<K>,
     {
-        self.get_pair(key).map(second)
-    }
-
-    pub fn get_pair<Q: ?Sized>(&self, key: &Q) -> Option<(&K, &V)>
-        where Q: Hash + Equivalent<K>,
-    {
-        if let Some((_, found)) = self.find(key) {
-            let entry = &self.entries[found];
-            Some((&entry.key, &entry.value))
-        } else {
-            None
-        }
+        self.get_full(key).map(third)
     }
 
     /// Return item index, key and value
-    pub fn get_pair_index<Q: ?Sized>(&self, key: &Q) -> Option<(usize, &K, &V)>
+    pub fn get_full<Q: ?Sized>(&self, key: &Q) -> Option<(usize, &K, &V)>
         where Q: Hash + Equivalent<K>,
     {
         if let Some((_, found)) = self.find(key) {
@@ -866,31 +847,14 @@ impl<K, V, S> OrderMap<K, V, S>
     pub fn get_mut<Q: ?Sized>(&mut self, key: &Q) -> Option<&mut V>
         where Q: Hash + Equivalent<K>,
     {
-        self.get_pair_mut(key).map(second)
+        self.get_full_mut(key).map(third)
     }
 
-    pub fn get_pair_mut<Q: ?Sized>(&mut self, key: &Q)
-        -> Option<(&mut K, &mut V)>
+    pub fn get_full_mut<Q: ?Sized>(&mut self, key: &Q)
+        -> Option<(usize, &K, &mut V)>
         where Q: Hash + Equivalent<K>,
     {
-        if let Some((_, found)) = self.find(key) {
-            let entry = &mut self.entries[found];
-            Some((&mut entry.key, &mut entry.value))
-        } else {
-            None
-        }
-    }
-
-    pub fn get_pair_index_mut<Q: ?Sized>(&mut self, key: &Q)
-        -> Option<(usize, &mut K, &mut V)>
-        where Q: Hash + Equivalent<K>,
-    {
-        if let Some((_, found)) = self.find(key) {
-            let entry = &mut self.entries[found];
-            Some((found, &mut entry.key, &mut entry.value))
-        } else {
-            None
-        }
+        self.get_full_mut2(key).map(|(i, k, v)| (i, &*k, v))
     }
 
     /// Return probe (indices) and position (entries)
@@ -900,6 +864,15 @@ impl<K, V, S> OrderMap<K, V, S>
         if self.len() == 0 { return None; }
         let h = hash_elem_using(&self.hash_builder, key);
         self.find_using(h, move |entry| { Q::equivalent(key, &entry.key) })
+    }
+
+    /// FIXME Same as .swap_remove
+    ///
+    /// Computes in **O(1)** time (average).
+    pub fn remove<Q: ?Sized>(&mut self, key: &Q) -> Option<V>
+        where Q: Hash + Equivalent<K>,
+    {
+        self.swap_remove(key)
     }
 
     /// Remove the key-value pair equivalent to `key` and return
@@ -915,33 +888,26 @@ impl<K, V, S> OrderMap<K, V, S>
     pub fn swap_remove<Q: ?Sized>(&mut self, key: &Q) -> Option<V>
         where Q: Hash + Equivalent<K>,
     {
-        self.swap_remove_pair(key).map(second)
+        self.swap_remove_full(key).map(third)
     }
 
-    /// FIXME Same as .swap_remove
-    ///
-    /// Computes in **O(1)** time (average).
-    pub fn remove<Q: ?Sized>(&mut self, key: &Q) -> Option<V>
-        where Q: Hash + Equivalent<K>,
-    {
-        self.swap_remove(key)
-    }
-
-    /// Remove the key-value pair equivalent to `key` and return it.
+    /// Remove the key-value pair equivalent to `key` and return it and
+    /// the index it had.
     ///
     /// Like `Vec::swap_remove`, the pair is removed by swapping it with the
     /// last element of the map and popping it off. **This perturbs
     /// the postion of what used to be the last element!**
     ///
     /// Return `None` if `key` is not in map.
-    pub fn swap_remove_pair<Q: ?Sized>(&mut self, key: &Q) -> Option<(K, V)>
+    pub fn swap_remove_full<Q: ?Sized>(&mut self, key: &Q) -> Option<(usize, K, V)>
         where Q: Hash + Equivalent<K>,
     {
         let (probe, found) = match self.find(key) {
             None => return None,
             Some(t) => t,
         };
-        Some(self.remove_found(probe, found))
+        let (k, v) = self.remove_found(probe, found);
+        Some((found, k, v))
     }
 
     /// Remove the last key-value pair
@@ -958,22 +924,9 @@ impl<K, V, S> OrderMap<K, V, S>
     ///
     /// Computes in **O(n)** time (average).
     pub fn retain<F>(&mut self, mut keep: F)
-        where F: FnMut(&mut K, &mut V) -> bool,
+        where F: FnMut(&K, &mut V) -> bool,
     {
-        // We can use either forward or reverse scan, but forward was
-        // faster in a microbenchmark
-        let mut i = 0;
-        while i < self.len() {
-            {
-                let entry = &mut self.entries[i];
-                if keep(&mut entry.key, &mut entry.value) {
-                    i += 1;
-                    continue;
-                }
-            }
-            self.swap_remove_index(i);
-            // skip increment on remove
-        }
+        self.retain2(move |k, v| keep(&*k, v))
     }
 
     /// Sort the key-value pairs of the map and return a by value iterator of
@@ -1712,12 +1665,13 @@ mod tests {
         let remove = [4, 12, 8, 7];
 
         for &key in &remove_fail {
-            assert!(map.swap_remove_pair(&key).is_none());
+            assert!(map.swap_remove_full(&key).is_none());
         }
         println!("{:?}", map);
         for &key in &remove {
         //println!("{:?}", map);
-            assert_eq!(map.swap_remove_pair(&key), Some((key, key)));
+            let index = map.get_full(&key).unwrap().0;
+            assert_eq!(map.swap_remove_full(&key), Some((index, key, key)));
         }
         println!("{:?}", map);
 
