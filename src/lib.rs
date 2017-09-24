@@ -19,7 +19,7 @@ use std::fmt;
 use std::mem::{replace};
 use std::marker::PhantomData;
 
-use util::{second, third, ptrdistance, enumerate};
+use util::{third, ptrdistance, enumerate};
 pub use equivalent::Equivalent;
 pub use mutable_keys::MutableKeys;
 
@@ -866,6 +866,15 @@ impl<K, V, S> OrderMap<K, V, S>
         self.find_using(h, move |entry| { Q::equivalent(key, &entry.key) })
     }
 
+    /// FIXME Same as .swap_remove
+    ///
+    /// Computes in **O(1)** time (average).
+    pub fn remove<Q: ?Sized>(&mut self, key: &Q) -> Option<V>
+        where Q: Hash + Equivalent<K>,
+    {
+        self.swap_remove(key)
+    }
+
     /// Remove the key-value pair equivalent to `key` and return
     /// its value.
     ///
@@ -879,33 +888,26 @@ impl<K, V, S> OrderMap<K, V, S>
     pub fn swap_remove<Q: ?Sized>(&mut self, key: &Q) -> Option<V>
         where Q: Hash + Equivalent<K>,
     {
-        self.swap_remove_pair(key).map(second)
+        self.swap_remove_full(key).map(third)
     }
 
-    /// FIXME Same as .swap_remove
-    ///
-    /// Computes in **O(1)** time (average).
-    pub fn remove<Q: ?Sized>(&mut self, key: &Q) -> Option<V>
-        where Q: Hash + Equivalent<K>,
-    {
-        self.swap_remove(key)
-    }
-
-    /// Remove the key-value pair equivalent to `key` and return it.
+    /// Remove the key-value pair equivalent to `key` and return it and
+    /// the index it had.
     ///
     /// Like `Vec::swap_remove`, the pair is removed by swapping it with the
     /// last element of the map and popping it off. **This perturbs
     /// the postion of what used to be the last element!**
     ///
     /// Return `None` if `key` is not in map.
-    pub fn swap_remove_pair<Q: ?Sized>(&mut self, key: &Q) -> Option<(K, V)>
+    pub fn swap_remove_full<Q: ?Sized>(&mut self, key: &Q) -> Option<(usize, K, V)>
         where Q: Hash + Equivalent<K>,
     {
         let (probe, found) = match self.find(key) {
             None => return None,
             Some(t) => t,
         };
-        Some(self.remove_found(probe, found))
+        let (k, v) = self.remove_found(probe, found);
+        Some((found, k, v))
     }
 
     /// Remove the last key-value pair
@@ -1663,12 +1665,13 @@ mod tests {
         let remove = [4, 12, 8, 7];
 
         for &key in &remove_fail {
-            assert!(map.swap_remove_pair(&key).is_none());
+            assert!(map.swap_remove_full(&key).is_none());
         }
         println!("{:?}", map);
         for &key in &remove {
         //println!("{:?}", map);
-            assert_eq!(map.swap_remove_pair(&key), Some((key, key)));
+            let index = map.get_full(&key).unwrap().0;
+            assert_eq!(map.swap_remove_full(&key), Some((index, key, key)));
         }
         println!("{:?}", map);
 
