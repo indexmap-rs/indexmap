@@ -508,6 +508,10 @@ impl<'a, K, V, S> OccupiedEntry<'a, K, V, S> {
     pub fn get_mut(&mut self) -> &mut V {
         &mut self.map.entries[self.index].value
     }
+
+    pub fn index(&self) -> usize {
+        self.index
+    }
     pub fn into_mut(self) -> &'a mut V {
         &mut self.map.entries[self.index].value
     }
