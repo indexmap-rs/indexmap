@@ -484,6 +484,13 @@ impl<'a, K, V, S> Entry<'a, K, V, S> {
             Entry::Vacant(ref entry) => entry.key(),
         }
     }
+
+    pub fn index(&self) -> usize {
+        match *self {
+            Entry::Occupied(ref entry) => entry.index(),
+            Entry::Vacant(ref entry) => entry.index(),
+        }
+    }
 }
 
 pub struct OccupiedEntry<'a, K: 'a, V: 'a, S: 'a = RandomState> {
@@ -534,6 +541,7 @@ pub struct VacantEntry<'a, K: 'a, V: 'a, S: 'a = RandomState> {
 impl<'a, K, V, S> VacantEntry<'a, K, V, S> {
     pub fn key(&self) -> &K { &self.key }
     pub fn into_key(self) -> K { self.key }
+    pub fn index(&self) -> usize { self.map.len() }
     pub fn insert(self, value: V) -> &'a mut V {
         if self.map.size_class_is_64bit() {
             self.insert_impl::<u64>(value)
@@ -1732,5 +1740,28 @@ mod tests {
         map.extend(vec![(&1, &2), (&3, &4)]);
         map.extend(vec![(5, 6)]);
         assert_eq!(map.into_iter().collect::<Vec<_>>(), vec![(1, 2), (3, 4), (5, 6)]);
+    }
+
+    #[test]
+    fn entry() {
+        let mut map = OrderMap::new();
+        
+        map.insert(1, "1");
+        map.insert(2, "2");
+        {
+            let e = map.entry(3);
+            assert_eq!(e.index(), 2);
+            let e = e.or_insert("3");
+            assert_eq!(e, &"3");
+        }
+        
+        let e = map.entry(2);
+        assert_eq!(e.index(), 1);
+        assert_eq!(e.key(), &2);
+        match e {
+            Entry::Occupied(ref e) => assert_eq!(e.get(), &"2"),
+            Entry::Vacant(_) => panic!()
+        }
+        assert_eq!(e.or_insert("4"), &"2");
     }
 }
