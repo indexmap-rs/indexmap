@@ -1781,4 +1781,27 @@ mod tests {
         assert_ne!(map_a, map_c);
         assert_ne!(map_c, map_a);
     }
+
+    #[test]
+    fn entry() {
+        let mut map = OrderMap::new();
+        
+        map.insert(1, "1");
+        map.insert(2, "2");
+        {
+            let e = map.entry(3);
+            assert_eq!(e.index(), 2);
+            let e = e.or_insert("3");
+            assert_eq!(e, &"3");
+        }
+        
+        let e = map.entry(2);
+        assert_eq!(e.index(), 1);
+        assert_eq!(e.key(), &2);
+        match e {
+            Entry::Occupied(ref e) => assert_eq!(e.get(), &"2"),
+            Entry::Vacant(_) => panic!()
+        }
+        assert_eq!(e.or_insert("4"), &"2");
+    }
 }
