@@ -491,6 +491,13 @@ impl<'a, K, V, S> Entry<'a, K, V, S> {
             Entry::Vacant(ref entry) => entry.key(),
         }
     }
+
+    pub fn index(&self) -> usize {
+        match *self {
+            Entry::Occupied(ref entry) => entry.index(),
+            Entry::Vacant(ref entry) => entry.index(),
+        }
+    }
 }
 
 pub struct OccupiedEntry<'a, K: 'a, V: 'a, S: 'a = RandomState> {
@@ -541,6 +548,7 @@ pub struct VacantEntry<'a, K: 'a, V: 'a, S: 'a = RandomState> {
 impl<'a, K, V, S> VacantEntry<'a, K, V, S> {
     pub fn key(&self) -> &K { &self.key }
     pub fn into_key(self) -> K { self.key }
+    pub fn index(&self) -> usize { self.map.len() }
     pub fn insert(self, value: V) -> &'a mut V {
         if self.map.size_class_is_64bit() {
             self.insert_impl::<u64>(value)
