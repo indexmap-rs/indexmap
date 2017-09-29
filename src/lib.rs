@@ -1741,4 +1741,27 @@ mod tests {
         map.extend(vec![(5, 6)]);
         assert_eq!(map.into_iter().collect::<Vec<_>>(), vec![(1, 2), (3, 4), (5, 6)]);
     }
+
+    #[test]
+    fn entry() {
+        let mut map = OrderMap::new();
+        
+        map.insert(1, "1");
+        map.insert(2, "2");
+        {
+            let e = map.entry(3);
+            assert_eq!(e.index(), 2);
+            let e = e.or_insert("3");
+            assert_eq!(e, &"3");
+        }
+        
+        let e = map.entry(2);
+        assert_eq!(e.index(), 1);
+        assert_eq!(e.key(), &2);
+        match e {
+            Entry::Occupied(ref e) => assert_eq!(e.get(), &"2"),
+            Entry::Vacant(_) => panic!()
+        }
+        assert_eq!(e.or_insert("4"), &"2");
+    }
 }
