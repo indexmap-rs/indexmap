@@ -27,13 +27,14 @@ impl<K, V, S> Serialize for OrderMap<K, V, S>
     }
 }
 
-struct OrderMapVisitor<K, V>(PhantomData<(K, V)>);
+struct OrderMapVisitor<K, V, S>(PhantomData<(K, V, S)>);
 
-impl<'de, K, V> Visitor<'de> for OrderMapVisitor<K, V>
+impl<'de, K, V, S> Visitor<'de> for OrderMapVisitor<K, V, S>
     where K: Deserialize<'de> + Eq + Hash,
-          V: Deserialize<'de>
+          V: Deserialize<'de>,
+          S: Default + BuildHasher
 {
-    type Value = OrderMap<K, V>;
+    type Value = OrderMap<K, V, S>;
 
     fn expecting(&self, formatter: &mut Formatter) -> fmt::Result {
         write!(formatter, "a map")
@@ -42,7 +43,7 @@ impl<'de, K, V> Visitor<'de> for OrderMapVisitor<K, V>
     fn visit_map<A>(self, mut map: A) -> Result<Self::Value, A::Error>
         where A: MapAccess<'de>
     {
-        let mut values = OrderMap::with_capacity(map.size_hint().unwrap_or(0));
+        let mut values = OrderMap::with_capacity_and_hasher(map.size_hint().unwrap_or(0), Default::default());
 
         while let Some((key, value)) = try!(map.next_entry()) {
             values.insert(key, value);
@@ -53,9 +54,10 @@ impl<'de, K, V> Visitor<'de> for OrderMapVisitor<K, V>
 }
 
 /// Requires crate feature `"serde-1"`
-impl<'de, K, V> Deserialize<'de> for OrderMap<K, V>
+impl<'de, K, V, S> Deserialize<'de> for OrderMap<K, V, S>
     where K: Deserialize<'de> + Eq + Hash,
-          V: Deserialize<'de>
+          V: Deserialize<'de>,
+          S: Default + BuildHasher
 {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
         where D: Deserializer<'de>
