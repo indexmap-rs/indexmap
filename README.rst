@@ -73,6 +73,11 @@ Where to go from here?
 Recent Changes
 --------------
 
+- 0.2.13
+
+  - Fix deserialization to support custom hashers by @Techcable
+  - Add methods ``.index()`` on the entry types by @garro95
+
 - 0.2.12
 
   - Add methods ``.with_hasher()``, ``.hasher()``
