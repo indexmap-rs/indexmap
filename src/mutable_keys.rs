@@ -7,7 +7,7 @@ use super::{OrderMap, Equivalent};
 /// Opt-in mutable access to keys.
 ///
 /// You are allowed to modify the keys in the hashmap **if the modifcation
-/// does not change the key's hash and equality**.
+/// does not change the key’s hash and equality**.
 ///
 /// If keys are modified erronously, you can no longer look them up.
 ///
@@ -19,6 +19,7 @@ use super::{OrderMap, Equivalent};
 /// This is sound (memory safe) but a logical error hazard (just like
 /// implementing PartialEq, Eq, or Hash incorrectly would be).
 ///
+/// `use` this trait to enable its methods for `OrderMap`.
 pub trait MutableKeys {
     type Key;
     type Value;
@@ -38,6 +39,9 @@ pub trait MutableKeys {
         where F: FnMut(&mut Self::Key, &mut Self::Value) -> bool;
 }
 
+/// Opt-in mutable access to keys.
+///
+/// See [`MutableKeys`](trait.MutableKeys.html) for more information.
 impl<K, V, S> MutableKeys for OrderMap<K, V, S>
     where K: Eq + Hash,
           S: BuildHasher,
