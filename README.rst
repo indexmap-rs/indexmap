@@ -85,7 +85,21 @@ Ideas that we already did
 
 
 Recent Changes
---------------
+==============
+
+- 0.3.0
+
+  - The methods ``get_pair, get_pair_index`` were both replaced by
+    ``get_full`` (and the same for the mutable case).
+  - Method ``swap_remove_pair`` replaced by ``swap_remove_full``
+  - Add trait ``MutableKeys`` for opt-in mutable key access. Mutable key access
+    is only possible through the methods of this extension trait.
+  - Add new trait ``Equivalent`` for key equivalence. This extends the
+    ``Borrow`` trait mechanism for ``OrderMap::get`` in a backwards compatible
+    way, just some minor type inference related issues may become apparent.
+    See `#10`__ for more information.
+
+__ https://github.com/bluss/ordermap/pull/10
 
 - 0.2.13
 
