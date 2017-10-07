@@ -8,16 +8,12 @@ pub struct PrivateMarker { }
 
 /// Opt-in mutable access to keys.
 ///
+/// These methods expose `&mut K`, mutable references to the key as it is stored
+/// in the map.
 /// You are allowed to modify the keys in the hashmap **if the modifcation
 /// does not change the key’s hash and equality**.
 ///
 /// If keys are modified erronously, you can no longer look them up.
-///
-/// These methods expose `&mut K`, mutable references to the key as it is stored
-/// in the map. The key is allowed to be modified, but *only in a way that
-/// preserves its hash and equality* (it is only useful for composite key
-/// structs).
-///
 /// This is sound (memory safe) but a logical error hazard (just like
 /// implementing PartialEq, Eq, or Hash incorrectly would be).
 ///
@@ -40,9 +36,9 @@ pub trait MutableKeys {
     fn retain2<F>(&mut self, keep: F)
         where F: FnMut(&mut Self::Key, &mut Self::Value) -> bool;
 
-    /// This method is not useful in itself -- it is there to “seal” the trait
-    /// for external implementation, so that we can extend it without it being
-    /// a technically breaking change.
+    /// This method is not useful in itself – it is there to “seal” the trait
+    /// for external implementation, so that we can add methods without
+    /// causing breaking changes.
     fn __private_marker(&self) -> PrivateMarker;
 }
 
