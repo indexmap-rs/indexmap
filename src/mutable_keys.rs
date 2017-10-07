@@ -4,6 +4,8 @@ use std::hash::BuildHasher;
 
 use super::{OrderMap, Equivalent};
 
+pub struct PrivateMarker { }
+
 /// Opt-in mutable access to keys.
 ///
 /// You are allowed to modify the keys in the hashmap **if the modifcation
@@ -37,6 +39,11 @@ pub trait MutableKeys {
     /// Computes in **O(n)** time (average).
     fn retain2<F>(&mut self, keep: F)
         where F: FnMut(&mut Self::Key, &mut Self::Value) -> bool;
+
+    /// This method is not useful in itself -- it is there to “seal” the trait
+    /// for external implementation, so that we can extend it without it being
+    /// a technically breaking change.
+    fn __private_marker(&self) -> PrivateMarker;
 }
 
 /// Opt-in mutable access to keys.
@@ -77,5 +84,9 @@ impl<K, V, S> MutableKeys for OrderMap<K, V, S>
             self.swap_remove_index(i);
             // skip increment on remove
         }
+    }
+
+    fn __private_marker(&self) -> PrivateMarker {
+        PrivateMarker { }
     }
 }
