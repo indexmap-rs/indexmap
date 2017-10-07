@@ -1,12 +1,6 @@
 
 Experimental hash table implementation in just Rust (stable, no unsafe code).
 
-This is inpired by Python 3.6's new dict implementation (which remembers
-the insertion order and is fast to iterate, and is compact in memory).
-
-This implementation corresponds to their "compact hash map" idea as it is now,
-and has consistent order.
-
 Please read the `API documentation here`__
 
 __ https://docs.rs/ordermap/
@@ -20,22 +14,34 @@ __ https://docs.rs/ordermap/
 .. _build_status: https://travis-ci.org/bluss/ordermap
 
 
-Using robin hood hashing just like Rust's libstd HashMap.
+Background
+==========
 
-- Has insert, lookup, grow
-- Remove is implemented.
+This was inpired by Python 3.6's new dict implementation (which remembers
+the insertion order and is fast to iterate, and is compact in memory).
+
+Some of those features were translated to Rust, and some were not. The result
+was ordermap, a hash table that is
+
+- Order is independent of hash function and hash values of keys
+- Fast to iterate
+- Indexed in compact space
+- Preserves insertion order as long as you don't call ``remove``.
+- Using robin hood hashing just like Rust's libstd HashMap.
 
   - It's the usual backwards shift deletion, but only on the index vector, so
-    it's cheaper.
-  - Remove does not respect the insertion order and this is by design
-  - The consistent iteration order (indepentent of hash function) is the main
-    feature and affords us fast iteration, no pathological slowdowns or
-    hash function/iteration order based attacks.
-  - original-insertion-order-preserving removal would want to be implemented
-    with tombstones, but I've decided this is going to be a separately named
-    hash map. So: fork time.
+    it's cheaper because it's moving less memory around.
 
-Performance (Figures from late 2016)
+Does not implement
+------------------
+
+
+- ``.reserve`` exists but does not have a full implementation
+
+Performance
+-----------
+
+(Figures from late 2016)
 
 - Iteration is very fast
 - Lookup is faster than libstd HashMap for "small" tables (below something like
@@ -44,7 +50,8 @@ Performance (Figures from late 2016)
 - Growing the map is faster than libstd HashMap, doesn't need to move keys and values
   at all, only the index vec
 
-Interesting Features:
+Interesting Features
+--------------------
 
 - Insertion order is preserved (swap_remove perturbs the order, like the method name says)
 - Implements .pop() -> Option<(K, V)> in O(1) time
@@ -55,11 +62,18 @@ Interesting Features:
 
 
 Where to go from here?
+----------------------
+
+- Ideas and PRs for how to implement insertion-order preserving remove (for example tombstones)
+  are welcome. The plan is to split the crate into two hash table implementations
+  a) the current compact index space version and b) the full insertion order version
+
+
+Ideas that we already did
+-------------------------
 
 - It can be an *indexable* ordered map in the current fashion.
   (This was implemented in 0.2.0, for potential use as a graph datastructure).
-- Ideas and PRs for how to implement insertion-order preserving remove (for example tombstones)
-  are welcome.
 
 - Idea for more cache efficient lookup (This was implemented in 0.1.2)
 
