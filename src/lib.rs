@@ -1,6 +1,11 @@
 
 #![doc(html_root_url = "https://docs.rs/ordermap/0.2/")]
 
+//! [`OrderMap`] is a hash table where the iteration order of the key-value
+//! pairs is independent of the hash values of the keys.
+//!
+//! [`OrderMap`]: struct.OrderMap.html
+
 mod macros;
 #[cfg(feature = "serde-1")]
 mod serde;
@@ -202,7 +207,11 @@ impl<Sz> ShortHashProxy<Sz>
     }
 }
 
-/// A hash map with consistent order of the key-value pairs.
+/// A hash table where the iteration order of the key-value pairs is independent
+/// of the hash values of the keys.
+///
+/// The interface is closely compatible with the standard `HashMap`, but also
+/// has additional features.
 ///
 /// # Order
 ///
@@ -211,6 +220,13 @@ impl<Sz> ShortHashProxy<Sz>
 /// not depend on the keys or the hash function at all.
 ///
 /// All iterators traverse the map in *the order*.
+///
+/// # Indices
+///
+/// The key-value pairs are indexed in a compact range without holes in the
+/// range `0..self.len()`. For example, the method `.get_full` looks up the
+/// index for a key, and the method `.get_index` looks up the key-value pair by
+/// index.
 ///
 /// # Examples
 ///
