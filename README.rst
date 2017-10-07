@@ -98,6 +98,7 @@ Recent Changes
     ``Borrow`` trait mechanism for ``OrderMap::get`` in a backwards compatible
     way, just some minor type inference related issues may become apparent.
     See `#10`__ for more information.
+  - Implement ``Extend<(&K, &V)>`` by @xfix
 
 __ https://github.com/bluss/ordermap/pull/10
 
