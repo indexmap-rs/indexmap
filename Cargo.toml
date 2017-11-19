@@ -1,11 +1,14 @@
 [package]
 name = "ordermap"
-version = "0.3.0"
+version = "0.3.1"
 authors = ["bluss"]
 documentation = "https://docs.rs/ordermap/"
 repository = "https://github.com/bluss/ordermap"
 license = "Apache-2.0/MIT"
 description = "A hash table with consistent order and fast iteration."
+
+keywords = ["hashmap"]
+categories = ["data-structures"]
 
 [lib]
 bench = false

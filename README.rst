@@ -87,6 +87,12 @@ Ideas that we already did
 Recent Changes
 ==============
 
+- 0.3.1
+
+  - In all ordermap iterators, forward the ``collect`` method to the underlying
+    iterator as well.
+  - Add crates.io categories
+
 - 0.3.0
 
   - The methods ``get_pair, get_pair_index`` were both replaced by
