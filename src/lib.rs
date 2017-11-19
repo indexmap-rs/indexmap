@@ -16,6 +16,7 @@ mod mutable_keys;
 use std::hash::Hash;
 use std::hash::BuildHasher;
 use std::hash::Hasher;
+use std::iter::FromIterator;
 use std::collections::hash_map::RandomState;
 use std::ops::RangeFull;
 
@@ -1162,6 +1163,40 @@ use std::slice::Iter as SliceIter;
 use std::slice::IterMut as SliceIterMut;
 use std::vec::IntoIter as VecIntoIter;
 
+// generate all the Iterator methods by just forwarding to the underlying
+// self.iter and mapping its element.
+macro_rules! iterator_methods {
+    // $map_elt is the mapping function from the underlying iterator's element
+    // same mapping function for both options and iterators
+    ($map_elt:expr) => {
+        fn next(&mut self) -> Option<Self::Item> {
+            self.iter.next().map($map_elt)
+        }
+
+        fn size_hint(&self) -> (usize, Option<usize>) {
+            self.iter.size_hint()
+        }
+
+        fn count(self) -> usize {
+            self.iter.len()
+        }
+
+        fn nth(&mut self, n: usize) -> Option<Self::Item> {
+            self.iter.nth(n).map($map_elt)
+        }
+
+        fn last(mut self) -> Option<Self::Item> {
+            self.next_back()
+        }
+
+        fn collect<C>(self) -> C
+            where C: FromIterator<Self::Item>
+        {
+            self.iter.map($map_elt).collect()
+        }
+    }
+}
+
 pub struct Keys<'a, K: 'a, V: 'a> {
     iter: SliceIter<'a, Bucket<K, V>>,
 }
@@ -1169,25 +1204,7 @@ pub struct Keys<'a, K: 'a, V: 'a> {
 impl<'a, K, V> Iterator for Keys<'a, K, V> {
     type Item = &'a K;
 
-    fn next(&mut self) -> Option<&'a K> {
-        self.iter.next().map(|ent| &ent.key)
-    }
-
-    fn size_hint(&self) -> (usize, Option<usize>) {
-        self.iter.size_hint()
-    }
-
-    fn count(self) -> usize {
-        self.iter.len()
-    }
-
-    fn nth(&mut self, n: usize) -> Option<Self::Item> {
-        self.iter.nth(n).map(|ent| &ent.key)
-    }
-
-    fn last(mut self) -> Option<Self::Item> {
-        self.next_back()
-    }
+    iterator_methods!(|entry| &entry.key);
 }
 
 impl<'a, K, V> DoubleEndedIterator for Keys<'a, K, V> {
@@ -1209,25 +1226,7 @@ pub struct Values<'a, K: 'a, V: 'a> {
 impl<'a, K, V> Iterator for Values<'a, K, V> {
     type Item = &'a V;
 
-    fn next(&mut self) -> Option<Self::Item> {
-        self.iter.next().map(|ent| &ent.value)
-    }
-
-    fn size_hint(&self) -> (usize, Option<usize>) {
-        self.iter.size_hint()
-    }
-
-    fn count(self) -> usize {
-        self.iter.len()
-    }
-
-    fn nth(&mut self, n: usize) -> Option<Self::Item> {
-        self.iter.nth(n).map(|ent| &ent.value)
-    }
-
-    fn last(mut self) -> Option<Self::Item> {
-        self.next_back()
-    }
+    iterator_methods!(|ent| &ent.value);
 }
 
 impl<'a, K, V> DoubleEndedIterator for Values<'a, K, V> {
@@ -1249,25 +1248,7 @@ pub struct ValuesMut<'a, K: 'a, V: 'a> {
 impl<'a, K, V> Iterator for ValuesMut<'a, K, V> {
     type Item = &'a mut V;
 
-    fn next(&mut self) -> Option<Self::Item> {
-        self.iter.next().map(|ent| &mut ent.value)
-    }
-
-    fn size_hint(&self) -> (usize, Option<usize>) {
-        self.iter.size_hint()
-    }
-
-    fn count(self) -> usize {
-        self.iter.len()
-    }
-
-    fn nth(&mut self, n: usize) -> Option<Self::Item> {
-        self.iter.nth(n).map(|ent| &mut ent.value)
-    }
-
-    fn last(mut self) -> Option<Self::Item> {
-        self.next_back()
-    }
+    iterator_methods!(|ent| &mut ent.value);
 }
 
 impl<'a, K, V> DoubleEndedIterator for ValuesMut<'a, K, V> {
@@ -1289,25 +1270,7 @@ pub struct Iter<'a, K: 'a, V: 'a> {
 impl<'a, K, V> Iterator for Iter<'a, K, V> {
     type Item = (&'a K, &'a V);
 
-    fn next(&mut self) -> Option<Self::Item> {
-        self.iter.next().map(|e| (&e.key, &e.value))
-    }
-
-    fn size_hint(&self) -> (usize, Option<usize>) {
-        self.iter.size_hint()
-    }
-
-    fn count(self) -> usize {
-        self.iter.len()
-    }
-
-    fn nth(&mut self, n: usize) -> Option<Self::Item> {
-        self.iter.nth(n).map(|e| (&e.key, &e.value))
-    }
-
-    fn last(mut self) -> Option<Self::Item> {
-        self.next_back()
-    }
+    iterator_methods!(|e| (&e.key, &e.value));
 }
 
 impl<'a, K, V> DoubleEndedIterator for Iter<'a, K, V> {
@@ -1329,25 +1292,7 @@ pub struct IterMut<'a, K: 'a, V: 'a> {
 impl<'a, K, V> Iterator for IterMut<'a, K, V> {
     type Item = (&'a K, &'a mut V);
 
-    fn next(&mut self) -> Option<Self::Item> {
-        self.iter.next().map(|e| (&e.key, &mut e.value))
-    }
-
-    fn size_hint(&self) -> (usize, Option<usize>) {
-        self.iter.size_hint()
-    }
-    
-    fn count(self) -> usize {
-        self.iter.len()
-    }
-
-    fn nth(&mut self, n: usize) -> Option<Self::Item> {
-        self.iter.nth(n).map(|e| (&e.key, &mut e.value))
-    }
-
-    fn last(mut self) -> Option<Self::Item> {
-        self.next_back()
-    }
+    iterator_methods!(|e| (&e.key, &mut e.value));
 }
 
 impl<'a, K, V> DoubleEndedIterator for IterMut<'a, K, V> {
@@ -1369,30 +1314,12 @@ pub struct IntoIter<K, V> {
 impl<K, V> Iterator for IntoIter<K, V> {
     type Item = (K, V);
 
-    fn next(&mut self) -> Option<Self::Item> {
-        self.iter.next().map(|e| (e.key, e.value))
-    }
-
-    fn size_hint(&self) -> (usize, Option<usize>) {
-        self.iter.size_hint()
-    }
-
-    fn count(self) -> usize {
-        self.iter.len()
-    }
-
-    fn nth(&mut self, n: usize) -> Option<Self::Item> {
-        self.iter.nth(n).map(|e| (e.key, e.value))
-    }
-
-    fn last(mut self) -> Option<Self::Item> {
-        self.next_back()
-    }
+    iterator_methods!(|entry| (entry.key, entry.value));
 }
 
 impl<'a, K, V> DoubleEndedIterator for IntoIter<K, V> {
     fn next_back(&mut self) -> Option<Self::Item> {
-        self.iter.next_back().map(|e| (e.key, e.value))
+        self.iter.next_back().map(|entry| (entry.key, entry.value))
     }
 }
 
@@ -1475,8 +1402,6 @@ impl<'a, K, V, Q: ?Sized, S> IndexMut<&'a Q> for OrderMap<K, V, S>
         }
     }
 }
-
-use std::iter::FromIterator;
 
 impl<K, V, S> FromIterator<(K, V)> for OrderMap<K, V, S>
     where K: Hash + Eq,
