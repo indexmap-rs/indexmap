@@ -7,6 +7,7 @@ use std::iter::{FromIterator, Chain};
 use std::hash::{Hash, BuildHasher};
 use std::mem::replace;
 use std::ops::RangeFull;
+use std::ops::{BitAnd, BitOr, BitXor, Sub};
 
 use super::{OrderMap, Equivalent};
 
@@ -737,6 +738,55 @@ impl<'a, T, S> DoubleEndedIterator for Union<'a, T, S>
 }
 
 
+impl<'a, 'b, T, S1, S2> BitAnd<&'b OrderSet<T, S2>> for &'a OrderSet<T, S1>
+    where T: Eq + Hash + Clone,
+          S1: BuildHasher + Default,
+          S2: BuildHasher,
+{
+    type Output = OrderSet<T, S1>;
+
+    fn bitand(self, other: &'b OrderSet<T, S2>) -> Self::Output {
+        self.intersection(other).cloned().collect()
+    }
+}
+
+impl<'a, 'b, T, S1, S2> BitOr<&'b OrderSet<T, S2>> for &'a OrderSet<T, S1>
+    where T: Eq + Hash + Clone,
+          S1: BuildHasher + Default,
+          S2: BuildHasher,
+{
+    type Output = OrderSet<T, S1>;
+
+    fn bitor(self, other: &'b OrderSet<T, S2>) -> Self::Output {
+        self.union(other).cloned().collect()
+    }
+}
+
+impl<'a, 'b, T, S1, S2> BitXor<&'b OrderSet<T, S2>> for &'a OrderSet<T, S1>
+    where T: Eq + Hash + Clone,
+          S1: BuildHasher + Default,
+          S2: BuildHasher,
+{
+    type Output = OrderSet<T, S1>;
+
+    fn bitxor(self, other: &'b OrderSet<T, S2>) -> Self::Output {
+        self.symmetric_difference(other).cloned().collect()
+    }
+}
+
+impl<'a, 'b, T, S1, S2> Sub<&'b OrderSet<T, S2>> for &'a OrderSet<T, S1>
+    where T: Eq + Hash + Clone,
+          S1: BuildHasher + Default,
+          S2: BuildHasher,
+{
+    type Output = OrderSet<T, S1>;
+
+    fn sub(self, other: &'b OrderSet<T, S2>) -> Self::Output {
+        self.difference(other).cloned().collect()
+    }
+}
+
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1019,5 +1069,46 @@ mod tests {
         check(set_d.intersection(&set_c), (3..6).rev());
         check(set_c.union(&set_d), (0..6).chain((6..9).rev()));
         check(set_d.union(&set_c), (3..9).rev().chain(0..3));
+    }
+
+    #[test]
+    fn ops() {
+        let empty = OrderSet::<i32>::new();
+        let set_a: OrderSet<_> = (0..3).collect();
+        let set_b: OrderSet<_> = (3..6).collect();
+        let set_c: OrderSet<_> = (0..6).collect();
+        let set_d: OrderSet<_> = (3..9).rev().collect();
+
+        assert_eq!(&set_a & &set_a, set_a);
+        assert_eq!(&set_a | &set_a, set_a);
+        assert_eq!(&set_a ^ &set_a, empty);
+        assert_eq!(&set_a - &set_a, empty);
+
+        assert_eq!(&set_a & &set_b, empty);
+        assert_eq!(&set_b & &set_a, empty);
+        assert_eq!(&set_a | &set_b, set_c);
+        assert_eq!(&set_b | &set_a, set_c);
+        assert_eq!(&set_a ^ &set_b, set_c);
+        assert_eq!(&set_b ^ &set_a, set_c);
+        assert_eq!(&set_a - &set_b, set_a);
+        assert_eq!(&set_b - &set_a, set_b);
+
+        assert_eq!(&set_a & &set_c, set_a);
+        assert_eq!(&set_c & &set_a, set_a);
+        assert_eq!(&set_a | &set_c, set_c);
+        assert_eq!(&set_c | &set_a, set_c);
+        assert_eq!(&set_a ^ &set_c, set_b);
+        assert_eq!(&set_c ^ &set_a, set_b);
+        assert_eq!(&set_a - &set_c, empty);
+        assert_eq!(&set_c - &set_a, set_b);
+
+        assert_eq!(&set_c & &set_d, set_b);
+        assert_eq!(&set_d & &set_c, set_b);
+        assert_eq!(&set_c | &set_d, &set_a | &set_d);
+        assert_eq!(&set_d | &set_c, &set_a | &set_d);
+        assert_eq!(&set_c ^ &set_d, &set_a | &(&set_d - &set_b));
+        assert_eq!(&set_d ^ &set_c, &set_a | &(&set_d - &set_b));
+        assert_eq!(&set_c - &set_d, set_a);
+        assert_eq!(&set_d - &set_c, &set_d - &set_b);
     }
 }
