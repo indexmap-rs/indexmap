@@ -3,7 +3,7 @@
 use std::cmp::Ordering;
 use std::collections::hash_map::RandomState;
 use std::fmt;
-use std::iter::FromIterator;
+use std::iter::{FromIterator, Chain};
 use std::hash::{Hash, BuildHasher};
 use std::mem::replace;
 use std::ops::RangeFull;
@@ -152,6 +152,46 @@ impl<T, S> OrderSet<T, S>
     pub fn iter(&self) -> Iter<T> {
         Iter {
             iter: self.map.keys()
+        }
+    }
+
+    /// Return an iterator over the values that are in `self` but not `other`.
+    pub fn difference<'a, S2>(&'a self, other: &'a OrderSet<T, S2>) -> Difference<'a, T, S2>
+        where S2: BuildHasher
+    {
+        Difference {
+            iter: self.iter(),
+            other: other,
+        }
+    }
+
+    /// Return an iterator over the values that are in `self` or `other`,
+    /// but not in both.
+    pub fn symmetric_difference<'a, S2>(&'a self, other: &'a OrderSet<T, S2>)
+        -> SymmetricDifference<'a, T, S, S2>
+        where S2: BuildHasher
+    {
+        SymmetricDifference {
+            iter: self.difference(other).chain(other.difference(self)),
+        }
+    }
+
+    /// Return an iterator over the values that are in both `self` and `other`.
+    pub fn intersection<'a, S2>(&'a self, other: &'a OrderSet<T, S2>) -> Intersection<'a, T, S2>
+        where S2: BuildHasher
+    {
+        Intersection {
+            iter: self.iter(),
+            other: other,
+        }
+    }
+
+    /// Return an iterator over all values that are in `self` or `other`.
+    pub fn union<'a, S2>(&'a self, other: &'a OrderSet<T, S2>) -> Union<'a, T, S>
+        where S2: BuildHasher
+    {
+        Union {
+            iter: self.iter().chain(other.difference(self)),
         }
     }
 
@@ -487,11 +527,7 @@ impl<T, S1, S2> PartialEq<OrderSet<T, S2>> for OrderSet<T, S1>
           S2: BuildHasher
 {
     fn eq(&self, other: &OrderSet<T, S2>) -> bool {
-        if self.len() != other.len() {
-            return false;
-        }
-
-        self.iter().all(move |value| other.contains(value))
+        self.len() == other.len() && self.is_subset(other)
     }
 }
 
@@ -499,6 +535,36 @@ impl<T, S> Eq for OrderSet<T, S>
     where T: Eq + Hash,
           S: BuildHasher
 {
+}
+
+impl<T, S> OrderSet<T, S>
+    where T: Eq + Hash,
+          S: BuildHasher
+{
+    /// Returns `true` if `self` has no elements in common with `other`.
+    pub fn is_disjoint<S2>(&self, other: &OrderSet<T, S2>) -> bool
+        where S2: BuildHasher
+    {
+        if self.len() <= other.len() {
+            self.iter().all(move |value| !other.contains(value))
+        } else {
+            other.iter().all(move |value| !self.contains(value))
+        }
+    }
+
+    /// Returns `true` if all elements of `self` are contained in `other`.
+    pub fn is_subset<S2>(&self, other: &OrderSet<T, S2>) -> bool
+        where S2: BuildHasher
+    {
+        self.len() <= other.len() && self.iter().all(move |value| other.contains(value))
+    }
+
+    /// Returns `true` if all elements of `other` are contained in `self`.
+    pub fn is_superset<S2>(&self, other: &OrderSet<T, S2>) -> bool
+        where S2: BuildHasher
+    {
+        other.is_subset(self)
+    }
 }
 
 
@@ -515,6 +581,158 @@ impl<'a, T> Iterator for Drain<'a, T> {
 
     fn size_hint(&self) -> (usize, Option<usize>) {
         self.iter.size_hint()
+    }
+}
+
+
+pub struct Difference<'a, T: 'a, S: 'a> {
+    iter: Iter<'a, T>,
+    other: &'a OrderSet<T, S>,
+}
+
+impl<'a, T, S> Iterator for Difference<'a, T, S>
+    where T: Eq + Hash,
+          S: BuildHasher
+{
+    type Item = &'a T;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        while let Some(item) = self.iter.next() {
+            if !self.other.contains(item) {
+                return Some(item);
+            }
+        }
+        None
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        (0, self.iter.size_hint().1)
+    }
+}
+
+impl<'a, T, S> DoubleEndedIterator for Difference<'a, T, S>
+    where T: Eq + Hash,
+          S: BuildHasher
+{
+    fn next_back(&mut self) -> Option<Self::Item> {
+        while let Some(item) = self.iter.next_back() {
+            if !self.other.contains(item) {
+                return Some(item);
+            }
+        }
+        None
+    }
+}
+
+
+pub struct Intersection<'a, T: 'a, S: 'a> {
+    iter: Iter<'a, T>,
+    other: &'a OrderSet<T, S>,
+}
+
+impl<'a, T, S> Iterator for Intersection<'a, T, S>
+    where T: Eq + Hash,
+          S: BuildHasher
+{
+    type Item = &'a T;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        while let Some(item) = self.iter.next() {
+            if self.other.contains(item) {
+                return Some(item);
+            }
+        }
+        None
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        (0, self.iter.size_hint().1)
+    }
+}
+
+impl<'a, T, S> DoubleEndedIterator for Intersection<'a, T, S>
+    where T: Eq + Hash,
+          S: BuildHasher
+{
+    fn next_back(&mut self) -> Option<Self::Item> {
+        while let Some(item) = self.iter.next_back() {
+            if self.other.contains(item) {
+                return Some(item);
+            }
+        }
+        None
+    }
+}
+
+
+pub struct SymmetricDifference<'a, T: 'a, S1: 'a, S2: 'a> {
+    iter: Chain<Difference<'a, T, S2>, Difference<'a, T, S1>>,
+}
+
+impl<'a, T, S1, S2> Iterator for SymmetricDifference<'a, T, S1, S2>
+    where T: Eq + Hash,
+          S1: BuildHasher,
+          S2: BuildHasher,
+{
+    type Item = &'a T;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.iter.next()
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.iter.size_hint()
+    }
+
+    fn fold<B, F>(self, init: B, f: F) -> B
+        where F: FnMut(B, Self::Item) -> B
+    {
+        self.iter.fold(init, f)
+    }
+}
+
+impl<'a, T, S1, S2> DoubleEndedIterator for SymmetricDifference<'a, T, S1, S2>
+    where T: Eq + Hash,
+          S1: BuildHasher,
+          S2: BuildHasher,
+{
+    fn next_back(&mut self) -> Option<Self::Item> {
+        self.iter.next_back()
+    }
+}
+
+
+pub struct Union<'a, T: 'a, S: 'a> {
+    iter: Chain<Iter<'a, T>, Difference<'a, T, S>>,
+}
+
+impl<'a, T, S> Iterator for Union<'a, T, S>
+    where T: Eq + Hash,
+          S: BuildHasher,
+{
+    type Item = &'a T;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.iter.next()
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.iter.size_hint()
+    }
+
+    fn fold<B, F>(self, init: B, f: F) -> B
+        where F: FnMut(B, Self::Item) -> B
+    {
+        self.iter.fold(init, f)
+    }
+}
+
+impl<'a, T, S> DoubleEndedIterator for Union<'a, T, S>
+    where T: Eq + Hash,
+          S: BuildHasher,
+{
+    fn next_back(&mut self) -> Option<Self::Item> {
+        self.iter.next_back()
     }
 }
 
