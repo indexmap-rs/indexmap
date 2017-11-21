@@ -938,4 +938,86 @@ mod tests {
         set.extend(vec![5, 6]);
         assert_eq!(set.into_iter().collect::<Vec<_>>(), vec![1, 2, 3, 4, 5, 6]);
     }
+
+    #[test]
+    fn comparisons() {
+        let set_a: OrderSet<_> = (0..3).collect();
+        let set_b: OrderSet<_> = (3..6).collect();
+        let set_c: OrderSet<_> = (0..6).collect();
+        let set_d: OrderSet<_> = (3..9).collect();
+
+        assert!(!set_a.is_disjoint(&set_a));
+        assert!(set_a.is_subset(&set_a));
+        assert!(set_a.is_superset(&set_a));
+
+        assert!(set_a.is_disjoint(&set_b));
+        assert!(set_b.is_disjoint(&set_a));
+        assert!(!set_a.is_subset(&set_b));
+        assert!(!set_b.is_subset(&set_a));
+        assert!(!set_a.is_superset(&set_b));
+        assert!(!set_b.is_superset(&set_a));
+
+        assert!(!set_a.is_disjoint(&set_c));
+        assert!(!set_c.is_disjoint(&set_a));
+        assert!(set_a.is_subset(&set_c));
+        assert!(!set_c.is_subset(&set_a));
+        assert!(!set_a.is_superset(&set_c));
+        assert!(set_c.is_superset(&set_a));
+
+        assert!(!set_c.is_disjoint(&set_d));
+        assert!(!set_d.is_disjoint(&set_c));
+        assert!(!set_c.is_subset(&set_d));
+        assert!(!set_d.is_subset(&set_c));
+        assert!(!set_c.is_superset(&set_d));
+        assert!(!set_d.is_superset(&set_c));
+    }
+
+    #[test]
+    fn iter_comparisons() {
+        use std::iter::empty;
+
+        fn check<'a, I1, I2>(iter1: I1, iter2: I2)
+            where I1: Iterator<Item = &'a i32>,
+                  I2: Iterator<Item = i32>,
+        {
+            assert!(iter1.cloned().eq(iter2));
+        }
+
+        let set_a: OrderSet<_> = (0..3).collect();
+        let set_b: OrderSet<_> = (3..6).collect();
+        let set_c: OrderSet<_> = (0..6).collect();
+        let set_d: OrderSet<_> = (3..9).rev().collect();
+
+        check(set_a.difference(&set_a), empty());
+        check(set_a.symmetric_difference(&set_a), empty());
+        check(set_a.intersection(&set_a), 0..3);
+        check(set_a.union(&set_a), 0..3);
+
+        check(set_a.difference(&set_b), 0..3);
+        check(set_b.difference(&set_a), 3..6);
+        check(set_a.symmetric_difference(&set_b), 0..6);
+        check(set_b.symmetric_difference(&set_a), (3..6).chain(0..3));
+        check(set_a.intersection(&set_b), empty());
+        check(set_b.intersection(&set_a), empty());
+        check(set_a.union(&set_b), 0..6);
+        check(set_b.union(&set_a), (3..6).chain(0..3));
+
+        check(set_a.difference(&set_c), empty());
+        check(set_c.difference(&set_a), 3..6);
+        check(set_a.symmetric_difference(&set_c), 3..6);
+        check(set_c.symmetric_difference(&set_a), 3..6);
+        check(set_a.intersection(&set_c), 0..3);
+        check(set_c.intersection(&set_a), 0..3);
+        check(set_a.union(&set_c), 0..6);
+        check(set_c.union(&set_a), 0..6);
+
+        check(set_c.difference(&set_d), 0..3);
+        check(set_d.difference(&set_c), (6..9).rev());
+        check(set_c.symmetric_difference(&set_d), (0..3).chain((6..9).rev()));
+        check(set_d.symmetric_difference(&set_c), (6..9).rev().chain(0..3));
+        check(set_c.intersection(&set_d), 3..6);
+        check(set_d.intersection(&set_c), (3..6).rev());
+        check(set_c.union(&set_d), (0..6).chain((6..9).rev()));
+        check(set_d.union(&set_c), (3..9).rev().chain(0..3));
+    }
 }
