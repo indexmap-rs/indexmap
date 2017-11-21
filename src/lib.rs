@@ -13,6 +13,8 @@ mod util;
 mod equivalent;
 mod mutable_keys;
 
+pub mod set;
+
 use std::hash::Hash;
 use std::hash::BuildHasher;
 use std::hash::Hasher;
@@ -28,6 +30,7 @@ use std::marker::PhantomData;
 use util::{third, ptrdistance, enumerate};
 pub use equivalent::Equivalent;
 pub use mutable_keys::MutableKeys;
+pub use set::OrderSet;
 
 fn hash_elem_using<B: BuildHasher, K: ?Sized + Hash>(build: &B, k: &K) -> HashValue {
     let mut h = build.build_hasher();
