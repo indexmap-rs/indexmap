@@ -8,8 +8,12 @@ use std::hash::{Hash, BuildHasher};
 use std::mem::replace;
 use std::ops::RangeFull;
 use std::ops::{BitAnd, BitOr, BitXor, Sub};
+use std::slice;
+use std::vec;
 
 use super::{OrderMap, Equivalent};
+
+type Bucket<T> = super::Bucket<T, ()>;
 
 /// A hash set where the iteration order of the values is independent of their
 /// hash values.
@@ -152,7 +156,7 @@ impl<T, S> OrderSet<T, S>
     /// Return an iterator over the values of the set, in their order
     pub fn iter(&self) -> Iter<T> {
         Iter {
-            iter: self.map.keys()
+            iter: self.map.keys().iter
         }
     }
 
@@ -329,7 +333,7 @@ impl<T, S> OrderSet<T, S>
         where F: FnMut(&T, &T) -> Ordering
     {
         IntoIter {
-            iter: self.map.sorted_by(move |a, &(), b, &()| cmp(a, b)),
+            iter: self.map.sorted_by(move |a, &(), b, &()| cmp(a, b)).iter,
         }
     }
 
@@ -337,7 +341,7 @@ impl<T, S> OrderSet<T, S>
     /// Keeps the allocated memory for reuse.
     pub fn drain(&mut self, range: RangeFull) -> Drain<T> {
         Drain {
-            iter: self.map.drain(range),
+            iter: self.map.drain(range).inner,
         }
     }
 }
@@ -364,14 +368,14 @@ impl<T, S> OrderSet<T, S> {
 
 
 pub struct IntoIter<T> {
-    iter: super::IntoIter<T, ()>,
+    iter: vec::IntoIter<Bucket<T>>,
 }
 
 impl<T> Iterator for IntoIter<T> {
     type Item = T;
 
     fn next(&mut self) -> Option<Self::Item> {
-        self.iter.next().map(|(x, ())| x)
+        self.iter.next().map(|entry| entry.key)
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
@@ -383,7 +387,7 @@ impl<T> Iterator for IntoIter<T> {
     }
 
     fn nth(&mut self, n: usize) -> Option<Self::Item> {
-        self.iter.nth(n).map(|(x, ())| x)
+        self.iter.nth(n).map(|entry| entry.key)
     }
 
     fn last(mut self) -> Option<Self::Item> {
@@ -393,13 +397,15 @@ impl<T> Iterator for IntoIter<T> {
     fn collect<C>(self) -> C
         where C: FromIterator<Self::Item>
     {
-        self.iter.map(|(x, ())| x).collect()
+        // NB: forwarding this directly to standard iterators will
+        // allow it to leverage unstable traits like `TrustedLen`.
+        self.iter.map(|entry| entry.key).collect()
     }
 }
 
 impl<T> DoubleEndedIterator for IntoIter<T> {
     fn next_back(&mut self) -> Option<Self::Item> {
-        self.iter.next_back().map(|(x, ())| x)
+        self.iter.next_back().map(|entry| entry.key)
     }
 }
 
@@ -411,14 +417,14 @@ impl<T> ExactSizeIterator for IntoIter<T> {
 
 
 pub struct Iter<'a, T: 'a> {
-    iter: super::Keys<'a, T, ()>,
+    iter: slice::Iter<'a, Bucket<T>>,
 }
 
 impl<'a, T> Iterator for Iter<'a, T> {
     type Item = &'a T;
 
     fn next(&mut self) -> Option<Self::Item> {
-        self.iter.next()
+        self.iter.next().map(|entry| &entry.key)
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
@@ -430,7 +436,7 @@ impl<'a, T> Iterator for Iter<'a, T> {
     }
 
     fn nth(&mut self, n: usize) -> Option<Self::Item> {
-        self.iter.nth(n)
+        self.iter.nth(n).map(|entry| &entry.key)
     }
 
     fn last(mut self) -> Option<Self::Item> {
@@ -440,13 +446,15 @@ impl<'a, T> Iterator for Iter<'a, T> {
     fn collect<C>(self) -> C
         where C: FromIterator<Self::Item>
     {
-        self.iter.collect()
+        // NB: forwarding this directly to standard iterators will
+        // allow it to leverage unstable traits like `TrustedLen`.
+        self.iter.map(|entry| &entry.key).collect()
     }
 }
 
 impl<'a, T> DoubleEndedIterator for Iter<'a, T> {
     fn next_back(&mut self) -> Option<Self::Item> {
-        self.iter.next_back()
+        self.iter.next_back().map(|entry| &entry.key)
     }
 }
 
@@ -478,7 +486,7 @@ impl<T, S> IntoIterator for OrderSet<T, S>
 
     fn into_iter(self) -> Self::IntoIter {
         IntoIter {
-            iter: self.map.into_iter(),
+            iter: self.map.into_iter().iter,
         }
     }
 }
@@ -570,14 +578,14 @@ impl<T, S> OrderSet<T, S>
 
 
 pub struct Drain<'a, T: 'a> {
-    iter: super::Drain<'a, T, ()>,
+    iter: vec::Drain<'a, Bucket<T>>,
 }
 
 impl<'a, T> Iterator for Drain<'a, T> {
     type Item = T;
 
     fn next(&mut self) -> Option<Self::Item> {
-        self.iter.next().map(|(x, ())| x)
+        self.iter.next().map(|entry| entry.key)
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
