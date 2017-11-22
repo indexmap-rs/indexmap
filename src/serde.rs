@@ -43,7 +43,7 @@ impl<'de, K, V, S> Visitor<'de> for OrderMapVisitor<K, V, S>
     fn visit_map<A>(self, mut map: A) -> Result<Self::Value, A::Error>
         where A: MapAccess<'de>
     {
-        let mut values = OrderMap::with_capacity_and_hasher(map.size_hint().unwrap_or(0), Default::default());
+        let mut values = OrderMap::with_capacity_and_hasher(map.size_hint().unwrap_or(0), S::default());
 
         while let Some((key, value)) = try!(map.next_entry()) {
             values.insert(key, value);
@@ -100,7 +100,7 @@ impl<'de, T, S> Visitor<'de> for OrderSetVisitor<T, S>
     fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
         where A: SeqAccess<'de>
     {
-        let mut values = OrderSet::with_capacity_and_hasher(seq.size_hint().unwrap_or(0), Default::default());
+        let mut values = OrderSet::with_capacity_and_hasher(seq.size_hint().unwrap_or(0), S::default());
 
         while let Some(value) = try!(seq.next_element()) {
             values.insert(value);
