@@ -27,7 +27,9 @@ type Bucket<T> = super::Bucket<T, ()>;
 /// insertion and removal calls on the set. The order does not depend on the
 /// values or the hash function at all.
 ///
-/// All iterators traverse the set in *the order*.
+/// All iterators traverse the set *in order*.  Set operation iterators like
+/// `union` produce a concatenated order, as do their matching "bitwise"
+/// operators.  See their documentation for specifics.
 ///
 /// # Indices
 ///
@@ -161,6 +163,8 @@ impl<T, S> OrderSet<T, S>
     }
 
     /// Return an iterator over the values that are in `self` but not `other`.
+    ///
+    /// Values are produced in the same order that they appear in `self`.
     pub fn difference<'a, S2>(&'a self, other: &'a OrderSet<T, S2>) -> Difference<'a, T, S2>
         where S2: BuildHasher
     {
@@ -172,6 +176,9 @@ impl<T, S> OrderSet<T, S>
 
     /// Return an iterator over the values that are in `self` or `other`,
     /// but not in both.
+    ///
+    /// Values from `self` are produced in their original order, followed by
+    /// values from `other` in their original order.
     pub fn symmetric_difference<'a, S2>(&'a self, other: &'a OrderSet<T, S2>)
         -> SymmetricDifference<'a, T, S, S2>
         where S2: BuildHasher
@@ -182,6 +189,8 @@ impl<T, S> OrderSet<T, S>
     }
 
     /// Return an iterator over the values that are in both `self` and `other`.
+    ///
+    /// Values are produced in the same order that they appear in `self`.
     pub fn intersection<'a, S2>(&'a self, other: &'a OrderSet<T, S2>) -> Intersection<'a, T, S2>
         where S2: BuildHasher
     {
@@ -192,6 +201,9 @@ impl<T, S> OrderSet<T, S>
     }
 
     /// Return an iterator over all values that are in `self` or `other`.
+    ///
+    /// Values from `self` are produced in their original order, followed by
+    /// values that are unique to `other` in their original order.
     pub fn union<'a, S2>(&'a self, other: &'a OrderSet<T, S2>) -> Union<'a, T, S>
         where S2: BuildHasher
     {
@@ -753,6 +765,9 @@ impl<'a, 'b, T, S1, S2> BitAnd<&'b OrderSet<T, S2>> for &'a OrderSet<T, S1>
 {
     type Output = OrderSet<T, S1>;
 
+    /// Returns the set intersection, cloned into a new set.
+    ///
+    /// Values are collected in the same order that they appear in `self`.
     fn bitand(self, other: &'b OrderSet<T, S2>) -> Self::Output {
         self.intersection(other).cloned().collect()
     }
@@ -765,6 +780,10 @@ impl<'a, 'b, T, S1, S2> BitOr<&'b OrderSet<T, S2>> for &'a OrderSet<T, S1>
 {
     type Output = OrderSet<T, S1>;
 
+    /// Returns the set union, cloned into a new set.
+    ///
+    /// Values from `self` are collected in their original order, followed by
+    /// values that are unique to `other` in their original order.
     fn bitor(self, other: &'b OrderSet<T, S2>) -> Self::Output {
         self.union(other).cloned().collect()
     }
@@ -777,6 +796,10 @@ impl<'a, 'b, T, S1, S2> BitXor<&'b OrderSet<T, S2>> for &'a OrderSet<T, S1>
 {
     type Output = OrderSet<T, S1>;
 
+    /// Returns the set symmetric-difference, cloned into a new set.
+    ///
+    /// Values from `self` are collected in their original order, followed by
+    /// values from `other` in their original order.
     fn bitxor(self, other: &'b OrderSet<T, S2>) -> Self::Output {
         self.symmetric_difference(other).cloned().collect()
     }
@@ -789,6 +812,9 @@ impl<'a, 'b, T, S1, S2> Sub<&'b OrderSet<T, S2>> for &'a OrderSet<T, S1>
 {
     type Output = OrderSet<T, S1>;
 
+    /// Returns the set difference, cloned into a new set.
+    ///
+    /// Values are collected in the same order that they appear in `self`.
     fn sub(self, other: &'b OrderSet<T, S2>) -> Self::Output {
         self.difference(other).cloned().collect()
     }
