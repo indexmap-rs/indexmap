@@ -59,10 +59,13 @@ macro_rules! ordermap {
 /// # }
 /// ```
 macro_rules! orderset {
+    (@single $($x:tt)*) => (());
+    (@count $($rest:expr),*) => (<[()]>::len(&[$(orderset!(@single $rest)),*]));
+
     ($($value:expr,)+) => { orderset!($($value),+) };
     ($($value:expr),*) => {
         {
-            let _cap = ordermap!(@count $($value),*);
+            let _cap = orderset!(@count $($value),*);
             let mut _set = $crate::OrderSet::with_capacity(_cap);
             $(
                 _set.insert($value);
