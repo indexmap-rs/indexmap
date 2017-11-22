@@ -386,33 +386,7 @@ pub struct IntoIter<T> {
 impl<T> Iterator for IntoIter<T> {
     type Item = T;
 
-    fn next(&mut self) -> Option<Self::Item> {
-        self.iter.next().map(|entry| entry.key)
-    }
-
-    fn size_hint(&self) -> (usize, Option<usize>) {
-        self.iter.size_hint()
-    }
-
-    fn count(self) -> usize {
-        self.iter.len()
-    }
-
-    fn nth(&mut self, n: usize) -> Option<Self::Item> {
-        self.iter.nth(n).map(|entry| entry.key)
-    }
-
-    fn last(mut self) -> Option<Self::Item> {
-        self.next_back()
-    }
-
-    fn collect<C>(self) -> C
-        where C: FromIterator<Self::Item>
-    {
-        // NB: forwarding this directly to standard iterators will
-        // allow it to leverage unstable traits like `TrustedLen`.
-        self.iter.map(|entry| entry.key).collect()
-    }
+    iterator_methods!(|entry| entry.key);
 }
 
 impl<T> DoubleEndedIterator for IntoIter<T> {
@@ -435,33 +409,7 @@ pub struct Iter<'a, T: 'a> {
 impl<'a, T> Iterator for Iter<'a, T> {
     type Item = &'a T;
 
-    fn next(&mut self) -> Option<Self::Item> {
-        self.iter.next().map(|entry| &entry.key)
-    }
-
-    fn size_hint(&self) -> (usize, Option<usize>) {
-        self.iter.size_hint()
-    }
-
-    fn count(self) -> usize {
-        self.iter.len()
-    }
-
-    fn nth(&mut self, n: usize) -> Option<Self::Item> {
-        self.iter.nth(n).map(|entry| &entry.key)
-    }
-
-    fn last(mut self) -> Option<Self::Item> {
-        self.next_back()
-    }
-
-    fn collect<C>(self) -> C
-        where C: FromIterator<Self::Item>
-    {
-        // NB: forwarding this directly to standard iterators will
-        // allow it to leverage unstable traits like `TrustedLen`.
-        self.iter.map(|entry| &entry.key).collect()
-    }
+    iterator_methods!(|entry| &entry.key);
 }
 
 impl<'a, T> DoubleEndedIterator for Iter<'a, T> {

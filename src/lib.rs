@@ -6,6 +6,7 @@
 //!
 //! [`OrderMap`]: struct.OrderMap.html
 
+#[macro_use]
 mod macros;
 #[cfg(feature = "serde-1")]
 mod serde;
@@ -1165,42 +1166,6 @@ impl<K, V, S> OrderMap<K, V, S> {
 use std::slice::Iter as SliceIter;
 use std::slice::IterMut as SliceIterMut;
 use std::vec::IntoIter as VecIntoIter;
-
-// generate all the Iterator methods by just forwarding to the underlying
-// self.iter and mapping its element.
-macro_rules! iterator_methods {
-    // $map_elt is the mapping function from the underlying iterator's element
-    // same mapping function for both options and iterators
-    ($map_elt:expr) => {
-        fn next(&mut self) -> Option<Self::Item> {
-            self.iter.next().map($map_elt)
-        }
-
-        fn size_hint(&self) -> (usize, Option<usize>) {
-            self.iter.size_hint()
-        }
-
-        fn count(self) -> usize {
-            self.iter.len()
-        }
-
-        fn nth(&mut self, n: usize) -> Option<Self::Item> {
-            self.iter.nth(n).map($map_elt)
-        }
-
-        fn last(mut self) -> Option<Self::Item> {
-            self.next_back()
-        }
-
-        fn collect<C>(self) -> C
-            where C: FromIterator<Self::Item>
-        {
-            // NB: forwarding this directly to standard iterators will
-            // allow it to leverage unstable traits like `TrustedLen`.
-            self.iter.map($map_elt).collect()
-        }
-    }
-}
 
 pub struct Keys<'a, K: 'a, V: 'a> {
     iter: SliceIter<'a, Bucket<K, V>>,
