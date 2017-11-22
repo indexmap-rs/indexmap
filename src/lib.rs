@@ -1195,6 +1195,8 @@ macro_rules! iterator_methods {
         fn collect<C>(self) -> C
             where C: FromIterator<Self::Item>
         {
+            // NB: forwarding this directly to standard iterators will
+            // allow it to leverage unstable traits like `TrustedLen`.
             self.iter.map($map_elt).collect()
         }
     }
