@@ -6,12 +6,15 @@
 //!
 //! [`OrderMap`]: struct.OrderMap.html
 
+#[macro_use]
 mod macros;
 #[cfg(feature = "serde-1")]
 mod serde;
 mod util;
 mod equivalent;
 mod mutable_keys;
+
+pub mod set;
 
 use std::hash::Hash;
 use std::hash::BuildHasher;
@@ -28,6 +31,7 @@ use std::marker::PhantomData;
 use util::{third, ptrdistance, enumerate};
 pub use equivalent::Equivalent;
 pub use mutable_keys::MutableKeys;
+pub use set::OrderSet;
 
 fn hash_elem_using<B: BuildHasher, K: ?Sized + Hash>(build: &B, k: &K) -> HashValue {
     let mut h = build.build_hasher();
@@ -1162,40 +1166,6 @@ impl<K, V, S> OrderMap<K, V, S> {
 use std::slice::Iter as SliceIter;
 use std::slice::IterMut as SliceIterMut;
 use std::vec::IntoIter as VecIntoIter;
-
-// generate all the Iterator methods by just forwarding to the underlying
-// self.iter and mapping its element.
-macro_rules! iterator_methods {
-    // $map_elt is the mapping function from the underlying iterator's element
-    // same mapping function for both options and iterators
-    ($map_elt:expr) => {
-        fn next(&mut self) -> Option<Self::Item> {
-            self.iter.next().map($map_elt)
-        }
-
-        fn size_hint(&self) -> (usize, Option<usize>) {
-            self.iter.size_hint()
-        }
-
-        fn count(self) -> usize {
-            self.iter.len()
-        }
-
-        fn nth(&mut self, n: usize) -> Option<Self::Item> {
-            self.iter.nth(n).map($map_elt)
-        }
-
-        fn last(mut self) -> Option<Self::Item> {
-            self.next_back()
-        }
-
-        fn collect<C>(self) -> C
-            where C: FromIterator<Self::Item>
-        {
-            self.iter.map($map_elt).collect()
-        }
-    }
-}
 
 pub struct Keys<'a, K: 'a, V: 'a> {
     iter: SliceIter<'a, Bucket<K, V>>,

@@ -18,3 +18,15 @@ fn test_sort() {
 }
 
 
+#[test]
+fn test_sort_set() {
+    let s = orderset! {
+        1,
+        7,
+        2,
+        3,
+    };
+
+    itertools::assert_equal(s.sorted_by(|v1, v2| v1.cmp(v2)),
+                            vec![1, 2, 3, 7]);
+}
