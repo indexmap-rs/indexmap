@@ -23,32 +23,42 @@ the insertion order and is fast to iterate, and is compact in memory).
 Some of those features were translated to Rust, and some were not. The result
 was ordermap, a hash table that is
 
-- Order is independent of hash function and hash values of keys
+- Order is **independent of hash function** and hash values of keys
 - Fast to iterate
 - Indexed in compact space
-- Preserves insertion order as long as you don't call ``remove``.
+- Preserves insertion order **as long** as you don't call ``remove``.
 - Using robin hood hashing just like Rust's libstd HashMap.
 
   - It's the usual backwards shift deletion, but only on the index vector, so
     it's cheaper because it's moving less memory around.
 
-Does not implement
-------------------
-
+Does not implement (Yet)
+------------------------
 
 - ``.reserve`` exists but does not have a full implementation
 
 Performance
 -----------
 
-(Figures from late 2016)
+OrderMap derives a couple of performance facts directly from how it is constructed,
+which is roughly:
 
-- Iteration is very fast
-- Lookup is faster than libstd HashMap for "small" tables (below something like
-  100 000 key-value pairs), but suffers under load more due
-  to the index vec to entries vec indirection still.
-- Growing the map is faster than libstd HashMap, doesn't need to move keys and values
-  at all, only the index vec
+  Two vectors, the first, sparse, with hashes and key-value indices, and the
+  second, dense, the key-value pairs.
+
+- Iteration is very fast since it is on the dense key-values.
+- Removal is fast since it moves memory areas only in the first vector,
+  and uses a single swap in the second vector
+- Lookup is fast-ish because the hashes and indices are densely stored.
+  Lookup also is slow-ish since hashes and key-value pairs are stored in
+  separate places. (Visible when cpu caches size is limiting.)
+
+- In practice, OrderMap has been tested out as the hashmap in rustc in PR45282_ and
+  the perforamnce was roughly on par across the whole workload. 
+- If you want the properties of OrderMap, or its strongest performance points
+  fits your workload, it might be the best hash table implementation.
+
+.. _PR45282: https://github.com/rust-lang/rust/pull/45282
 
 Interesting Features
 --------------------
