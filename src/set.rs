@@ -1,4 +1,4 @@
-//! A hash set implemented as an `OrderMap` where the value is `()`.
+//! A hash set implemented using `OrderMap`
 
 use std::cmp::Ordering;
 use std::collections::hash_map::RandomState;
@@ -35,7 +35,7 @@ type Bucket<T> = super::Bucket<T, ()>;
 ///
 /// The values are indexed in a compact range without holes in the range
 /// `0..self.len()`. For example, the method `.get_full` looks up the index for
-/// a key, and the method `.get_index` looks up the value by index.
+/// a value, and the method `.get_index` looks up the value by index.
 ///
 /// # Examples
 ///
