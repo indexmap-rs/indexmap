@@ -980,7 +980,7 @@ impl<K, V, S> OrderMap<K, V, S>
         }
 
         Drain {
-            inner: self.entries.drain(range),
+            iter: self.entries.drain(range),
         }
     }
 }
@@ -1299,6 +1299,20 @@ impl<K, V> ExactSizeIterator for IntoIter<K, V> {
     }
 }
 
+pub struct Drain<'a, K, V> where K: 'a, V: 'a {
+    iter: ::std::vec::Drain<'a, Bucket<K, V>>
+}
+
+impl<'a, K, V> Iterator for Drain<'a, K, V> {
+    type Item = (K, V);
+
+    iterator_methods!(|bucket| (bucket.key, bucket.value));
+}
+
+impl<'a, K, V> DoubleEndedIterator for Drain<'a, K, V> {
+    double_ended_iterator_methods!(|bucket| (bucket.key, bucket.value));
+}
+
 
 impl<'a, K, V, S> IntoIterator for &'a OrderMap<K, V, S>
     where K: Hash + Eq,
@@ -1433,20 +1447,6 @@ impl<K, V, S> Eq for OrderMap<K, V, S>
           V: Eq,
           S: BuildHasher
 {
-}
-
-pub struct Drain<'a, K, V> where K: 'a, V: 'a {
-    inner: ::std::vec::Drain<'a, Bucket<K, V>>
-}
-
-impl<'a, K, V> Iterator for Drain<'a, K, V> {
-    type Item = (K, V);
-    fn next(&mut self) -> Option<Self::Item> {
-        self.inner.next().map(|bucket| (bucket.key, bucket.value))
-    }
-    fn size_hint(&self) -> (usize, Option<usize>) {
-        self.inner.size_hint()
-    }
 }
 
 #[cfg(test)]

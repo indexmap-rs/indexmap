@@ -110,3 +110,13 @@ macro_rules! iterator_methods {
         }
     }
 }
+
+macro_rules! double_ended_iterator_methods {
+    // $map_elt is the mapping function from the underlying iterator's element
+    // same mapping function for both options and iterators
+    ($map_elt:expr) => {
+        fn next_back(&mut self) -> Option<Self::Item> {
+            self.iter.next_back().map($map_elt)
+        }
+    }
+}

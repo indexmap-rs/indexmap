@@ -353,7 +353,7 @@ impl<T, S> OrderSet<T, S>
     /// Keeps the allocated memory for reuse.
     pub fn drain(&mut self, range: RangeFull) -> Drain<T> {
         Drain {
-            iter: self.map.drain(range).inner,
+            iter: self.map.drain(range).iter,
         }
     }
 }
@@ -424,6 +424,19 @@ impl<'a, T> ExactSizeIterator for Iter<'a, T> {
     }
 }
 
+pub struct Drain<'a, T: 'a> {
+    iter: vec::Drain<'a, Bucket<T>>,
+}
+
+impl<'a, T> Iterator for Drain<'a, T> {
+    type Item = T;
+
+    iterator_methods!(|bucket| bucket.key);
+}
+
+impl<'a, T> DoubleEndedIterator for Drain<'a, T> {
+    double_ended_iterator_methods!(|bucket| bucket.key);
+}
 
 impl<'a, T, S> IntoIterator for &'a OrderSet<T, S>
     where T: Hash + Eq,
@@ -533,23 +546,6 @@ impl<T, S> OrderSet<T, S>
         where S2: BuildHasher
     {
         other.is_subset(self)
-    }
-}
-
-
-pub struct Drain<'a, T: 'a> {
-    iter: vec::Drain<'a, Bucket<T>>,
-}
-
-impl<'a, T> Iterator for Drain<'a, T> {
-    type Item = T;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        self.iter.next().map(|entry| entry.key)
-    }
-
-    fn size_hint(&self) -> (usize, Option<usize>) {
-        self.iter.size_hint()
     }
 }
 
