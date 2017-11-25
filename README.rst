@@ -97,6 +97,11 @@ Ideas that we already did
 Recent Changes
 ==============
 
+- 0.3.2
+
+  - Add ``OrderSet`` by @cuviper!
+  - ``OrderMap::drain`` is now (too) a double ended iterator
+
 - 0.3.1
 
   - In all ordermap iterators, forward the ``collect`` method to the underlying
