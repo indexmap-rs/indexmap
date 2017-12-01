@@ -145,19 +145,19 @@ impl<'a, K, V, S> OrderMapView<'a, K, V, S> {
     /// Divides a view into two at an index.
     ///
     /// ***Panics*** if `mid > self.len()`
-    pub fn split_at(&self, mid: usize) -> (OrderMapView<'a, K, V, S>, OrderMapView<'a, K, V, S>) {
+    pub fn split_at(self, mid: usize) -> (Self, Self) {
         assert!(mid <= self.len());
         let mid = self.start + mid;
-        (OrderMapView { end: mid, ..*self },
-         OrderMapView { start: mid, ..*self })
+        (OrderMapView { end: mid, ..self },
+         OrderMapView { start: mid, ..self })
     }
 
     /// Returns the first key-value pair and a view of all the rest,
     /// or `None` if it is empty.
-    pub fn split_first(&self) -> Option<(&'a K, &'a V, OrderMapView<'a, K, V, S>)> {
+    pub fn split_first(self) -> Option<(&'a K, &'a V, Self)> {
         if self.start < self.end {
             self.map.get_index(self.start)
-                .map(|(k, v)| (k, v, OrderMapView { start: self.start + 1, ..*self }))
+                .map(|(k, v)| (k, v, OrderMapView { start: self.start + 1, ..self }))
         } else {
             None
         }
@@ -165,10 +165,10 @@ impl<'a, K, V, S> OrderMapView<'a, K, V, S> {
 
     /// Returns the last key-value pair and a view of all the rest,
     /// or `None` if it is empty.
-    pub fn split_last(&self) -> Option<(&'a K, &'a V, OrderMapView<'a, K, V, S>)> {
+    pub fn split_last(self) -> Option<(&'a K, &'a V, Self)> {
         if self.start < self.end {
             self.map.get_index(self.end - 1)
-                .map(|(k, v)| (k, v, OrderMapView { end: self.end - 1, ..*self }))
+                .map(|(k, v)| (k, v, OrderMapView { end: self.end - 1, ..self }))
         } else {
             None
         }

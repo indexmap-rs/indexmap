@@ -36,6 +36,13 @@ impl<'a, K, V, S> OrderMapViewMut<'a, K, V, S> {
         }
     }
 
+    // TODO pub fn view(&self) -> OrderMapView<K, V, S>
+
+    /// Reborrow the current view.
+    pub fn view_mut(&mut self) -> OrderMapViewMut<K, V, S> {
+        OrderMapViewMut { entries: &mut *self.entries, ..*self }
+    }
+
     /// Return the number of key-value pairs in the map view.
     ///
     /// Computes in **O(1)** time.
@@ -180,31 +187,27 @@ impl<'a, K, V, S> OrderMapViewMut<'a, K, V, S> {
     /// Divides a view into two at an index.
     ///
     /// ***Panics*** if `mid > self.len()`
-    // FIXME should downgrade to OrderMapView like:
-    // pub fn split_at(&self, mid: usize) -> (OrderMapView<'a, K, V, S>, OrderMapView<'a, K, V, S>) {
-    pub fn split_at(&mut self, mid: usize) -> (OrderMapViewMut<K, V, S>, OrderMapViewMut<K, V, S>) {
+    pub fn split_at(self, mid: usize) -> (Self, Self) {
         let (left, right) = self.entries.split_at_mut(mid);
-        (OrderMapViewMut { entries: left, ..*self },
-         OrderMapViewMut { entries: right, offset: self.offset + mid, ..*self })
+        (OrderMapViewMut { entries: left, ..self },
+         OrderMapViewMut { entries: right, offset: self.offset + mid, ..self })
     }
 
     /// Divides a view into two at an index.
     ///
     /// ***Panics*** if `mid > self.len()`
-    pub fn split_at_mut(&mut self, mid: usize) -> (OrderMapViewMut<K, V, S>, OrderMapViewMut<K, V, S>) {
+    pub fn split_at_mut(self, mid: usize) -> (Self, Self) {
         let (left, right) = self.entries.split_at_mut(mid);
-        (OrderMapViewMut { entries: left, ..*self },
-         OrderMapViewMut { entries: right, offset: self.offset + mid, ..*self })
+        (OrderMapViewMut { entries: left, ..self },
+         OrderMapViewMut { entries: right, offset: self.offset + mid, ..self })
     }
 
     /// Returns the first key-value pair and a view of all the rest,
     /// or `None` if it is empty.
-    // FIXME should downgrade to OrderMapView like:
-    // pub fn split_first(&self) -> Option<(&'a K, &'a V, OrderMapView<'a, K, V, S>)> {
-    pub fn split_first(&mut self) -> Option<(&K, &V, OrderMapViewMut<K, V, S>)> {
+    pub fn split_first(self) -> Option<(&'a K, &'a V, Self)> {
         if let Some((ent, rest)) = self.entries.split_first_mut() {
             Some((&ent.key, &ent.value,
-                  OrderMapViewMut { offset: self.offset + 1, entries: rest, ..*self }))
+                  OrderMapViewMut { offset: self.offset + 1, entries: rest, ..self }))
         } else {
             None
         }
@@ -212,10 +215,10 @@ impl<'a, K, V, S> OrderMapViewMut<'a, K, V, S> {
 
     /// Returns the first key-value pair and a view of all the rest,
     /// or `None` if it is empty.
-    pub fn split_first_mut(&mut self) -> Option<(&mut K, &mut V, OrderMapViewMut<K, V, S>)> {
+    pub fn split_first_mut(self) -> Option<(&'a mut K, &'a mut V, Self)> {
         if let Some((ent, rest)) = self.entries.split_first_mut() {
             Some((&mut ent.key, &mut ent.value,
-                  OrderMapViewMut { offset: self.offset + 1, entries: rest, ..*self }))
+                  OrderMapViewMut { offset: self.offset + 1, entries: rest, ..self }))
         } else {
             None
         }
@@ -223,12 +226,10 @@ impl<'a, K, V, S> OrderMapViewMut<'a, K, V, S> {
 
     /// Returns the last key-value pair and a view of all the rest,
     /// or `None` if it is empty.
-    // FIXME should downgrade to OrderMapView like:
-    // pub fn split_last(&self) -> Option<(&'a K, &'a V, OrderMapView<'a, K, V, S>)> {
-    pub fn split_last(&mut self) -> Option<(&K, &V, OrderMapViewMut<K, V, S>)> {
+    pub fn split_last(self) -> Option<(&'a K, &'a V, Self)> {
         if let Some((ent, rest)) = self.entries.split_last_mut() {
             Some((&ent.key, &ent.value,
-                  OrderMapViewMut { entries: rest, ..*self }))
+                  OrderMapViewMut { entries: rest, ..self }))
         } else {
             None
         }
@@ -236,10 +237,10 @@ impl<'a, K, V, S> OrderMapViewMut<'a, K, V, S> {
 
     /// Returns the last key-value pair and a view of all the rest,
     /// or `None` if it is empty.
-    pub fn split_last_mut(&mut self) -> Option<(&mut K, &mut V, OrderMapViewMut<K, V, S>)> {
+    pub fn split_last_mut(self) -> Option<(&'a mut K, &'a mut V, Self)> {
         if let Some((ent, rest)) = self.entries.split_last_mut() {
             Some((&mut ent.key, &mut ent.value,
-                  OrderMapViewMut { entries: rest, ..*self }))
+                  OrderMapViewMut { entries: rest, ..self }))
         } else {
             None
         }
@@ -442,7 +443,7 @@ mod tests {
             }
         }
 
-        fn check_split_at(view: &mut OrderMapViewMut<i32, ()>, slice: &[i32], index: usize) {
+        fn check_split_at(view: OrderMapViewMut<i32, ()>, slice: &[i32], index: usize) {
             let (slice1, slice2) = slice.split_at(index);
             let (view1, view2) = view.split_at_mut(index);
             check(view1, slice1, slice2);
@@ -456,21 +457,20 @@ mod tests {
             map.insert(elt, ());
         }
 
-        let mut view = map.view_mut();
         for i in 0..insert.len() + 1 {
-            check_split_at(&mut view, &insert, i);
+            check_split_at(map.view_mut(), &insert, i);
         }
 
         {
             let (first, slice) = insert.split_first().unwrap();
-            let (k, &mut (), tail) = view.split_first_mut().unwrap();
+            let (k, &mut (), tail) = map.view_mut().split_first_mut().unwrap();
             assert_eq!(k, first);
             check(tail, slice, &[*first]);
         }
 
         {
             let (last, slice) = insert.split_last().unwrap();
-            let (k, &mut (), tail) = view.split_last_mut().unwrap();
+            let (k, &mut (), tail) = map.view_mut().split_last_mut().unwrap();
             assert_eq!(k, last);
             check(tail, slice, &[*last]);
         }
