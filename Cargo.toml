@@ -21,7 +21,7 @@ itertools = "0.7.0"
 rand = "0.3"
 quickcheck = { version = "0.4", default-features = false }
 fnv = "1.0"
-lazy_static = "0.2"
+lazy_static = "1"
 serde_test = "1.0.5"
 
 [features]
