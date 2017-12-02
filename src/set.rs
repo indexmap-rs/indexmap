@@ -25,7 +25,9 @@ type Bucket<T> = super::Bucket<T, ()>;
 ///
 /// The values have a consistent order that is determined by the sequence of
 /// insertion and removal calls on the set. The order does not depend on the
-/// values or the hash function at all.
+/// values or the hash function at all. Note that insertion order and value
+/// are not affected if a re-insertion is attempted once an element is
+/// already present.
 ///
 /// All iterators traverse the set *in order*.  Set operation iterators like
 /// `union` produce a concatenated order, as do their matching "bitwise"
@@ -145,10 +147,12 @@ impl<T, S> OrderSet<T, S>
         self.map.reserve(additional);
     }
 
-    /// Insert the value into the map.
+    /// Insert the value into the set.
     ///
-    /// If the value did already exist in the set, returns `false`;
-    /// otherwise, return `true`.
+    /// If an equivalent item already exists in the set, it returns
+    /// `false` leaving the original value in the set and without
+    /// altering its insertion order. Otherwise, it inserts the new
+    /// item and returns `true`.
     ///
     /// Computes in **O(1)** time (amortized average).
     pub fn insert(&mut self, value: T) -> bool {
@@ -831,6 +835,26 @@ mod tests {
 
         for &i in &values {
             assert!(set.get(&i).is_some(), "did not find {}", i);
+        }
+    }
+
+    #[test]
+    fn insert_dup() {
+        let mut elements = vec![0, 2, 4, 6, 8];
+        let mut set: OrderSet<u8> = elements.drain(..).collect();
+        {
+            let (i, v) = set.get_full(&0).unwrap();
+            assert_eq!(set.len(), 5);
+            assert_eq!(i, 0);
+            assert_eq!(*v, 0);
+        }
+        {
+            let inserted = set.insert(0);
+            let (i, v) = set.get_full(&0).unwrap();
+            assert_eq!(set.len(), 5);
+            assert_eq!(inserted, false);
+            assert_eq!(i, 0);
+            assert_eq!(*v, 0);
         }
     }
 
