@@ -1,4 +1,5 @@
 
+#![deny(unsafe_code)]
 #![doc(html_root_url = "https://docs.rs/ordermap/0.3/")]
 
 //! [`OrderMap`] is a hash table where the iteration order of the key-value
