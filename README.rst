@@ -97,6 +97,11 @@ Ideas that we already did
 Recent Changes
 ==============
 
+- 0.3.3
+
+  - Document insertion behaviour better by @lucab
+  - Updated dependences (no feature changes) by @ignatenkobrain
+
 - 0.3.2
 
   - Add ``OrderSet`` by @cuviper!
