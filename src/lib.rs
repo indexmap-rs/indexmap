@@ -642,7 +642,12 @@ impl<K, V, S> OrderMap<K, V, S>
     /// Computes in **O(n)** time.
     pub fn clear(&mut self) {
         self.entries.clear();
-        for pos in &mut *self.indices {
+        self.clear_indices();
+    }
+
+    // clear self.indices to the same state as "no elements"
+    fn clear_indices(&mut self) {
+        for pos in self.indices.iter_mut() {
             *pos = Pos::none();
         }
     }
@@ -973,12 +978,11 @@ impl<K, V, S> OrderMap<K, V, S>
         self.entries.sort_by(move |a, b| cmp(&a.key, &a.value, &b.key, &b.value));
         self.into_iter()
     }
+
     /// Clears the `OrderMap`, returning all key-value pairs as a drain iterator.
     /// Keeps the allocated memory for reuse.
     pub fn drain(&mut self, range: RangeFull) -> Drain<K, V> {
-        for i in &mut *self.indices {
-            *i = Pos::none();
-        }
+        self.clear_indices();
 
         Drain {
             iter: self.entries.drain(range),
