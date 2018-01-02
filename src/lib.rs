@@ -304,7 +304,7 @@ impl<K, V, S> fmt::Debug for OrderMap<K, V, S>
                 let hash = self.entries[pos].hash;
                 let key = &self.entries[pos].key;
                 let desire = desired_pos(self.mask, hash);
-                try!(writeln!(f, ", desired={}, probe_distance={}, key={:?}",
+                try!(write!(f, ", desired={}, probe_distance={}, key={:?}",
                               desire,
                               probe_distance(self.mask, hash, i),
                               key));
