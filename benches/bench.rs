@@ -579,7 +579,7 @@ fn pop_ordermap_100_000(b: &mut Bencher) {
 }
 
 #[bench]
-fn retain_few_ordermap_100_000(b: &mut Bencher) {
+fn few_retain_ordermap_100_000(b: &mut Bencher) {
     let map = OMAP_100K.clone();
 
     b.iter(|| {
@@ -590,7 +590,18 @@ fn retain_few_ordermap_100_000(b: &mut Bencher) {
 }
 
 #[bench]
-fn retain_half_ordermap_100_000(b: &mut Bencher) {
+fn few_retain_hashmap_100_000(b: &mut Bencher) {
+    let map = HMAP_100K.clone();
+
+    b.iter(|| {
+        let mut map = map.clone();
+        map.retain(|k, _| *k % 7 == 0);
+        map
+    });
+}
+
+#[bench]
+fn half_retain_ordermap_100_000(b: &mut Bencher) {
     let map = OMAP_100K.clone();
 
     b.iter(|| {
@@ -601,8 +612,30 @@ fn retain_half_ordermap_100_000(b: &mut Bencher) {
 }
 
 #[bench]
-fn retain_many_ordermap_100_000(b: &mut Bencher) {
+fn half_retain_hashmap_100_000(b: &mut Bencher) {
+    let map = HMAP_100K.clone();
+
+    b.iter(|| {
+        let mut map = map.clone();
+        map.retain(|k, _| *k % 2 == 0);
+        map
+    });
+}
+
+#[bench]
+fn many_retain_ordermap_100_000(b: &mut Bencher) {
     let map = OMAP_100K.clone();
+
+    b.iter(|| {
+        let mut map = map.clone();
+        map.retain(|k, _| *k % 100 != 0);
+        map
+    });
+}
+
+#[bench]
+fn many_retain_hashmap_100_000(b: &mut Bencher) {
+    let map = HMAP_100K.clone();
 
     b.iter(|| {
         let mut map = map.clone();
