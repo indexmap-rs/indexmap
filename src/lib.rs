@@ -201,6 +201,21 @@ impl Pos {
             }
         }
     }
+
+    /// Like resolve, but the Pos **must** be non-none. Return its index.
+    #[inline]
+    fn resolve_existing_index<Sz>(&self) -> usize 
+        where Sz: Size
+    {
+        debug_assert!(!self.is_none(), "datastructure inconsistent: none where valid Pos expected");
+        if Sz::is_64_bit() {
+            self.index as usize
+        } else {
+            let (i, _) = split_lo_hi(self.index);
+            i as usize
+        }
+    }
+
 }
 
 #[inline]
@@ -1302,16 +1317,12 @@ fn find_existing_entry_at<Sz>(indices: &[Pos], hash: HashValue,
                               mask: usize, entry_index: usize) -> usize
     where Sz: Size,
 {
-    let actual_pos = entry_index;
     let mut probe = desired_pos(mask, hash);
     probe_loop!(probe < indices.len(), {
-        if let Some((i, _)) = indices[probe].resolve::<Sz>() {
-            if i == actual_pos {
-                return probe;
-            }
-        } else {
-            debug_assert!(false, "the entry does not exist");
-        }
+        // the entry *must* be present; if we hit a Pos::none this was not true
+        // and there is a debug assertion in resolve_existing_index for that.
+        let i = indices[probe].resolve_existing_index::<Sz>();
+        if i == entry_index { return probe; }
     });
 }
 
