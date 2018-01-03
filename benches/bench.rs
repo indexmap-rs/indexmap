@@ -5,6 +5,7 @@ extern crate fnv;
 #[macro_use]
 extern crate lazy_static;
 
+use std::hash::Hash;
 use fnv::FnvHasher;
 use std::hash::BuildHasherDefault;
 type FnvBuilder = BuildHasherDefault<FnvHasher>;
@@ -361,13 +362,16 @@ fn lookup_orderedmap_10_000_noexist(b: &mut Bencher) {
 // number of items to look up
 const LOOKUP_MAP_SIZE: u32 = 100_000_u32;
 const LOOKUP_SAMPLE_SIZE: u32 = 5000;
+const SORT_MAP_SIZE: usize = 10_000;
 
 
+// use lazy_static so that comparison benchmarks use the exact same inputs
 lazy_static! {
     static ref KEYS: Vec<u32> = {
         shuffled_keys(0..LOOKUP_MAP_SIZE)
     };
 }
+
 lazy_static! {
     static ref HMAP_100K: HashMap<u32, u32> = {
         let c = LOOKUP_MAP_SIZE;
@@ -387,6 +391,25 @@ lazy_static! {
         let keys = &*KEYS;
         for &key in keys {
             map.insert(key, key);
+        }
+        map
+    };
+}
+
+lazy_static! {
+    static ref OMAP_SORT_U32: OrderMap<u32, u32> = {
+        let mut map = OrderMap::with_capacity(SORT_MAP_SIZE);
+        for &key in &KEYS[..SORT_MAP_SIZE] {
+            map.insert(key, key);
+        }
+        map
+    };
+}
+lazy_static! {
+    static ref OMAP_SORT_S: OrderMap<String, String> = {
+        let mut map = OrderMap::with_capacity(SORT_MAP_SIZE);
+        for &key in &KEYS[..SORT_MAP_SIZE] {
+            map.insert(format!("{:^16x}", &key), String::new());
         }
         map
     };
@@ -640,6 +663,63 @@ fn many_retain_hashmap_100_000(b: &mut Bencher) {
     b.iter(|| {
         let mut map = map.clone();
         map.retain(|k, _| *k % 100 != 0);
+        map
+    });
+}
+
+
+// simple sort impl for comparison
+pub fn simple_sort<K: Ord + Hash, V>(m: &mut OrderMap<K, V>) {
+    let mut ordered: Vec<_> = m.drain(..).collect();
+    ordered.sort_by(|left, right| left.0.cmp(&right.0));
+    m.extend(ordered);
+}
+
+
+#[bench]
+fn ordermap_sort_s(b: &mut Bencher) {
+    let map = OMAP_SORT_S.clone();
+
+    // there's a map clone there, but it's still useful to profile this
+    b.iter(|| {
+        let mut map = map.clone();
+        map.sort_keys();
+        map
+    });
+}
+
+#[bench]
+fn ordermap_simple_sort_s(b: &mut Bencher) {
+    let map = OMAP_SORT_S.clone();
+
+    // there's a map clone there, but it's still useful to profile this
+    b.iter(|| {
+        let mut map = map.clone();
+        simple_sort(&mut map);
+        map
+    });
+}
+
+#[bench]
+fn ordermap_sort_u32(b: &mut Bencher) {
+    let map = OMAP_SORT_U32.clone();
+
+    // there's a map clone there, but it's still useful to profile this
+    b.iter(|| {
+        let mut map = map.clone();
+        map.sort_keys();
+        map
+    });
+}
+
+#[bench]
+fn ordermap_simple_sort_u32(b: &mut Bencher) {
+    let map = OMAP_SORT_U32.clone();
+
+    // there's a map clone there, but it's still useful to profile this
+    b.iter(|| {
+        let mut map = map.clone();
+        simple_sort(&mut map);
         map
     });
 }
