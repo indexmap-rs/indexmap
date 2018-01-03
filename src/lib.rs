@@ -1044,6 +1044,52 @@ impl<K, V, S> OrderMap<K, V, S>
         }
     }
 
+    pub fn sort_by<F>(&mut self, mut compare: F)
+        where F: FnMut(&K, &V, &K, &V) -> Ordering,
+    {
+        // new_index will form a lookup map from current index -> new index.
+        let mut new_index = Vec::from_iter(0..self.len());
+        new_index.sort_by(|&i, &j| {
+            let ei = &self.entries[i];
+            let ej = &self.entries[j];
+            compare(&ei.key, &ei.value, &ej.key, &ej.value)
+        });
+
+        // Apply new index to self.indices
+        dispatch_32_vs_64!(self.apply_new_index(&new_index));
+
+        // Apply new index to entries
+        apply_permutation(&mut new_index, &mut self.entries);
+
+        /// Apply a permutation
+        ///
+        /// perm: Each index 0..v.len() appear exactly once.
+        fn apply_permutation<T>(perm: &mut [usize], v: &mut [T]) {
+            debug_assert_eq!(perm.len(), v.len());
+             
+            for i in 0..perm.len() {
+                let mut current = i;
+                while i != perm[current] {
+                    let next = replace(&mut perm[current], current);
+                    // move element from next to current
+                    v.swap(next, current);
+                    current = next;
+                }
+                perm[current] = current;
+            }
+        }
+    }
+
+    fn apply_new_index<Sz>(&mut self, new_index: &[usize])
+        where Sz: Size
+    {
+        for pos in self.indices.iter_mut() {
+            if let Some((i, _)) = pos.resolve::<Sz>() {
+                pos.set_pos::<Sz>(new_index[i]);
+            }
+        }
+    }
+
     /// Sort the key-value pairs of the map and return a by value iterator of
     /// the key-value pairs with the result.
     ///
