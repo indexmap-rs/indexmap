@@ -17,6 +17,7 @@ mod mutable_keys;
 
 pub mod set;
 
+use std::cmp::min;
 use std::hash::Hash;
 use std::hash::BuildHasher;
 use std::hash::Hasher;
@@ -143,9 +144,24 @@ impl Pos {
     #[inline]
     fn is_none(&self) -> bool { self.index == !0 }
 
+    /// Return the index part of the Pos value inside `Some(_)` if the position
+    /// is not none, otherwise return `None`.
     #[inline]
     fn pos(&self) -> Option<usize> {
         if self.index == !0 { None } else { Some(lo32(self.index as u64)) }
+    }
+
+    /// Set the index part of the Pos value to `i`
+    #[inline]
+    fn set_pos<Sz>(&mut self, i: usize)
+        where Sz: Size,
+    {
+        debug_assert!(!self.is_none());
+        if Sz::is_64_bit() {
+            self.index = i as u64;
+        } else {
+            self.index = i as u64 | ((self.index >> 32) << 32)
+        }
     }
 
     #[inline]
@@ -163,6 +179,9 @@ impl Pos {
         }
     }
 
+    /// “Resolve” the Pos into a combination of its index value and
+    /// a proxy value to the hash (whether it contains the hash or not
+    /// depends on the size class of the hash map).
     #[inline]
     fn resolve<Sz>(&self) -> Option<(usize, ShortHashProxy<Sz>)>
         where Sz: Size
@@ -182,6 +201,21 @@ impl Pos {
             }
         }
     }
+
+    /// Like resolve, but the Pos **must** be non-none. Return its index.
+    #[inline]
+    fn resolve_existing_index<Sz>(&self) -> usize 
+        where Sz: Size
+    {
+        debug_assert!(!self.is_none(), "datastructure inconsistent: none where valid Pos expected");
+        if Sz::is_64_bit() {
+            self.index as usize
+        } else {
+            let (i, _) = split_lo_hi(self.index);
+            i as usize
+        }
+    }
+
 }
 
 #[inline]
@@ -959,13 +993,121 @@ impl<K, V, S> OrderMap<K, V, S>
     /// Scan through each key-value pair in the map and keep those where the
     /// closure `keep` returns `true`.
     ///
-    /// The order the elements are visited is not specified.
+    /// The elements are visited in order, and remaining elements keep their
+    /// order.
     ///
     /// Computes in **O(n)** time (average).
     pub fn retain<F>(&mut self, mut keep: F)
         where F: FnMut(&K, &mut V) -> bool,
     {
-        self.retain2(move |k, v| keep(&*k, v))
+        self.retain_mut(move |k, v| keep(k, v));
+    }
+
+    /// Scan through each key-value pair in the map and keep those where the
+    /// closure `keep` returns `true`.
+    ///
+    /// The order the elements are visited is not specified and removing
+    /// elements jumbles the order in the map.
+    ///
+    /// Computes in **O(n)** time (average).
+    pub fn retain_unordered<F>(&mut self, mut keep: F)
+        where F: FnMut(&K, &mut V) -> bool,
+    {
+        self.retain_unordered2(move |k, v| keep(&*k, v))
+    }
+
+    fn retain_mut<F>(&mut self, keep: F)
+        where F: FnMut(&mut K, &mut V) -> bool,
+    {
+        dispatch_32_vs_64!(self.retain_in_order_impl::<F>(keep));
+    }
+
+    fn retain_in_order_impl<Sz, F>(&mut self, mut keep: F)
+        where F: FnMut(&mut K, &mut V) -> bool,
+              Sz: Size,
+    {
+        let initial_len = self.len();
+
+        // We need to use tombstones in self.indices to mark elements that were
+        // deleted; this is because we need a working self.indices for lookups
+        // during phase 1
+        //
+        // We can safely use the length as the tombstone index; no entry
+        // has this index and it always fits into Pos.
+        let tombstone_index = initial_len;
+
+        // phase 1
+        // adapted from retain_mut for a vec
+        {
+            let v = &mut self.entries;
+            let len = v.len();
+            let mut del = 0; // deleted elements
+            for i in 0..len {
+                let will_keep;
+                let hash;
+                {
+                    let ent = &mut v[i];
+                    hash = ent.hash;
+                    will_keep = keep(&mut ent.key, &mut ent.value);
+                };
+                let probe = find_existing_entry_at::<Sz>(&self.indices, hash, self.mask, i);
+                if !will_keep {
+                    del += 1;
+                    self.indices[probe].set_pos::<Sz>(tombstone_index);
+                } else if del > 0 {
+                    self.indices[probe].set_pos::<Sz>(i - del);
+                    v.swap(i - del, i);
+                }
+            }
+            if del > 0 {
+                v.truncate(len - del);
+            } else {
+                return;
+            }
+        }
+
+        // phase 2
+        //
+        // Find tombstones. Move any non-ideally placed elements that follow
+        // the tombstones to the free slot nearest its ideal.
+
+        let mut probe = 0;      // current index into self.indices
+        let mut prev_empty = 0; // current contiguous run of tombstones or moved
+                                // from slots
+        let mut lap_n = 0;
+        probe_loop!(probe < self.indices.len(), {
+            lap_n += (probe == 0) as usize;
+            if let Some((i, hash_proxy)) = self.indices[probe].resolve::<Sz>() {
+                let is_tombstone = i == tombstone_index;
+                if is_tombstone {
+                    self.indices[probe] = Pos::none();
+                    // start or continue a run of tombstone elements
+                    prev_empty += 1;
+                } else if prev_empty > 0 {
+                    let entry_hash = hash_proxy.get_short_hash(&self.entries, i);
+                    let probe_offset = probe_distance(self.mask, entry_hash.into_hash(), probe);
+                    if probe_offset > 0 {
+                        // non-ideally placed element; improve its position
+                        let improvement_shift = min(probe_offset, prev_empty);
+                        debug_assert_ne!(improvement_shift, 0);
+                        let best_free_pos = probe.wrapping_sub(improvement_shift) & self.mask;
+                        self.indices[best_free_pos] = self.indices[probe];
+                        self.indices[probe] = Pos::none();
+                        prev_empty = improvement_shift;
+
+                        // manual probe increment:
+                        // the only way to `continue` inside probe_loop!()
+                        probe += 1;
+                        continue;
+                    }
+                    prev_empty = 0;
+                }
+            } else {
+                // this slot was already empty, so nothing needs this spot
+                prev_empty = 0;
+                if lap_n > 1 { break; }
+            }
+        });
     }
 
     /// Sort the key-value pairs of the map and return a by value iterator of
@@ -1093,25 +1235,17 @@ impl<K, V, S> OrderMap<K, V, S> {
     /// return its probe and entry index.
     fn find_existing_entry(&self, entry: &Bucket<K, V>) -> (usize, usize)
     {
+        debug_assert!(self.len() > 0);
         dispatch_32_vs_64!(self.find_existing_entry_impl(entry))
     }
 
     fn find_existing_entry_impl<Sz>(&self, entry: &Bucket<K, V>) -> (usize, usize)
         where Sz: Size,
     {
-        debug_assert!(self.len() > 0);
         let hash = entry.hash;
         let actual_pos = ptrdistance(&self.entries[0], entry);
-        let mut probe = desired_pos(self.mask, hash);
-        probe_loop!(probe < self.indices.len(), {
-            if let Some((i, _)) = self.indices[probe].resolve::<Sz>() {
-                if i == actual_pos {
-                    return (probe, actual_pos);
-                }
-            } else {
-                debug_assert!(false, "the entry does not exist");
-            }
-        });
+        let probe = find_existing_entry_at::<Sz>(&self.indices, hash, self.mask, actual_pos);
+        (probe, actual_pos)
     }
 
     fn remove_found(&mut self, probe: usize, found: usize) -> (K, V) {
@@ -1167,6 +1301,31 @@ impl<K, V, S> OrderMap<K, V, S> {
     }
 
 }
+
+/// Find, in the indices, an entry that already exists at a known position
+/// inside self.entries in the OrderMap.
+///
+/// This is effectively reverse lookup, from the entries into the hash buckets.
+///
+/// Return the probe index (into self.indices)
+///
+/// + indices: The self.indices of the map,
+/// + hash: The full hash value from the bucket
+/// + mask: self.mask.
+/// + entry_index: The index of the entry in self.entries
+fn find_existing_entry_at<Sz>(indices: &[Pos], hash: HashValue,
+                              mask: usize, entry_index: usize) -> usize
+    where Sz: Size,
+{
+    let mut probe = desired_pos(mask, hash);
+    probe_loop!(probe < indices.len(), {
+        // the entry *must* be present; if we hit a Pos::none this was not true
+        // and there is a debug assertion in resolve_existing_index for that.
+        let i = indices[probe].resolve_existing_index::<Sz>();
+        if i == entry_index { return probe; }
+    });
+}
+
 
 use std::slice::Iter as SliceIter;
 use std::slice::IterMut as SliceIterMut;

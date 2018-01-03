@@ -332,7 +332,8 @@ impl<T, S> OrderSet<T, S>
     /// Scan through each value in the set and keep those where the
     /// closure `keep` returns `true`.
     ///
-    /// The order the elements are visited is not specified.
+    /// The elements are visited in order, and remaining elements keep their
+    /// order.
     ///
     /// Computes in **O(n)** time (average).
     pub fn retain<F>(&mut self, mut keep: F)
