@@ -286,8 +286,17 @@ quickcheck! {
         answer.reverse();
 
         map.sort_by(|k1, _, k2, _| Ord::cmp(k1, k2));
+
+        // check it contains all the values it should
+        for &(key, val) in &answer {
+            assert_eq!(map[&key], val);
+        }
+
+        // check the order
+
         let mapv = Vec::from_iter(map);
         assert_eq!(answer, mapv);
+
     }
 
     fn sort_2(keyvals: Large<Vec<(i8, i8)>>) -> () {
