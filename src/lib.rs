@@ -1234,24 +1234,22 @@ impl<K, V, S> OrderMap<K, V, S> {
     {
         // backward shift deletion in self.indices
         // after probe, shift all non-ideally placed indices backward
-        if self.len() > 0 {
-            let mut last_probe = probe_at_remove;
-            let mut probe = probe_at_remove + 1;
-            probe_loop!(probe < self.indices.len(), {
-                if let Some((i, hash_proxy)) = self.indices[probe].resolve::<Sz>() {
-                    let entry_hash = hash_proxy.get_short_hash(&self.entries, i);
-                    if probe_distance(self.mask, entry_hash.into_hash(), probe) > 0 {
-                        self.indices[last_probe] = self.indices[probe];
-                        self.indices[probe] = Pos::none();
-                    } else {
-                        break;
-                    }
+        let mut last_probe = probe_at_remove;
+        let mut probe = probe_at_remove + 1;
+        probe_loop!(probe < self.indices.len(), {
+            if let Some((i, hash_proxy)) = self.indices[probe].resolve::<Sz>() {
+                let entry_hash = hash_proxy.get_short_hash(&self.entries, i);
+                if probe_distance(self.mask, entry_hash.into_hash(), probe) > 0 {
+                    self.indices[last_probe] = self.indices[probe];
+                    self.indices[probe] = Pos::none();
                 } else {
                     break;
                 }
-                last_probe = probe;
-            });
-        }
+            } else {
+                break;
+            }
+            last_probe = probe;
+        });
     }
 
 }
