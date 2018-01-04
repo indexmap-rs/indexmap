@@ -45,6 +45,11 @@ fn hash_elem_using<B: BuildHasher, K: ?Sized + Hash>(build: &B, k: &K) -> HashVa
 #[derive(Copy, Debug)]
 struct HashValue(usize);
 
+impl HashValue {
+    #[inline(always)]
+    fn get(self) -> usize { self.0 }
+}
+
 impl Clone for HashValue {
     #[inline]
     fn clone(&self) -> Self { *self }
@@ -1059,37 +1064,26 @@ impl<K, V, S> OrderMap<K, V, S>
     pub fn sort_by<F>(&mut self, mut compare: F)
         where F: FnMut(&K, &V, &K, &V) -> Ordering,
     {
-        // new_index will form a lookup map from current index -> new index.
-        let mut new_index = Vec::from_iter(0..self.len());
-        new_index.sort_by(|&i, &j| {
-            let ei = &self.entries[i];
-            let ej = &self.entries[j];
-            compare(&ei.key, &ei.value, &ej.key, &ej.value)
-        });
+        // here we temporarily use the hash field in a bucket to store the old
+        // index instead.
+        //
+        // Save the old hash values in `side_index`.
+        // Then we can sort `self.entries` in place.
+        let mut side_index = Vec::from_iter(enumerate(&mut self.entries).map(|(i, elt)| {
+            replace(&mut elt.hash, HashValue(i)).get()
+        }));
+
+        self.entries.sort_by(move |ei, ej| compare(&ei.key, &ei.value, &ej.key, &ej.value));
+
+        // Here we write back the hash values from side_index and fill
+        // in side_index with a mapping from the old to the new index instead.
+        for (i, ent) in enumerate(&mut self.entries) {
+            let old_index = ent.hash.get();
+            ent.hash = HashValue(replace(&mut side_index[old_index], i));
+        }
 
         // Apply new index to self.indices
-        dispatch_32_vs_64!(self.apply_new_index(&new_index));
-
-        // Apply new index to entries
-        apply_permutation(&mut new_index, &mut self.entries);
-
-        /// Apply a permutation
-        ///
-        /// perm: Each index 0..v.len() appear exactly once.
-        fn apply_permutation<T>(perm: &mut [usize], v: &mut [T]) {
-            debug_assert_eq!(perm.len(), v.len());
-             
-            for i in 0..perm.len() {
-                let mut current = i;
-                while i != perm[current] {
-                    let next = replace(&mut perm[current], current);
-                    // move element from next to current
-                    v.swap(next, current);
-                    current = next;
-                }
-                perm[current] = current;
-            }
-        }
+        dispatch_32_vs_64!(self.apply_new_index(&side_index));
     }
 
     fn apply_new_index<Sz>(&mut self, new_index: &[usize])
