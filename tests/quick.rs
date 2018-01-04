@@ -273,6 +273,49 @@ quickcheck! {
         // check the order
         itertools::assert_equal(map.keys(), initial_map.keys().filter(|&k| !remove_map.contains_key(k)));
     }
+
+    fn sort_1(keyvals: Large<Vec<(i8, i8)>>) -> () {
+        let mut map: OrderMap<_, _> = OrderMap::from_iter(keyvals.to_vec());
+        let mut answer = keyvals.0;
+        answer.sort_by_key(|t| t.0);
+
+        // reverse dedup: Because OrderMap::from_iter keeps the last value for
+        // identical keys
+        answer.reverse();
+        answer.dedup_by_key(|t| t.0);
+        answer.reverse();
+
+        map.sort_by(|k1, _, k2, _| Ord::cmp(k1, k2));
+
+        // check it contains all the values it should
+        for &(key, val) in &answer {
+            assert_eq!(map[&key], val);
+        }
+
+        // check the order
+
+        let mapv = Vec::from_iter(map);
+        assert_eq!(answer, mapv);
+
+    }
+
+    fn sort_2(keyvals: Large<Vec<(i8, i8)>>) -> () {
+        let mut map: OrderMap<_, _> = OrderMap::from_iter(keyvals.to_vec());
+        map.sort_by(|_, v1, _, v2| Ord::cmp(v1, v2));
+        assert_sorted_by_key(map, |t| t.1);
+    }
+}
+
+fn assert_sorted_by_key<I, Key, X>(iterable: I, key: Key)
+    where I: IntoIterator,
+          I::Item: Ord + Clone + Debug,
+          Key: Fn(&I::Item) -> X,
+          X: Ord,
+{
+    let input = Vec::from_iter(iterable);
+    let mut sorted = input.clone();
+    sorted.sort_by_key(key);
+    assert_eq!(input, sorted);
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]

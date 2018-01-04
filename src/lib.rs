@@ -45,6 +45,11 @@ fn hash_elem_using<B: BuildHasher, K: ?Sized + Hash>(build: &B, k: &K) -> HashVa
 #[derive(Copy, Debug)]
 struct HashValue(usize);
 
+impl HashValue {
+    #[inline(always)]
+    fn get(self) -> usize { self.0 }
+}
+
 impl Clone for HashValue {
     #[inline]
     fn clone(&self) -> Self { *self }
@@ -1040,6 +1045,57 @@ impl<K, V, S> OrderMap<K, V, S>
                 self.entries.truncate(len - n_deleted);
             } else {
                 return;
+            }
+        }
+    }
+
+    /// Sort the map’s key-value pairs by the default ordering of the keys.
+    ///
+    /// See `sort_by` for details.
+    pub fn sort_keys(&mut self)
+        where K: Ord,
+    {
+        self.sort_by(|k1, _, k2, _| Ord::cmp(k1, k2))
+    }
+
+    /// Sort the map’s key-value pairs in place using the comparison
+    /// function `compare`.
+    ///
+    /// The comparison function receives two key and value pairs to compare (you
+    /// can sort by keys or values or their combination as needed).
+    ///
+    /// Computes in **O(n log n)** time and **O(n)** space. The sort is stable.
+    pub fn sort_by<F>(&mut self, mut compare: F)
+        where F: FnMut(&K, &V, &K, &V) -> Ordering,
+    {
+        // here we temporarily use the hash field in a bucket to store the old
+        // index instead.
+        //
+        // Save the old hash values in `side_index`.
+        // Then we can sort `self.entries` in place.
+        let mut side_index = Vec::from_iter(enumerate(&mut self.entries).map(|(i, elt)| {
+            replace(&mut elt.hash, HashValue(i)).get()
+        }));
+
+        self.entries.sort_by(move |ei, ej| compare(&ei.key, &ei.value, &ej.key, &ej.value));
+
+        // Here we write back the hash values from side_index and fill
+        // in side_index with a mapping from the old to the new index instead.
+        for (i, ent) in enumerate(&mut self.entries) {
+            let old_index = ent.hash.get();
+            ent.hash = HashValue(replace(&mut side_index[old_index], i));
+        }
+
+        // Apply new index to self.indices
+        dispatch_32_vs_64!(self.apply_new_index(&side_index));
+    }
+
+    fn apply_new_index<Sz>(&mut self, new_index: &[usize])
+        where Sz: Size
+    {
+        for pos in self.indices.iter_mut() {
+            if let Some((i, _)) = pos.resolve::<Sz>() {
+                pos.set_pos::<Sz>(new_index[i]);
             }
         }
     }
