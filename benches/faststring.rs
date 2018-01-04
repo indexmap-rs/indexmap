@@ -1,16 +1,11 @@
 #![feature(test)]
 extern crate test;
 extern crate rand;
-extern crate fnv;
 extern crate lazy_static;
-
-use fnv::FnvHasher;
-use std::hash::BuildHasherDefault;
-type FnvBuilder = BuildHasherDefault<FnvHasher>;
 
 use test::Bencher;
 
-#[macro_use] extern crate ordermap;
+extern crate ordermap;
 
 use ordermap::OrderMap;
 
