@@ -273,35 +273,6 @@ quickcheck! {
         // check the order
         itertools::assert_equal(map.keys(), initial_map.keys().filter(|&k| !remove_map.contains_key(k)));
     }
-
-    // Check that retain unordered visits each key exactly once
-    fn retain_visit(keys: Large<Vec<i8>>, remove: Large<Vec<i8>>) -> () {
-        let mut map = ordermap(keys.iter());
-        let initial_map = map.clone();
-        let mut visit = OrderMap::with_capacity(map.len());
-        let remove_map = ordermap(remove.iter());
-        map.retain_unordered(|k, _| {
-            *visit.entry(*k).or_insert(0) += 1;
-            !remove_map.contains_key(k)
-        });
-
-        assert_eq!(visit.len(), initial_map.len());
-        assert!(visit.iter().all(|(_, v)| *v == 1));
-    }
-
-    fn retain_unordered(keys: Large<Vec<i8>>, remove: Large<Vec<i8>>) -> () {
-        let mut map = ordermap(keys.iter());
-        let remove_map = ordermap(remove.iter());
-        let keys_s = set(keys.iter());
-        let remove_s = set(remove.iter());
-        let answer = &keys_s - &remove_s;
-        map.retain_unordered(|k, _| !remove_map.contains_key(k));
-        assert_eq!(map.len(), answer.len());
-        for key in &answer {
-            assert!(map.contains_key(key));
-        }
-    }
-
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]

@@ -1002,19 +1002,6 @@ impl<K, V, S> OrderMap<K, V, S>
         self.retain_mut(move |k, v| keep(k, v));
     }
 
-    /// Scan through each key-value pair in the map and keep those where the
-    /// closure `keep` returns `true`.
-    ///
-    /// The order the elements are visited is not specified and removing
-    /// elements jumbles the order in the map.
-    ///
-    /// Computes in **O(n)** time (average).
-    pub fn retain_unordered<F>(&mut self, mut keep: F)
-        where F: FnMut(&K, &mut V) -> bool,
-    {
-        self.retain_unordered2(move |k, v| keep(&*k, v))
-    }
-
     fn retain_mut<F>(&mut self, keep: F)
         where F: FnMut(&mut K, &mut V) -> bool,
     {

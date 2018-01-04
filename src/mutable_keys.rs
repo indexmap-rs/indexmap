@@ -37,16 +37,6 @@ pub trait MutableKeys {
     fn retain2<F>(&mut self, keep: F)
         where F: FnMut(&mut Self::Key, &mut Self::Value) -> bool;
 
-    /// Scan through each key-value pair in the map and keep those where the
-    /// closure `keep` returns `true`.
-    ///
-    /// The order the elements are visited is not specified and removing
-    /// elements jumbles the order in the map.
-    ///
-    /// Computes in **O(n)** time (average).
-    fn retain_unordered2<F>(&mut self, keep: F)
-        where F: FnMut(&mut Self::Key, &mut Self::Value) -> bool;
-
     /// This method is not useful in itself – it is there to “seal” the trait
     /// for external implementation, so that we can add methods without
     /// causing breaking changes.
@@ -78,25 +68,6 @@ impl<K, V, S> MutableKeys for OrderMap<K, V, S>
         where F: FnMut(&mut K, &mut V) -> bool,
     {
         self.retain_mut(keep)
-    }
-
-    fn retain_unordered2<F>(&mut self, mut keep: F)
-        where F: FnMut(&mut K, &mut V) -> bool,
-    {
-        // We can use either forward or reverse scan, but forward was
-        // faster in a microbenchmark
-        let mut i = 0;
-        while i < self.len() {
-            {
-                let entry = &mut self.entries[i];
-                if keep(&mut entry.key, &mut entry.value) {
-                    i += 1;
-                    continue;
-                }
-            }
-            self.swap_remove_index(i);
-            // skip increment on remove
-        }
     }
 
     fn __private_marker(&self) -> PrivateMarker {
