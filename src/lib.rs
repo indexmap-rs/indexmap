@@ -1050,6 +1050,8 @@ impl<K, V, S> OrderMap<K, V, S>
     }
 
     /// Sort the map’s key-value pairs by the default ordering of the keys.
+    ///
+    /// See `sort_by` for details.
     pub fn sort_keys(&mut self)
         where K: Ord,
     {
@@ -1061,6 +1063,8 @@ impl<K, V, S> OrderMap<K, V, S>
     ///
     /// The comparison function receives two key and value pairs to compare (you
     /// can sort by keys or values or their combination as needed).
+    ///
+    /// Computes in **O(n log n)** time and **O(n)** space. The sort is stable.
     pub fn sort_by<F>(&mut self, mut compare: F)
         where F: FnMut(&K, &V, &K, &V) -> Ordering,
     {

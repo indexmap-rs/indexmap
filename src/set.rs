@@ -343,6 +343,8 @@ impl<T, S> OrderSet<T, S>
     }
 
     /// Sort the set’s values by their default ordering.
+    ///
+    /// See `sort_by` for details.
     pub fn sort(&mut self)
         where T: Ord,
     {
@@ -350,6 +352,8 @@ impl<T, S> OrderSet<T, S>
     }
 
     /// Sort the set’s values in place using the comparison function `compare`.
+    ///
+    /// Computes in **O(n log n)** time and **O(n)** space. The sort is stable.
     pub fn sort_by<F>(&mut self, mut compare: F)
         where F: FnMut(&T, &T) -> Ordering,
     {
