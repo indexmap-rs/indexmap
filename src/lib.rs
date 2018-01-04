@@ -17,7 +17,6 @@ mod mutable_keys;
 
 pub mod set;
 
-use std::cmp::min;
 use std::hash::Hash;
 use std::hash::BuildHasher;
 use std::hash::Hasher;
@@ -1026,88 +1025,36 @@ impl<K, V, S> OrderMap<K, V, S>
         where F: FnMut(&mut K, &mut V) -> bool,
               Sz: Size,
     {
-        let initial_len = self.len();
-
-        // We need to use tombstones in self.indices to mark elements that were
-        // deleted; this is because we need a working self.indices for lookups
-        // during phase 1
-        //
-        // We can safely use the length as the tombstone index; no entry
-        // has this index and it always fits into Pos.
-        let tombstone_index = initial_len;
-
-        // phase 1
-        // adapted from retain_mut for a vec
+        // Like Vec::retain in self.entries; for each removed key-value pair,
+        // we clear its corresponding spot in self.indices, and run the
+        // usual backward shift in self.indices.
         {
-            let v = &mut self.entries;
-            let len = v.len();
-            let mut del = 0; // deleted elements
+            let len = self.entries.len();
+            let mut n_deleted = 0;
             for i in 0..len {
                 let will_keep;
                 let hash;
                 {
-                    let ent = &mut v[i];
+                    let ent = &mut self.entries[i];
                     hash = ent.hash;
                     will_keep = keep(&mut ent.key, &mut ent.value);
                 };
                 let probe = find_existing_entry_at::<Sz>(&self.indices, hash, self.mask, i);
                 if !will_keep {
-                    del += 1;
-                    self.indices[probe].set_pos::<Sz>(tombstone_index);
-                } else if del > 0 {
-                    self.indices[probe].set_pos::<Sz>(i - del);
-                    v.swap(i - del, i);
+                    n_deleted += 1;
+                    self.indices[probe] = Pos::none();
+                    self.backward_shift_after_removal::<Sz>(probe);
+                } else if n_deleted > 0 {
+                    self.indices[probe].set_pos::<Sz>(i - n_deleted);
+                    self.entries.swap(i - n_deleted, i);
                 }
             }
-            if del > 0 {
-                v.truncate(len - del);
+            if n_deleted > 0 {
+                self.entries.truncate(len - n_deleted);
             } else {
                 return;
             }
         }
-
-        // phase 2
-        //
-        // Find tombstones. Move any non-ideally placed elements that follow
-        // the tombstones to the free slot nearest its ideal.
-
-        let mut probe = 0;      // current index into self.indices
-        let mut prev_empty = 0; // current contiguous run of tombstones or moved
-                                // from slots
-        let mut lap_n = 0;
-        probe_loop!(probe < self.indices.len(), {
-            lap_n += (probe == 0) as usize;
-            if let Some((i, hash_proxy)) = self.indices[probe].resolve::<Sz>() {
-                let is_tombstone = i == tombstone_index;
-                if is_tombstone {
-                    self.indices[probe] = Pos::none();
-                    // start or continue a run of tombstone elements
-                    prev_empty += 1;
-                } else if prev_empty > 0 {
-                    let entry_hash = hash_proxy.get_short_hash(&self.entries, i);
-                    let probe_offset = probe_distance(self.mask, entry_hash.into_hash(), probe);
-                    if probe_offset > 0 {
-                        // non-ideally placed element; improve its position
-                        let improvement_shift = min(probe_offset, prev_empty);
-                        debug_assert_ne!(improvement_shift, 0);
-                        let best_free_pos = probe.wrapping_sub(improvement_shift) & self.mask;
-                        self.indices[best_free_pos] = self.indices[probe];
-                        self.indices[probe] = Pos::none();
-                        prev_empty = improvement_shift;
-
-                        // manual probe increment:
-                        // the only way to `continue` inside probe_loop!()
-                        probe += 1;
-                        continue;
-                    }
-                    prev_empty = 0;
-                }
-            } else {
-                // this slot was already empty, so nothing needs this spot
-                prev_empty = 0;
-                if lap_n > 1 { break; }
-            }
-        });
     }
 
     /// Sort the key-value pairs of the map and return a by value iterator of
@@ -1276,11 +1223,20 @@ impl<K, V, S> OrderMap<K, V, S> {
                 }
             });
         }
+
+        self.backward_shift_after_removal::<Sz>(probe);
+
+        (entry.key, entry.value)
+    }
+
+    fn backward_shift_after_removal<Sz>(&mut self, probe_at_remove: usize)
+        where Sz: Size
+    {
         // backward shift deletion in self.indices
         // after probe, shift all non-ideally placed indices backward
         if self.len() > 0 {
-            let mut last_probe = probe;
-            let mut probe = probe + 1;
+            let mut last_probe = probe_at_remove;
+            let mut probe = probe_at_remove + 1;
             probe_loop!(probe < self.indices.len(), {
                 if let Some((i, hash_proxy)) = self.indices[probe].resolve::<Sz>() {
                     let entry_hash = hash_proxy.get_short_hash(&self.entries, i);
@@ -1296,8 +1252,6 @@ impl<K, V, S> OrderMap<K, V, S> {
                 last_probe = probe;
             });
         }
-
-        (entry.key, entry.value)
     }
 
 }
@@ -1325,7 +1279,6 @@ fn find_existing_entry_at<Sz>(indices: &[Pos], hash: HashValue,
         if i == entry_index { return probe; }
     });
 }
-
 
 use std::slice::Iter as SliceIter;
 use std::slice::IterMut as SliceIterMut;
@@ -1767,6 +1720,15 @@ mod tests {
         }
         assert_eq!(map.len(), insert.len() - remove.len());
         assert_eq!(map.keys().count(), insert.len() - remove.len());
+    }
+
+    #[test]
+    fn remove_to_empty() {
+        let mut map = ordermap! { 0 => 0, 4 => 4, 5 => 5 };
+        map.swap_remove(&5).unwrap();
+        map.swap_remove(&4).unwrap();
+        map.swap_remove(&0).unwrap();
+        assert!(map.is_empty());
     }
 
     #[test]
