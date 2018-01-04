@@ -1,5 +1,5 @@
 
-Experimental hash table implementation in just Rust (stable, no unsafe code).
+Awesome hash table implementation in just Rust (stable, no unsafe code).
 
 Please read the `API documentation here`__
 
