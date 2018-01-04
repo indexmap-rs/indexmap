@@ -97,6 +97,14 @@ Ideas that we already did
 Recent Changes
 ==============
 
+- 0.3.4
+
+  - The ``.retain()`` methods for ``OrderMap`` and ``OrderSet`` now
+    traverse the elements in order, and the retained elements **keep their order**
+  - Added new methods ``.sort_by()``, ``.sort_keys()`` to ``OrderMap`` and
+    ``.sort_by()``, ``.sort()`` to ``OrderSet``. These methods allow you to
+    sort the maps in place efficiently.
+
 - 0.3.3
 
   - Document insertion behaviour better by @lucab
