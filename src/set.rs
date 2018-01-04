@@ -342,6 +342,20 @@ impl<T, S> OrderSet<T, S>
         self.map.retain(move |x, &mut ()| keep(x))
     }
 
+    /// Sort the set’s values by their default ordering.
+    pub fn sort(&mut self)
+        where T: Ord,
+    {
+        self.map.sort_keys()
+    }
+
+    /// Sort the set’s values in place using the comparison function `compare`.
+    pub fn sort_by<F>(&mut self, mut compare: F)
+        where F: FnMut(&T, &T) -> Ordering,
+    {
+        self.map.sort_by(move |a, _, b, _| compare(a, b));
+    }
+
     /// Sort the values of the set and return a by value iterator of
     /// the values with the result.
     ///
