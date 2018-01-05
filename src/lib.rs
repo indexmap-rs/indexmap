@@ -1020,33 +1020,27 @@ impl<K, V, S> OrderMap<K, V, S>
         // Like Vec::retain in self.entries; for each removed key-value pair,
         // we clear its corresponding spot in self.indices, and run the
         // usual backward shift in self.indices.
-        {
-            let len = self.entries.len();
-            let mut n_deleted = 0;
-            for i in 0..len {
-                let will_keep;
-                let hash;
-                {
-                    let ent = &mut self.entries[i];
-                    hash = ent.hash;
-                    will_keep = keep(&mut ent.key, &mut ent.value);
-                };
-                let probe = find_existing_entry_at::<Sz>(&self.indices, hash, self.mask, i);
-                if !will_keep {
-                    n_deleted += 1;
-                    self.indices[probe] = Pos::none();
-                    self.backward_shift_after_removal::<Sz>(probe);
-                } else if n_deleted > 0 {
-                    self.indices[probe].set_pos::<Sz>(i - n_deleted);
-                    self.entries.swap(i - n_deleted, i);
-                }
-            }
-            if n_deleted > 0 {
-                self.entries.truncate(len - n_deleted);
-            } else {
-                return;
+        let len = self.entries.len();
+        let mut n_deleted = 0;
+        for i in 0..len {
+            let will_keep;
+            let hash;
+            {
+                let ent = &mut self.entries[i];
+                hash = ent.hash;
+                will_keep = keep(&mut ent.key, &mut ent.value);
+            };
+            let probe = find_existing_entry_at::<Sz>(&self.indices, hash, self.mask, i);
+            if !will_keep {
+                n_deleted += 1;
+                self.indices[probe] = Pos::none();
+                self.backward_shift_after_removal::<Sz>(probe);
+            } else if n_deleted > 0 {
+                self.indices[probe].set_pos::<Sz>(i - n_deleted);
+                self.entries.swap(i - n_deleted, i);
             }
         }
+        self.entries.truncate(len - n_deleted);
     }
 
     /// Sort the map’s key-value pairs by the default ordering of the keys.
