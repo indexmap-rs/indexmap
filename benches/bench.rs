@@ -723,3 +723,23 @@ fn ordermap_simple_sort_u32(b: &mut Bencher) {
         map
     });
 }
+
+// measure the fixed overhead of cloning in sort benchmarks
+#[bench]
+fn ordermap_clone_for_sort_s(b: &mut Bencher) {
+    let map = OMAP_SORT_S.clone();
+
+    b.iter(|| {
+        map.clone()
+    });
+}
+
+#[bench]
+fn ordermap_clone_for_sort_u32(b: &mut Bencher) {
+    let map = OMAP_SORT_U32.clone();
+
+    b.iter(|| {
+        map.clone()
+    });
+}
+
