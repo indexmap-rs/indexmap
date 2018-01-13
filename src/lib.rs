@@ -625,14 +625,6 @@ impl<K, V, S> OrderMap<K, V, S>
     where K: Hash + Eq,
           S: BuildHasher,
 {
-    /// Get the given key’s corresponding entry in the map for in-place manipulation.
-    ///
-    /// Computes in **O(1)** time (amortized average).
-    pub fn entry(&mut self, key: K) -> Entry<K, V, S> {
-        self.reserve_one();
-        dispatch_32_vs_64!(self.entry_phase_1(key))
-    }
-
     // Warning, this is a code duplication zone Entry is not yet finished
     fn entry_phase_1<Sz>(&mut self, key: K) -> Entry<K, V, S>
         where Sz: Size
@@ -853,6 +845,16 @@ impl<K, V, S> OrderMap<K, V, S>
             }
         }
     }
+
+    /// Get the given key’s corresponding entry in the map for insertion and/or
+    /// in-place manipulation.
+    ///
+    /// Computes in **O(1)** time (amortized average).
+    pub fn entry(&mut self, key: K) -> Entry<K, V, S> {
+        self.reserve_one();
+        dispatch_32_vs_64!(self.entry_phase_1(key))
+    }
+
 
     /// Return an iterator over the key-value pairs of the map, in their order
     pub fn iter(&self) -> Iter<K, V> {
