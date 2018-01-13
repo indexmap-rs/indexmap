@@ -545,6 +545,7 @@ impl<'a, K, V, S> Entry<'a, K, V, S> {
         }
     }
 
+    /// Return the index where the key-value pair exists or will be inserted.
     pub fn index(&self) -> usize {
         match *self {
             Entry::Occupied(ref entry) => entry.index(),
@@ -569,6 +570,7 @@ impl<'a, K, V, S> OccupiedEntry<'a, K, V, S> {
         &mut self.map.entries[self.index].value
     }
 
+    /// Return the index of the key-value pair
     pub fn index(&self) -> usize {
         self.index
     }
@@ -601,6 +603,7 @@ pub struct VacantEntry<'a, K: 'a, V: 'a, S: 'a = RandomState> {
 impl<'a, K, V, S> VacantEntry<'a, K, V, S> {
     pub fn key(&self) -> &K { &self.key }
     pub fn into_key(self) -> K { self.key }
+    /// Return the index where the key-value pair will be inserted.
     pub fn index(&self) -> usize { self.map.len() }
     pub fn insert(self, value: V) -> &'a mut V {
         if self.map.size_class_is_64bit() {
