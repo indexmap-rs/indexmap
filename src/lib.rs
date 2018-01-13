@@ -1575,6 +1575,7 @@ impl<'a, K, V, S> Extend<(&'a K, &'a V)> for OrderMap<K, V, S>
 impl<K, V, S> Default for OrderMap<K, V, S>
     where S: BuildHasher + Default,
 {
+    /// Return an empty `OrderMap`
     fn default() -> Self {
         Self::with_capacity_and_hasher(0, S::default())
     }

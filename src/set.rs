@@ -521,6 +521,7 @@ impl<'a, T, S> Extend<&'a T> for OrderSet<T, S>
 impl<T, S> Default for OrderSet<T, S>
     where S: BuildHasher + Default,
 {
+    /// Return an empty `OrderSet`
     fn default() -> Self {
         OrderSet { map: OrderMap::default() }
     }
