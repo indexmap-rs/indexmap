@@ -817,12 +817,19 @@ impl<K, V, S> OrderMap<K, V, S>
         }
     }
 
-    /// Insert they key-value pair into the map.
+    /// Insert a key-value pair in the map.
     ///
-    /// If a value already existed for `key`, that old value is returned
-    /// in `Some`; otherwise, return `None`.
+    /// If an equivalent key already exists in the map: the key remains and
+    /// retains in its place in the order, its corresponding value is updated
+    /// with `value` and the older value is returned inside `Some(_)`.
+    ///
+    /// If no equivalent key existed in the map: the new key-value pair is
+    /// inserted, last in order, and `None` is returned.
     ///
     /// Computes in **O(1)** time (amortized average).
+    ///
+    /// See also [`entry`](#method.entry) if you you want to insert *or* modify
+    /// or if you need to get the `index` of the corresponding key-value pair.
     pub fn insert(&mut self, key: K, value: V) -> Option<V> {
         self.reserve_one();
         if self.size_class_is_64bit() {
