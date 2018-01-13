@@ -1544,11 +1544,16 @@ impl<K, V, S> FromIterator<(K, V)> for OrderMap<K, V, S>
     where K: Hash + Eq,
           S: BuildHasher + Default,
 {
+    /// Create an `OrderMap` from the sequence of key-value pairs in the
+    /// iterable.
+    ///
+    /// `from_iter` uses the same logic as `extend`. See
+    /// [`extend`](#method.extend) for more details.
     fn from_iter<I: IntoIterator<Item=(K, V)>>(iterable: I) -> Self {
         let iter = iterable.into_iter();
         let (low, _) = iter.size_hint();
         let mut map = Self::with_capacity_and_hasher(low, <_>::default());
-        for (k, v) in iter { map.insert(k, v); }
+        map.extend(iter);
         map
     }
 }
@@ -1557,6 +1562,15 @@ impl<K, V, S> Extend<(K, V)> for OrderMap<K, V, S>
     where K: Hash + Eq,
           S: BuildHasher,
 {
+    /// Extend the map with all key-value pairs in the iterable.
+    ///
+    /// This is equivalent to calling [`insert`](#method.insert) for each of
+    /// them in order, which means that for keys that already existed
+    /// in the map, their value is updated but it keeps the existing order.
+    ///
+    /// New keys are inserted inserted in the order in the sequence. If
+    /// equivalents of a key occur more than once, the last corresponding value
+    /// prevails.
     fn extend<I: IntoIterator<Item=(K, V)>>(&mut self, iterable: I) {
         for (k, v) in iterable { self.insert(k, v); }
     }
@@ -1567,6 +1581,9 @@ impl<'a, K, V, S> Extend<(&'a K, &'a V)> for OrderMap<K, V, S>
           V: Copy,
           S: BuildHasher,
 {
+    /// Extend the map with all key-value pairs in the iterable.
+    ///
+    /// See the first extend method for more details.
     fn extend<I: IntoIterator<Item=(&'a K, &'a V)>>(&mut self, iterable: I) {
         self.extend(iterable.into_iter().map(|(&key, &value)| (key, value)));
     }
