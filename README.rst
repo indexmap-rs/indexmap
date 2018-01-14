@@ -35,7 +35,7 @@ was ordermap, a hash table that has following properties:
 Does not implement (Yet)
 ------------------------
 
-- ``.reserve()`` exists but does not have a full implementation
+- ``.reserve()`` exists but does not have a complete implementation
 
 Performance
 -----------
@@ -96,6 +96,10 @@ Ideas that we already did
 
 Recent Changes
 ==============
+
+- 0.3.5
+
+  - Documentation improvements
 
 - 0.3.4
 
