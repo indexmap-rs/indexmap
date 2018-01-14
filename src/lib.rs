@@ -512,10 +512,15 @@ macro_rules! dispatch_32_vs_64 {
     };
 }
 
+/// Entry for an existing key-value pair or a vacant location to
+/// insert one.
+///
 /// FIXME: Remove dependence on the `S` parameter
 /// (to match HashMap).
 pub enum Entry<'a, K: 'a, V: 'a, S: 'a = RandomState> {
+    /// Existing slot with equivalent key.
     Occupied(OccupiedEntry<'a, K, V, S>),
+    /// Vacant slot (no equivalent key in the map).
     Vacant(VacantEntry<'a, K, V, S>),
 }
 
@@ -685,7 +690,9 @@ impl<K, V, S> OrderMap<K, V, S>
         }
     }
 
-    /// FIXME Not implemented fully yet
+    /// Reserve capacity for `additional` more key-value pairs.
+    ///
+    /// FIXME Not implemented fully yet.
     pub fn reserve(&mut self, additional: usize) {
         if additional > 0 {
             self.reserve_one();
@@ -955,7 +962,7 @@ impl<K, V, S> OrderMap<K, V, S>
         self.find_using(h, move |entry| { Q::equivalent(key, &entry.key) })
     }
 
-    /// FIXME Same as .swap_remove
+    /// NOTE: Same as .swap_remove
     ///
     /// Computes in **O(1)** time (average).
     pub fn remove<Q: ?Sized>(&mut self, key: &Q) -> Option<V>
