@@ -839,7 +839,7 @@ impl<K, V, S> OrderMap<K, V, S>
     /// Computes in **O(1)** time (amortized average).
     ///
     /// See also [`entry`](#method.entry) if you you want to insert *or* modify
-    /// or if you need to get the `index` of the corresponding key-value pair.
+    /// or if you need to get the index of the corresponding key-value pair.
     pub fn insert(&mut self, key: K, value: V) -> Option<V> {
         self.reserve_one();
         if self.size_class_is_64bit() {
@@ -909,7 +909,7 @@ impl<K, V, S> OrderMap<K, V, S>
         }
     }
 
-    /// Return `true` if and equivalent to `key` exists in the map.
+    /// Return `true` if an equivalent to `key` exists in the map.
     ///
     /// Computes in **O(1)** time (average).
     pub fn contains_key<Q: ?Sized>(&self, key: &Q) -> bool
