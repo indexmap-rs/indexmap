@@ -1252,15 +1252,11 @@ impl<K, V, S> OrderMap<K, V, S> {
     fn find_existing_entry(&self, entry: &Bucket<K, V>) -> (usize, usize)
     {
         debug_assert!(self.len() > 0);
-        dispatch_32_vs_64!(self.find_existing_entry_impl(entry))
-    }
 
-    fn find_existing_entry_impl<Sz>(&self, entry: &Bucket<K, V>) -> (usize, usize)
-        where Sz: Size,
-    {
         let hash = entry.hash;
         let actual_pos = ptrdistance(&self.entries[0], entry);
-        let probe = find_existing_entry_at::<Sz>(&self.indices, hash, self.mask, actual_pos);
+        let probe = dispatch_32_vs_64!(self =>
+            find_existing_entry_at(&self.indices, hash, self.mask, actual_pos));
         (probe, actual_pos)
     }
 
