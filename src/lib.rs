@@ -1094,19 +1094,17 @@ impl<K, V, S> OrderMap<K, V, S>
     pub fn sort_by<F>(&mut self, mut compare: F)
         where F: FnMut(&K, &V, &K, &V) -> Ordering,
     {
-        // here we temporarily use the hash field in a bucket to store the old
-        // index instead.
-        //
-        // Save the old hash values in `side_index`.
-        // Then we can sort `self.entries` in place.
+        // Temporarily use the hash field in a bucket to store the old index.
+        // Save the old hash values in `side_index`.  Then we can sort
+        // `self.entries` in place.
         let mut side_index = Vec::from_iter(enumerate(&mut self.entries).map(|(i, elt)| {
             replace(&mut elt.hash, HashValue(i)).get()
         }));
 
         self.entries.sort_by(move |ei, ej| compare(&ei.key, &ei.value, &ej.key, &ej.value));
 
-        // Here we write back the hash values from side_index and fill
-        // in side_index with a mapping from the old to the new index instead.
+        // Write back the hash values from side_index and fill `side_index` with
+        // a mapping from the old to the new index instead.
         for (i, ent) in enumerate(&mut self.entries) {
             let old_index = ent.hash.get();
             ent.hash = HashValue(replace(&mut side_index[old_index], i));
