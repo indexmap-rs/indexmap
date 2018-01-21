@@ -496,6 +496,8 @@ impl Size for u64 {
 ///
 /// The u32 or u64 is *prepended* to the type parameter list!
 macro_rules! dispatch_32_vs_64 {
+    // self.methodname with other explicit type params,
+    // size is prepended
     ($self_:ident . $method:ident::<$($t:ty),*>($($arg:expr),*)) => {
         if $self_.size_class_is_64bit() {
             $self_.$method::<u64, $($t),*>($($arg),*)
@@ -503,11 +505,21 @@ macro_rules! dispatch_32_vs_64 {
             $self_.$method::<u32, $($t),*>($($arg),*)
         }
     };
+    // self.methodname with only one type param, the size.
     ($self_:ident . $method:ident ($($arg:expr),*)) => {
         if $self_.size_class_is_64bit() {
             $self_.$method::<u64>($($arg),*)
         } else {
             $self_.$method::<u32>($($arg),*)
+        }
+    };
+    // functionname with size_class_is_64bit as the first argument, only one
+    // type param, the size.
+    ($self_:ident => $function:ident ($($arg:expr),*)) => {
+        if $self_.size_class_is_64bit() {
+            $function::<u64>($($arg),*)
+        } else {
+            $function::<u32>($($arg),*)
         }
     };
 }
@@ -1101,15 +1113,15 @@ impl<K, V, S> OrderMap<K, V, S>
         }
 
         // Apply new index to self.indices
-        dispatch_32_vs_64!(self.apply_new_index(&side_index));
-    }
+        dispatch_32_vs_64!(self => apply_new_index(&mut self.indices, &side_index));
 
-    fn apply_new_index<Sz>(&mut self, new_index: &[usize])
-        where Sz: Size
-    {
-        for pos in self.indices.iter_mut() {
-            if let Some((i, _)) = pos.resolve::<Sz>() {
-                pos.set_pos::<Sz>(new_index[i]);
+        fn apply_new_index<Sz>(indices: &mut [Pos], new_index: &[usize])
+            where Sz: Size
+        {
+            for pos in indices {
+                if let Some((i, _)) = pos.resolve::<Sz>() {
+                    pos.set_pos::<Sz>(new_index[i]);
+                }
             }
         }
     }
