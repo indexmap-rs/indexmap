@@ -681,41 +681,7 @@ impl<K, V, S> OrderMap<K, V, S>
         where Sz: Size
     {
         let hash = hash_elem_using(&self.hash_builder, &key);
-        let mut probe = desired_pos(self.core.mask, hash);
-        let mut dist = 0;
-        debug_assert!(self.len() < self.raw_capacity());
-        probe_loop!(probe < self.core.indices.len(), {
-            if let Some((i, hash_proxy)) = self.core.indices[probe].resolve::<Sz>() {
-                let entry_hash = hash_proxy.get_short_hash(&self.core.entries, i);
-                // if existing element probed less than us, swap
-                let their_dist = probe_distance(self.core.mask, entry_hash.into_hash(), probe);
-                if their_dist < dist {
-                    // robin hood: steal the spot if it's better for us
-                    return Entry::Vacant(VacantEntry {
-                        map: &mut self.core,
-                        hash: hash,
-                        key: key,
-                        probe: probe,
-                    });
-                } else if entry_hash == hash && self.core.entries[i].key == key {
-                    return Entry::Occupied(OccupiedEntry {
-                        map: &mut self.core,
-                        key: key,
-                        probe: probe,
-                        index: i,
-                    });
-                }
-            } else {
-                // empty bucket, insert here
-                return Entry::Vacant(VacantEntry {
-                    map: &mut self.core,
-                    hash: hash,
-                    key: key,
-                    probe: probe,
-                });
-            }
-            dist += 1;
-        });
+        self.core.entry_phase_1::<Sz>(hash, key)
     }
 
     /// Remove all key-value pairs in the map, while preserving its capacity.
@@ -1162,6 +1128,48 @@ impl<K, V> OrderMapCore<K, V> {
         };
         debug_assert_eq!(found, self.entries.len() - 1);
         Some(self.remove_found(probe, found))
+    }
+
+    // FIXME: reduce duplication (compare with insert)
+    fn entry_phase_1<Sz>(&mut self, hash: HashValue, key: K) -> Entry<K, V>
+        where Sz: Size,
+              K: Eq,
+    {
+        let mut probe = desired_pos(self.mask, hash);
+        let mut dist = 0;
+        debug_assert!(self.len() < self.raw_capacity());
+        probe_loop!(probe < self.indices.len(), {
+            if let Some((i, hash_proxy)) = self.indices[probe].resolve::<Sz>() {
+                let entry_hash = hash_proxy.get_short_hash(&self.entries, i);
+                // if existing element probed less than us, swap
+                let their_dist = probe_distance(self.mask, entry_hash.into_hash(), probe);
+                if their_dist < dist {
+                    // robin hood: steal the spot if it's better for us
+                    return Entry::Vacant(VacantEntry {
+                        map: self,
+                        hash: hash,
+                        key: key,
+                        probe: probe,
+                    });
+                } else if entry_hash == hash && self.entries[i].key == key {
+                    return Entry::Occupied(OccupiedEntry {
+                        map: self,
+                        key: key,
+                        probe: probe,
+                        index: i,
+                    });
+                }
+            } else {
+                // empty bucket, insert here
+                return Entry::Vacant(VacantEntry {
+                    map: self,
+                    hash: hash,
+                    key: key,
+                    probe: probe,
+                });
+            }
+            dist += 1;
+        });
     }
 
     // First phase: Look for the preferred location for key.
