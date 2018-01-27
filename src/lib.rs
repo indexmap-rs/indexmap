@@ -560,9 +560,6 @@ macro_rules! dispatch_32_vs_64 {
 
 /// Entry for an existing key-value pair or a vacant location to
 /// insert one.
-///
-/// FIXME: Remove dependence on the `S` parameter
-/// (to match HashMap).
 pub enum Entry<'a, K: 'a, V: 'a> {
     /// Existing slot with equivalent key.
     Occupied(OccupiedEntry<'a, K, V>),
@@ -679,7 +676,7 @@ impl<K, V, S> OrderMap<K, V, S>
     where K: Hash + Eq,
           S: BuildHasher,
 {
-    // Warning, this is a code duplication zone Entry is not yet finished
+    // FIXME: reduce duplication (compare with insert)
     fn entry_phase_1<Sz>(&mut self, key: K) -> Entry<K, V>
         where Sz: Size
     {
