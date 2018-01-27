@@ -5,7 +5,6 @@ use std::collections::hash_map::RandomState;
 use std::fmt;
 use std::iter::{FromIterator, Chain};
 use std::hash::{Hash, BuildHasher};
-use std::mem::replace;
 use std::ops::RangeFull;
 use std::ops::{BitAnd, BitOr, BitXor, Sub};
 use std::slice;
@@ -248,15 +247,11 @@ impl<T, S> OrderSet<T, S>
     /// Computes in **O(1)** time (average).
     pub fn replace(&mut self, value: T) -> Option<T>
     {
-        use super::Entry::*;
+        use super::map::Entry::*;
 
         match self.map.entry(value) {
             Vacant(e) => { e.insert(()); None },
-            Occupied(e) => {
-                // FIXME uses private fields!
-                let old_key = &mut e.map.entries[e.index].key;
-                Some(replace(old_key, e.key))
-            }
+            Occupied(e) => Some(e.replace_key()),
         }
     }
 

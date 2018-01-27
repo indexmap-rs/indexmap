@@ -56,12 +56,7 @@ impl<K, V, S> MutableKeys for OrderMap<K, V, S>
         -> Option<(usize, &mut K, &mut V)>
         where Q: Hash + Equivalent<K>,
     {
-        if let Some((_, found)) = self.find(key) {
-            let entry = &mut self.core.entries[found];
-            Some((found, &mut entry.key, &mut entry.value))
-        } else {
-            None
-        }
+        self.get_full_mut2_impl(key)
     }
 
     fn retain2<F>(&mut self, keep: F)
