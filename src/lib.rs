@@ -1090,37 +1090,10 @@ impl<K, V, S> OrderMap<K, V, S>
     ///
     /// Computes in **O(n log n + c)** time and **O(n)** space where *n* is
     /// the length of the map and *c* the capacity. The sort is stable.
-    pub fn sort_by<F>(&mut self, mut compare: F)
+    pub fn sort_by<F>(&mut self, compare: F)
         where F: FnMut(&K, &V, &K, &V) -> Ordering,
     {
-        // Temporarily use the hash field in a bucket to store the old index.
-        // Save the old hash values in `side_index`.  Then we can sort
-        // `self.core.entries` in place.
-        let mut side_index = Vec::from_iter(enumerate(&mut self.core.entries).map(|(i, elt)| {
-            replace(&mut elt.hash, HashValue(i)).get()
-        }));
-
-        self.core.entries.sort_by(move |ei, ej| compare(&ei.key, &ei.value, &ej.key, &ej.value));
-
-        // Write back the hash values from side_index and fill `side_index` with
-        // a mapping from the old to the new index instead.
-        for (i, ent) in enumerate(&mut self.core.entries) {
-            let old_index = ent.hash.get();
-            ent.hash = HashValue(replace(&mut side_index[old_index], i));
-        }
-
-        // Apply new index to self.core.indices
-        dispatch_32_vs_64!(self => apply_new_index(&mut self.core.indices, &side_index));
-
-        fn apply_new_index<Sz>(indices: &mut [Pos], new_index: &[usize])
-            where Sz: Size
-        {
-            for pos in indices {
-                if let Some((i, _)) = pos.resolve::<Sz>() {
-                    pos.set_pos::<Sz>(new_index[i]);
-                }
-            }
-        }
+        self.core.sort_by(compare)
     }
 
     /// Sort the key-value pairs of the map and return a by value iterator of
@@ -1344,6 +1317,39 @@ impl<K, V> OrderMapCore<K, V> {
             }
         }
         self.entries.truncate(len - n_deleted);
+    }
+
+    fn sort_by<F>(&mut self, mut compare: F)
+        where F: FnMut(&K, &V, &K, &V) -> Ordering,
+    {
+        // Temporarily use the hash field in a bucket to store the old index.
+        // Save the old hash values in `side_index`.  Then we can sort
+        // `self.entries` in place.
+        let mut side_index = Vec::from_iter(enumerate(&mut self.entries).map(|(i, elt)| {
+            replace(&mut elt.hash, HashValue(i)).get()
+        }));
+
+        self.entries.sort_by(move |ei, ej| compare(&ei.key, &ei.value, &ej.key, &ej.value));
+
+        // Write back the hash values from side_index and fill `side_index` with
+        // a mapping from the old to the new index instead.
+        for (i, ent) in enumerate(&mut self.entries) {
+            let old_index = ent.hash.get();
+            ent.hash = HashValue(replace(&mut side_index[old_index], i));
+        }
+
+        // Apply new index to self.indices
+        dispatch_32_vs_64!(self => apply_new_index(&mut self.indices, &side_index));
+
+        fn apply_new_index<Sz>(indices: &mut [Pos], new_index: &[usize])
+            where Sz: Size
+        {
+            for pos in indices {
+                if let Some((i, _)) = pos.resolve::<Sz>() {
+                    pos.set_pos::<Sz>(new_index[i]);
+                }
+            }
+        }
     }
 }
 
