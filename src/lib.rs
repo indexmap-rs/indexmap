@@ -460,7 +460,7 @@ impl<K, V, S> OrderMap<K, V, S>
 
     /// Computes in **O(1)** time.
     pub fn capacity(&self) -> usize {
-        usable_capacity(self.raw_capacity())
+        self.core.capacity()
     }
 
     #[inline]
@@ -742,123 +742,18 @@ impl<K, V, S> OrderMap<K, V, S>
         where Sz: Size
     {
         let hash = hash_elem_using(&self.hash_builder, &key);
-        let mut probe = desired_pos(self.core.mask, hash);
-        let mut dist = 0;
-        let insert_kind;
-        debug_assert!(self.len() < self.raw_capacity());
-        probe_loop!(probe < self.core.indices.len(), {
-            let pos = &mut self.core.indices[probe];
-            if let Some((i, hash_proxy)) = pos.resolve::<Sz>() {
-                let entry_hash = hash_proxy.get_short_hash(&self.core.entries, i);
-                // if existing element probed less than us, swap
-                let their_dist = probe_distance(self.core.mask, entry_hash.into_hash(), probe);
-                if their_dist < dist {
-                    // robin hood: steal the spot if it's better for us
-                    let index = self.core.entries.len();
-                    insert_kind = Inserted::RobinHood {
-                        probe: probe,
-                        old_pos: Pos::with_hash::<Sz>(index, hash),
-                    };
-                    break;
-                } else if entry_hash == hash && self.core.entries[i].key == key {
-                    return Inserted::Swapped {
-                        prev_value: replace(&mut self.core.entries[i].value, value),
-                    };
-                }
-            } else {
-                // empty bucket, insert here
-                let index = self.core.entries.len();
-                *pos = Pos::with_hash::<Sz>(index, hash);
-                insert_kind = Inserted::Done;
-                break;
-            }
-            dist += 1;
-        });
-        self.core.entries.push(Bucket { hash: hash, key: key, value: value });
-        insert_kind
-    }
-
-    fn first_allocation(&mut self) {
-        debug_assert_eq!(self.len(), 0);
-        let raw_cap = 8usize;
-        self.core.mask = raw_cap.wrapping_sub(1);
-        self.core.indices = vec![Pos::none(); raw_cap].into_boxed_slice();
-        self.core.entries = Vec::with_capacity(usable_capacity(raw_cap));
-    }
-
-    #[inline(never)]
-    // `Sz` is *current* Size class, before grow
-    fn double_capacity<Sz>(&mut self)
-        where Sz: Size
-    {
-        debug_assert!(self.raw_capacity() == 0 || self.len() > 0);
-        if self.raw_capacity() == 0 {
-            return self.first_allocation();
-        }
-
-        // find first ideally placed element -- start of cluster
-        let mut first_ideal = 0;
-        for (i, index) in enumerate(&*self.core.indices) {
-            if let Some(pos) = index.pos() {
-                if 0 == probe_distance(self.core.mask, self.core.entries[pos].hash, i) {
-                    first_ideal = i;
-                    break;
-                }
-            }
-        }
-
-        // visit the entries in an order where we can simply reinsert them
-        // into self.core.indices without any bucket stealing.
-        let new_raw_cap = self.core.indices.len() * 2;
-        let old_indices = replace(&mut self.core.indices, vec![Pos::none(); new_raw_cap].into_boxed_slice());
-        self.core.mask = new_raw_cap.wrapping_sub(1);
-
-        // `Sz` is the old size class, and either u32 or u64 is the new
-        for &pos in &old_indices[first_ideal..] {
-            dispatch_32_vs_64!(self.reinsert_entry_in_order::<Sz>(pos));
-        }
-
-        for &pos in &old_indices[..first_ideal] {
-            dispatch_32_vs_64!(self.reinsert_entry_in_order::<Sz>(pos));
-        }
-        let more = self.capacity() - self.len();
-        self.core.entries.reserve_exact(more);
-    }
-
-    // write to self.core.indices
-    // read from self.core.entries at `pos`
-    //
-    // reinserting rewrites all `Pos` entries anyway. This handles transitioning
-    // from u32 to u64 size class if needed by using the two type parameters.
-    fn reinsert_entry_in_order<SzNew, SzOld>(&mut self, pos: Pos)
-        where SzNew: Size,
-              SzOld: Size,
-    {
-        if let Some((i, hash_proxy)) = pos.resolve::<SzOld>() {
-            // only if the size class is conserved can we use the short hash
-            let entry_hash = if SzOld::is_same_size::<SzNew>() {
-                hash_proxy.get_short_hash(&self.core.entries, i).into_hash()
-            } else {
-                self.core.entries[i].hash
-            };
-            // find first empty bucket and insert there
-            let mut probe = desired_pos(self.core.mask, entry_hash);
-            probe_loop!(probe < self.core.indices.len(), {
-                if let Some(_) = self.core.indices[probe].resolve::<SzNew>() {
-                    /* nothing */
-                } else {
-                    // empty bucket, insert here
-                    self.core.indices[probe] = Pos::with_hash::<SzNew>(i, entry_hash);
-                    return;
-                }
-            });
-        }
+        self.core.insert_phase_1::<Sz>(hash, key, value)
     }
 
     fn reserve_one(&mut self) {
         if self.len() == self.capacity() {
             dispatch_32_vs_64!(self.double_capacity());
         }
+    }
+    fn double_capacity<Sz>(&mut self)
+        where Sz: Size,
+    {
+        self.core.double_capacity::<Sz>();
     }
 
     /// Insert a key-value pair in the map.
@@ -1168,6 +1063,87 @@ impl<K, V, S> OrderMap<K, V, S> {
 impl<K, V> OrderMapCore<K, V> {
     fn len(&self) -> usize { self.entries.len() }
 
+    fn capacity(&self) -> usize {
+        usable_capacity(self.raw_capacity())
+    }
+
+    fn first_allocation(&mut self) {
+        debug_assert_eq!(self.len(), 0);
+        let raw_cap = 8usize;
+        self.mask = raw_cap.wrapping_sub(1);
+        self.indices = vec![Pos::none(); raw_cap].into_boxed_slice();
+        self.entries = Vec::with_capacity(usable_capacity(raw_cap));
+    }
+
+    #[inline(never)]
+    // `Sz` is *current* Size class, before grow
+    fn double_capacity<Sz>(&mut self)
+        where Sz: Size
+    {
+        debug_assert!(self.raw_capacity() == 0 || self.len() > 0);
+        if self.raw_capacity() == 0 {
+            return self.first_allocation();
+        }
+
+        // find first ideally placed element -- start of cluster
+        let mut first_ideal = 0;
+        for (i, index) in enumerate(&*self.indices) {
+            if let Some(pos) = index.pos() {
+                if 0 == probe_distance(self.mask, self.entries[pos].hash, i) {
+                    first_ideal = i;
+                    break;
+                }
+            }
+        }
+
+        // visit the entries in an order where we can simply reinsert them
+        // into self.indices without any bucket stealing.
+        let new_raw_cap = self.indices.len() * 2;
+        let old_indices = replace(&mut self.indices, vec![Pos::none(); new_raw_cap].into_boxed_slice());
+        self.mask = new_raw_cap.wrapping_sub(1);
+
+        // `Sz` is the old size class, and either u32 or u64 is the new
+        for &pos in &old_indices[first_ideal..] {
+            dispatch_32_vs_64!(self.reinsert_entry_in_order::<Sz>(pos));
+        }
+
+        for &pos in &old_indices[..first_ideal] {
+            dispatch_32_vs_64!(self.reinsert_entry_in_order::<Sz>(pos));
+        }
+        let more = self.capacity() - self.len();
+        self.entries.reserve_exact(more);
+    }
+
+    // write to self.indices
+    // read from self.entries at `pos`
+    //
+    // reinserting rewrites all `Pos` entries anyway. This handles transitioning
+    // from u32 to u64 size class if needed by using the two type parameters.
+    fn reinsert_entry_in_order<SzNew, SzOld>(&mut self, pos: Pos)
+        where SzNew: Size,
+              SzOld: Size,
+    {
+        if let Some((i, hash_proxy)) = pos.resolve::<SzOld>() {
+            // only if the size class is conserved can we use the short hash
+            let entry_hash = if SzOld::is_same_size::<SzNew>() {
+                hash_proxy.get_short_hash(&self.entries, i).into_hash()
+            } else {
+                self.entries[i].hash
+            };
+            // find first empty bucket and insert there
+            let mut probe = desired_pos(self.mask, entry_hash);
+            probe_loop!(probe < self.indices.len(), {
+                if let Some(_) = self.indices[probe].resolve::<SzNew>() {
+                    /* nothing */
+                } else {
+                    // empty bucket, insert here
+                    self.indices[probe] = Pos::with_hash::<SzNew>(i, entry_hash);
+                    return;
+                }
+            });
+        }
+    }
+
     fn pop_impl(&mut self) -> Option<(K, V)> {
         let (probe, found) = match self.entries.last()
             .map(|e| self.find_existing_entry(e))
@@ -1178,6 +1154,52 @@ impl<K, V> OrderMapCore<K, V> {
         debug_assert_eq!(found, self.entries.len() - 1);
         Some(self.remove_found(probe, found))
     }
+
+    // First phase: Look for the preferred location for key.
+    //
+    // We will know if `key` is already in the map, before we need to insert it.
+    // When we insert they key, it might be that we need to continue displacing
+    // entries (robin hood hashing), in which case Inserted::RobinHood is returned
+    fn insert_phase_1<Sz>(&mut self, hash: HashValue, key: K, value: V) -> Inserted<V>
+        where Sz: Size,
+              K: Eq,
+    {
+        let mut probe = desired_pos(self.mask, hash);
+        let mut dist = 0;
+        let insert_kind;
+        debug_assert!(self.len() < self.raw_capacity());
+        probe_loop!(probe < self.indices.len(), {
+            let pos = &mut self.indices[probe];
+            if let Some((i, hash_proxy)) = pos.resolve::<Sz>() {
+                let entry_hash = hash_proxy.get_short_hash(&self.entries, i);
+                // if existing element probed less than us, swap
+                let their_dist = probe_distance(self.mask, entry_hash.into_hash(), probe);
+                if their_dist < dist {
+                    // robin hood: steal the spot if it's better for us
+                    let index = self.entries.len();
+                    insert_kind = Inserted::RobinHood {
+                        probe: probe,
+                        old_pos: Pos::with_hash::<Sz>(index, hash),
+                    };
+                    break;
+                } else if entry_hash == hash && self.entries[i].key == key {
+                    return Inserted::Swapped {
+                        prev_value: replace(&mut self.entries[i].value, value),
+                    };
+                }
+            } else {
+                // empty bucket, insert here
+                let index = self.entries.len();
+                *pos = Pos::with_hash::<Sz>(index, hash);
+                insert_kind = Inserted::Done;
+                break;
+            }
+            dist += 1;
+        });
+        self.entries.push(Bucket { hash: hash, key: key, value: value });
+        insert_kind
+    }
+
 
     /// phase 2 is post-insert where we forward-shift `Pos` in the indices.
     fn insert_phase_2<Sz>(&mut self, mut probe: usize, mut old_pos: Pos)
