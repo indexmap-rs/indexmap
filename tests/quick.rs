@@ -26,7 +26,7 @@ use std::ops::Deref;
 use std::cmp::min;
 
 
-use ordermap::Entry as OEntry;
+use ordermap::map::Entry as OEntry;
 use std::collections::hash_map::Entry as HEntry;
 
 
