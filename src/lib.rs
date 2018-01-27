@@ -1079,7 +1079,7 @@ impl<K, V, S> OrderMap<K, V, S>
     pub fn sort_keys(&mut self)
         where K: Ord,
     {
-        self.sort_by(|k1, _, k2, _| Ord::cmp(k1, k2))
+        self.core.sort_by(key_cmp)
     }
 
     /// Sort the map’s key-value pairs in place using the comparison
@@ -1116,6 +1116,12 @@ impl<K, V, S> OrderMap<K, V, S>
             iter: self.core.entries.drain(range),
         }
     }
+}
+
+fn key_cmp<K, V>(k1: &K, _v1: &V, k2: &K, _v2: &V) -> Ordering
+    where K: Ord
+{
+    Ord::cmp(k1, k2)
 }
 
 impl<K, V, S> OrderMap<K, V, S> {
