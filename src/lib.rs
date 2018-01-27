@@ -107,7 +107,7 @@ impl<Sz> From<ShortHash<Sz>> for HashValue {
 }
 
 /// `Pos` is stored in the `indices` array and it points to the index of a
-/// `Bucket` in self.entries.
+/// `Bucket` in self.core.entries.
 ///
 /// Pos can be interpreted either as a 64-bit index, or as a 32-bit index and
 /// a 32-bit hash.
@@ -290,12 +290,18 @@ impl<Sz> ShortHashProxy<Sz>
 /// ```
 #[derive(Clone)]
 pub struct OrderMap<K, V, S = RandomState> {
+    core: OrderMapCore<K, V>,
+    hash_builder: S,
+}
+
+// core of the map that does not depend on S
+#[derive(Clone)]
+struct OrderMapCore<K, V> {
     mask: usize,
     /// indices are the buckets. indices.len() == raw capacity
     indices: Box<[Pos]>,
     /// entries is a dense vec of entries in their order. entries.len() == len
     entries: Vec<Bucket<K, V>>,
-    hash_builder: S,
 }
 
 #[derive(Copy, Clone, Debug)]
@@ -336,15 +342,15 @@ impl<K, V, S> fmt::Debug for OrderMap<K, V, S>
             return Ok(());
         }
         try!(writeln!(f, ""));
-        for (i, index) in enumerate(&*self.indices) {
+        for (i, index) in enumerate(&*self.core.indices) {
             try!(write!(f, "{}: {:?}", i, index));
             if let Some(pos) = index.pos() {
-                let hash = self.entries[pos].hash;
-                let key = &self.entries[pos].key;
-                let desire = desired_pos(self.mask, hash);
+                let hash = self.core.entries[pos].hash;
+                let key = &self.core.entries[pos].key;
+                let desire = desired_pos(self.core.mask, hash);
                 try!(write!(f, ", desired={}, probe_distance={}, key={:?}",
                               desire,
-                              probe_distance(self.mask, hash, i),
+                              probe_distance(self.core.mask, hash, i),
                               key));
             }
             try!(writeln!(f, ""));
@@ -352,7 +358,7 @@ impl<K, V, S> fmt::Debug for OrderMap<K, V, S>
         try!(writeln!(f, "cap={}, raw_cap={}, entries.cap={}",
                       self.capacity(),
                       self.raw_capacity(),
-                      self.entries.capacity()));
+                      self.core.entries.capacity()));
         Ok(())
     }
 }
@@ -407,18 +413,22 @@ impl<K, V, S> OrderMap<K, V, S>
     {
         if n == 0 {
             OrderMap {
-                mask: 0,
-                indices: Box::new([]),
-                entries: Vec::new(),
+                core: OrderMapCore {
+                    mask: 0,
+                    indices: Box::new([]),
+                    entries: Vec::new(),
+                },
                 hash_builder: hash_builder,
             }
         } else {
             let raw = to_raw_capacity(n);
             let raw_cap = max(raw.next_power_of_two(), 8);
             OrderMap {
-                mask: raw_cap.wrapping_sub(1),
-                indices: vec![Pos::none(); raw_cap].into_boxed_slice(),
-                entries: Vec::with_capacity(usable_capacity(raw_cap)),
+                core: OrderMapCore {
+                    mask: raw_cap.wrapping_sub(1),
+                    indices: vec![Pos::none(); raw_cap].into_boxed_slice(),
+                    entries: Vec::with_capacity(usable_capacity(raw_cap)),
+                },
                 hash_builder: hash_builder,
             }
         }
@@ -427,7 +437,7 @@ impl<K, V, S> OrderMap<K, V, S>
     /// Return the number of key-value pairs in the map.
     ///
     /// Computes in **O(1)** time.
-    pub fn len(&self) -> usize { self.entries.len() }
+    pub fn len(&self) -> usize { self.core.len() }
 
     /// Returns true if the map contains no elements.
     ///
@@ -448,6 +458,23 @@ impl<K, V, S> OrderMap<K, V, S>
         &self.hash_builder
     }
 
+    /// Computes in **O(1)** time.
+    pub fn capacity(&self) -> usize {
+        usable_capacity(self.raw_capacity())
+    }
+
+    #[inline]
+    fn size_class_is_64bit(&self) -> bool {
+        self.core.size_class_is_64bit()
+    }
+
+    #[inline(always)]
+    fn raw_capacity(&self) -> usize {
+        self.core.raw_capacity()
+    }
+}
+
+impl<K, V> OrderMapCore<K, V> {
     // Return whether we need 32 or 64 bits to specify a bucket or entry index
     #[cfg(not(feature = "test_low_transition_point"))]
     fn size_class_is_64bit(&self) -> bool {
@@ -465,15 +492,10 @@ impl<K, V, S> OrderMap<K, V, S>
     fn raw_capacity(&self) -> usize {
         self.indices.len()
     }
-
-    /// Computes in **O(1)** time.
-    pub fn capacity(&self) -> usize {
-        usable_capacity(self.raw_capacity())
-    }
 }
 
 /// Trait for the "size class". Either u32 or u64 depending on the index
-/// size needed to address an entry's indes in self.entries.
+/// size needed to address an entry's indes in self.core.entries.
 trait Size {
     fn is_64_bit() -> bool;
     fn is_same_size<T: Size>() -> bool {
@@ -529,14 +551,14 @@ macro_rules! dispatch_32_vs_64 {
 ///
 /// FIXME: Remove dependence on the `S` parameter
 /// (to match HashMap).
-pub enum Entry<'a, K: 'a, V: 'a, S: 'a = RandomState> {
+pub enum Entry<'a, K: 'a, V: 'a> {
     /// Existing slot with equivalent key.
-    Occupied(OccupiedEntry<'a, K, V, S>),
+    Occupied(OccupiedEntry<'a, K, V>),
     /// Vacant slot (no equivalent key in the map).
-    Vacant(VacantEntry<'a, K, V, S>),
+    Vacant(VacantEntry<'a, K, V>),
 }
 
-impl<'a, K, V, S> Entry<'a, K, V, S> {
+impl<'a, K, V> Entry<'a, K, V> {
     /// Computes in **O(1)** time (amortized average).
     pub fn or_insert(self, default: V) -> &'a mut V {
         match self {
@@ -571,14 +593,14 @@ impl<'a, K, V, S> Entry<'a, K, V, S> {
     }
 }
 
-pub struct OccupiedEntry<'a, K: 'a, V: 'a, S: 'a = RandomState> {
-    map: &'a mut OrderMap<K, V, S>,
+pub struct OccupiedEntry<'a, K: 'a, V: 'a> {
+    map: &'a mut OrderMapCore<K, V>,
     key: K,
     probe: usize,
     index: usize,
 }
 
-impl<'a, K, V, S> OccupiedEntry<'a, K, V, S> {
+impl<'a, K, V> OccupiedEntry<'a, K, V> {
     pub fn key(&self) -> &K { &self.key }
     pub fn get(&self) -> &V {
         &self.map.entries[self.index].value
@@ -610,14 +632,14 @@ impl<'a, K, V, S> OccupiedEntry<'a, K, V, S> {
 }
 
 
-pub struct VacantEntry<'a, K: 'a, V: 'a, S: 'a = RandomState> {
-    map: &'a mut OrderMap<K, V, S>,
+pub struct VacantEntry<'a, K: 'a, V: 'a> {
+    map: &'a mut OrderMapCore<K, V>,
     key: K,
     hash: HashValue,
     probe: usize,
 }
 
-impl<'a, K, V, S> VacantEntry<'a, K, V, S> {
+impl<'a, K, V> VacantEntry<'a, K, V> {
     pub fn key(&self) -> &K { &self.key }
     pub fn into_key(self) -> K { self.key }
     /// Return the index where the key-value pair will be inserted.
@@ -646,29 +668,29 @@ impl<K, V, S> OrderMap<K, V, S>
           S: BuildHasher,
 {
     // Warning, this is a code duplication zone Entry is not yet finished
-    fn entry_phase_1<Sz>(&mut self, key: K) -> Entry<K, V, S>
+    fn entry_phase_1<Sz>(&mut self, key: K) -> Entry<K, V>
         where Sz: Size
     {
         let hash = hash_elem_using(&self.hash_builder, &key);
-        let mut probe = desired_pos(self.mask, hash);
+        let mut probe = desired_pos(self.core.mask, hash);
         let mut dist = 0;
         debug_assert!(self.len() < self.raw_capacity());
-        probe_loop!(probe < self.indices.len(), {
-            if let Some((i, hash_proxy)) = self.indices[probe].resolve::<Sz>() {
-                let entry_hash = hash_proxy.get_short_hash(&self.entries, i);
+        probe_loop!(probe < self.core.indices.len(), {
+            if let Some((i, hash_proxy)) = self.core.indices[probe].resolve::<Sz>() {
+                let entry_hash = hash_proxy.get_short_hash(&self.core.entries, i);
                 // if existing element probed less than us, swap
-                let their_dist = probe_distance(self.mask, entry_hash.into_hash(), probe);
+                let their_dist = probe_distance(self.core.mask, entry_hash.into_hash(), probe);
                 if their_dist < dist {
                     // robin hood: steal the spot if it's better for us
                     return Entry::Vacant(VacantEntry {
-                        map: self,
+                        map: &mut self.core,
                         hash: hash,
                         key: key,
                         probe: probe,
                     });
-                } else if entry_hash == hash && self.entries[i].key == key {
+                } else if entry_hash == hash && self.core.entries[i].key == key {
                     return Entry::Occupied(OccupiedEntry {
-                        map: self,
+                        map: &mut self.core,
                         key: key,
                         probe: probe,
                         index: i,
@@ -677,7 +699,7 @@ impl<K, V, S> OrderMap<K, V, S>
             } else {
                 // empty bucket, insert here
                 return Entry::Vacant(VacantEntry {
-                    map: self,
+                    map: &mut self.core,
                     hash: hash,
                     key: key,
                     probe: probe,
@@ -691,13 +713,13 @@ impl<K, V, S> OrderMap<K, V, S>
     ///
     /// Computes in **O(n)** time.
     pub fn clear(&mut self) {
-        self.entries.clear();
+        self.core.entries.clear();
         self.clear_indices();
     }
 
-    // clear self.indices to the same state as "no elements"
+    // clear self.core.indices to the same state as "no elements"
     fn clear_indices(&mut self) {
-        for pos in self.indices.iter_mut() {
+        for pos in self.core.indices.iter_mut() {
             *pos = Pos::none();
         }
     }
@@ -720,48 +742,48 @@ impl<K, V, S> OrderMap<K, V, S>
         where Sz: Size
     {
         let hash = hash_elem_using(&self.hash_builder, &key);
-        let mut probe = desired_pos(self.mask, hash);
+        let mut probe = desired_pos(self.core.mask, hash);
         let mut dist = 0;
         let insert_kind;
         debug_assert!(self.len() < self.raw_capacity());
-        probe_loop!(probe < self.indices.len(), {
-            let pos = &mut self.indices[probe];
+        probe_loop!(probe < self.core.indices.len(), {
+            let pos = &mut self.core.indices[probe];
             if let Some((i, hash_proxy)) = pos.resolve::<Sz>() {
-                let entry_hash = hash_proxy.get_short_hash(&self.entries, i);
+                let entry_hash = hash_proxy.get_short_hash(&self.core.entries, i);
                 // if existing element probed less than us, swap
-                let their_dist = probe_distance(self.mask, entry_hash.into_hash(), probe);
+                let their_dist = probe_distance(self.core.mask, entry_hash.into_hash(), probe);
                 if their_dist < dist {
                     // robin hood: steal the spot if it's better for us
-                    let index = self.entries.len();
+                    let index = self.core.entries.len();
                     insert_kind = Inserted::RobinHood {
                         probe: probe,
                         old_pos: Pos::with_hash::<Sz>(index, hash),
                     };
                     break;
-                } else if entry_hash == hash && self.entries[i].key == key {
+                } else if entry_hash == hash && self.core.entries[i].key == key {
                     return Inserted::Swapped {
-                        prev_value: replace(&mut self.entries[i].value, value),
+                        prev_value: replace(&mut self.core.entries[i].value, value),
                     };
                 }
             } else {
                 // empty bucket, insert here
-                let index = self.entries.len();
+                let index = self.core.entries.len();
                 *pos = Pos::with_hash::<Sz>(index, hash);
                 insert_kind = Inserted::Done;
                 break;
             }
             dist += 1;
         });
-        self.entries.push(Bucket { hash: hash, key: key, value: value });
+        self.core.entries.push(Bucket { hash: hash, key: key, value: value });
         insert_kind
     }
 
     fn first_allocation(&mut self) {
         debug_assert_eq!(self.len(), 0);
         let raw_cap = 8usize;
-        self.mask = raw_cap.wrapping_sub(1);
-        self.indices = vec![Pos::none(); raw_cap].into_boxed_slice();
-        self.entries = Vec::with_capacity(usable_capacity(raw_cap));
+        self.core.mask = raw_cap.wrapping_sub(1);
+        self.core.indices = vec![Pos::none(); raw_cap].into_boxed_slice();
+        self.core.entries = Vec::with_capacity(usable_capacity(raw_cap));
     }
 
     #[inline(never)]
@@ -776,9 +798,9 @@ impl<K, V, S> OrderMap<K, V, S>
 
         // find first ideally placed element -- start of cluster
         let mut first_ideal = 0;
-        for (i, index) in enumerate(&*self.indices) {
+        for (i, index) in enumerate(&*self.core.indices) {
             if let Some(pos) = index.pos() {
-                if 0 == probe_distance(self.mask, self.entries[pos].hash, i) {
+                if 0 == probe_distance(self.core.mask, self.core.entries[pos].hash, i) {
                     first_ideal = i;
                     break;
                 }
@@ -786,10 +808,10 @@ impl<K, V, S> OrderMap<K, V, S>
         }
 
         // visit the entries in an order where we can simply reinsert them
-        // into self.indices without any bucket stealing.
-        let new_raw_cap = self.indices.len() * 2;
-        let old_indices = replace(&mut self.indices, vec![Pos::none(); new_raw_cap].into_boxed_slice());
-        self.mask = new_raw_cap.wrapping_sub(1);
+        // into self.core.indices without any bucket stealing.
+        let new_raw_cap = self.core.indices.len() * 2;
+        let old_indices = replace(&mut self.core.indices, vec![Pos::none(); new_raw_cap].into_boxed_slice());
+        self.core.mask = new_raw_cap.wrapping_sub(1);
 
         // `Sz` is the old size class, and either u32 or u64 is the new
         for &pos in &old_indices[first_ideal..] {
@@ -800,11 +822,11 @@ impl<K, V, S> OrderMap<K, V, S>
             dispatch_32_vs_64!(self.reinsert_entry_in_order::<Sz>(pos));
         }
         let more = self.capacity() - self.len();
-        self.entries.reserve_exact(more);
+        self.core.entries.reserve_exact(more);
     }
 
-    // write to self.indices
-    // read from self.entries at `pos`
+    // write to self.core.indices
+    // read from self.core.entries at `pos`
     //
     // reinserting rewrites all `Pos` entries anyway. This handles transitioning
     // from u32 to u64 size class if needed by using the two type parameters.
@@ -815,18 +837,18 @@ impl<K, V, S> OrderMap<K, V, S>
         if let Some((i, hash_proxy)) = pos.resolve::<SzOld>() {
             // only if the size class is conserved can we use the short hash
             let entry_hash = if SzOld::is_same_size::<SzNew>() {
-                hash_proxy.get_short_hash(&self.entries, i).into_hash()
+                hash_proxy.get_short_hash(&self.core.entries, i).into_hash()
             } else {
-                self.entries[i].hash
+                self.core.entries[i].hash
             };
             // find first empty bucket and insert there
-            let mut probe = desired_pos(self.mask, entry_hash);
-            probe_loop!(probe < self.indices.len(), {
-                if let Some(_) = self.indices[probe].resolve::<SzNew>() {
+            let mut probe = desired_pos(self.core.mask, entry_hash);
+            probe_loop!(probe < self.core.indices.len(), {
+                if let Some(_) = self.core.indices[probe].resolve::<SzNew>() {
                     /* nothing */
                 } else {
                     // empty bucket, insert here
-                    self.indices[probe] = Pos::with_hash::<SzNew>(i, entry_hash);
+                    self.core.indices[probe] = Pos::with_hash::<SzNew>(i, entry_hash);
                     return;
                 }
             });
@@ -859,7 +881,7 @@ impl<K, V, S> OrderMap<K, V, S>
                 Inserted::Swapped { prev_value } => Some(prev_value),
                 Inserted::Done => None,
                 Inserted::RobinHood { probe, old_pos } => {
-                    self.insert_phase_2::<u64>(probe, old_pos);
+                    self.core.insert_phase_2::<u64>(probe, old_pos);
                     None
                 }
             }
@@ -868,7 +890,7 @@ impl<K, V, S> OrderMap<K, V, S>
                 Inserted::Swapped { prev_value } => Some(prev_value),
                 Inserted::Done => None,
                 Inserted::RobinHood { probe, old_pos } => {
-                    self.insert_phase_2::<u32>(probe, old_pos);
+                    self.core.insert_phase_2::<u32>(probe, old_pos);
                     None
                 }
             }
@@ -879,7 +901,7 @@ impl<K, V, S> OrderMap<K, V, S>
     /// in-place manipulation.
     ///
     /// Computes in **O(1)** time (amortized average).
-    pub fn entry(&mut self, key: K) -> Entry<K, V, S> {
+    pub fn entry(&mut self, key: K) -> Entry<K, V> {
         self.reserve_one();
         dispatch_32_vs_64!(self.entry_phase_1(key))
     }
@@ -888,28 +910,28 @@ impl<K, V, S> OrderMap<K, V, S>
     /// Return an iterator over the key-value pairs of the map, in their order
     pub fn iter(&self) -> Iter<K, V> {
         Iter {
-            iter: self.entries.iter()
+            iter: self.core.entries.iter()
         }
     }
 
     /// Return an iterator over the key-value pairs of the map, in their order
     pub fn iter_mut(&mut self) -> IterMut<K, V> {
         IterMut {
-            iter: self.entries.iter_mut()
+            iter: self.core.entries.iter_mut()
         }
     }
 
     /// Return an iterator over the keys of the map, in their order
     pub fn keys(&self) -> Keys<K, V> {
         Keys {
-            iter: self.entries.iter()
+            iter: self.core.entries.iter()
         }
     }
 
     /// Return an iterator over the values of the map, in their order
     pub fn values(&self) -> Values<K, V> {
         Values {
-            iter: self.entries.iter()
+            iter: self.core.entries.iter()
         }
     }
 
@@ -917,7 +939,7 @@ impl<K, V, S> OrderMap<K, V, S>
     /// in their order
     pub fn values_mut(&mut self) -> ValuesMut<K, V> {
         ValuesMut {
-            iter: self.entries.iter_mut()
+            iter: self.core.entries.iter_mut()
         }
     }
 
@@ -945,7 +967,7 @@ impl<K, V, S> OrderMap<K, V, S>
         where Q: Hash + Equivalent<K>,
     {
         if let Some((_, found)) = self.find(key) {
-            let entry = &self.entries[found];
+            let entry = &self.core.entries[found];
             Some((found, &entry.key, &entry.value))
         } else {
             None
@@ -971,7 +993,7 @@ impl<K, V, S> OrderMap<K, V, S>
     {
         if self.len() == 0 { return None; }
         let h = hash_elem_using(&self.hash_builder, key);
-        self.find_using(h, move |entry| { Q::equivalent(key, &entry.key) })
+        self.core.find_using(h, move |entry| { Q::equivalent(key, &entry.key) })
     }
 
     /// NOTE: Same as .swap_remove
@@ -1014,7 +1036,7 @@ impl<K, V, S> OrderMap<K, V, S>
             None => return None,
             Some(t) => t,
         };
-        let (k, v) = self.remove_found(probe, found);
+        let (k, v) = self.core.remove_found(probe, found);
         Some((found, k, v))
     }
 
@@ -1022,7 +1044,7 @@ impl<K, V, S> OrderMap<K, V, S>
     ///
     /// Computes in **O(1)** time (average).
     pub fn pop(&mut self) -> Option<(K, V)> {
-        self.pop_impl()
+        self.core.pop_impl()
     }
 
     /// Scan through each key-value pair in the map and keep those where the
@@ -1041,37 +1063,14 @@ impl<K, V, S> OrderMap<K, V, S>
     fn retain_mut<F>(&mut self, keep: F)
         where F: FnMut(&mut K, &mut V) -> bool,
     {
-        dispatch_32_vs_64!(self.retain_in_order_impl::<F>(keep));
+        dispatch_32_vs_64!(self.retain_mut_sz::<_>(keep));
     }
 
-    fn retain_in_order_impl<Sz, F>(&mut self, mut keep: F)
+    fn retain_mut_sz<Sz, F>(&mut self, keep: F)
         where F: FnMut(&mut K, &mut V) -> bool,
               Sz: Size,
     {
-        // Like Vec::retain in self.entries; for each removed key-value pair,
-        // we clear its corresponding spot in self.indices, and run the
-        // usual backward shift in self.indices.
-        let len = self.entries.len();
-        let mut n_deleted = 0;
-        for i in 0..len {
-            let will_keep;
-            let hash;
-            {
-                let ent = &mut self.entries[i];
-                hash = ent.hash;
-                will_keep = keep(&mut ent.key, &mut ent.value);
-            };
-            let probe = find_existing_entry_at::<Sz>(&self.indices, hash, self.mask, i);
-            if !will_keep {
-                n_deleted += 1;
-                self.indices[probe] = Pos::none();
-                self.backward_shift_after_removal::<Sz>(probe);
-            } else if n_deleted > 0 {
-                self.indices[probe].set_pos::<Sz>(i - n_deleted);
-                self.entries.swap(i - n_deleted, i);
-            }
-        }
-        self.entries.truncate(len - n_deleted);
+        self.core.retain_in_order_impl::<Sz, F>(keep);
     }
 
     /// Sort the map’s key-value pairs by the default ordering of the keys.
@@ -1096,22 +1095,22 @@ impl<K, V, S> OrderMap<K, V, S>
     {
         // Temporarily use the hash field in a bucket to store the old index.
         // Save the old hash values in `side_index`.  Then we can sort
-        // `self.entries` in place.
-        let mut side_index = Vec::from_iter(enumerate(&mut self.entries).map(|(i, elt)| {
+        // `self.core.entries` in place.
+        let mut side_index = Vec::from_iter(enumerate(&mut self.core.entries).map(|(i, elt)| {
             replace(&mut elt.hash, HashValue(i)).get()
         }));
 
-        self.entries.sort_by(move |ei, ej| compare(&ei.key, &ei.value, &ej.key, &ej.value));
+        self.core.entries.sort_by(move |ei, ej| compare(&ei.key, &ei.value, &ej.key, &ej.value));
 
         // Write back the hash values from side_index and fill `side_index` with
         // a mapping from the old to the new index instead.
-        for (i, ent) in enumerate(&mut self.entries) {
+        for (i, ent) in enumerate(&mut self.core.entries) {
             let old_index = ent.hash.get();
             ent.hash = HashValue(replace(&mut side_index[old_index], i));
         }
 
-        // Apply new index to self.indices
-        dispatch_32_vs_64!(self => apply_new_index(&mut self.indices, &side_index));
+        // Apply new index to self.core.indices
+        dispatch_32_vs_64!(self => apply_new_index(&mut self.core.indices, &side_index));
 
         fn apply_new_index<Sz>(indices: &mut [Pos], new_index: &[usize])
             where Sz: Size
@@ -1131,7 +1130,7 @@ impl<K, V, S> OrderMap<K, V, S>
     pub fn sorted_by<F>(mut self, mut cmp: F) -> IntoIter<K, V>
         where F: FnMut(&K, &V, &K, &V) -> Ordering
     {
-        self.entries.sort_by(move |a, b| cmp(&a.key, &a.value, &b.key, &b.value));
+        self.core.entries.sort_by(move |a, b| cmp(&a.key, &a.value, &b.key, &b.value));
         self.into_iter()
     }
 
@@ -1141,7 +1140,7 @@ impl<K, V, S> OrderMap<K, V, S>
         self.clear_indices();
 
         Drain {
-            iter: self.entries.drain(range),
+            iter: self.core.entries.drain(range),
         }
     }
 }
@@ -1153,7 +1152,7 @@ impl<K, V, S> OrderMap<K, V, S> {
     ///
     /// Computes in **O(1)** time.
     pub fn get_index(&self, index: usize) -> Option<(&K, &V)> {
-        self.entries.get(index).map(|ent| (&ent.key, &ent.value))
+        self.core.entries.get(index).map(|ent| (&ent.key, &ent.value))
     }
 
     /// Get a key-value pair by index
@@ -1162,7 +1161,7 @@ impl<K, V, S> OrderMap<K, V, S> {
     ///
     /// Computes in **O(1)** time.
     pub fn get_index_mut(&mut self, index: usize) -> Option<(&mut K, &mut V)> {
-        self.entries.get_mut(index).map(|ent| (&mut ent.key, &mut ent.value))
+        self.core.entries.get_mut(index).map(|ent| (&mut ent.key, &mut ent.value))
     }
 
     /// Remove the key-value pair by index
@@ -1171,13 +1170,13 @@ impl<K, V, S> OrderMap<K, V, S> {
     ///
     /// Computes in **O(1)** time (average).
     pub fn swap_remove_index(&mut self, index: usize) -> Option<(K, V)> {
-        let (probe, found) = match self.entries.get(index)
-            .map(|e| self.find_existing_entry(e))
+        let (probe, found) = match self.core.entries.get(index)
+            .map(|e| self.core.find_existing_entry(e))
         {
             None => return None,
             Some(t) => t,
         };
-        Some(self.remove_found(probe, found))
+        Some(self.core.remove_found(probe, found))
     }
 }
 
@@ -1187,7 +1186,9 @@ impl<K, V, S> OrderMap<K, V, S> {
 // using Hash + Eq at all in these methods.
 //
 // However, we should probably not let this show in the public API or docs.
-impl<K, V, S> OrderMap<K, V, S> {
+impl<K, V> OrderMapCore<K, V> {
+    fn len(&self) -> usize { self.entries.len() }
+
     fn pop_impl(&mut self) -> Option<(K, V)> {
         let (probe, found) = match self.entries.last()
             .map(|e| self.find_existing_entry(e))
@@ -1315,6 +1316,35 @@ impl<K, V, S> OrderMap<K, V, S> {
         });
     }
 
+    fn retain_in_order_impl<Sz, F>(&mut self, mut keep: F)
+        where F: FnMut(&mut K, &mut V) -> bool,
+              Sz: Size,
+    {
+        // Like Vec::retain in self.entries; for each removed key-value pair,
+        // we clear its corresponding spot in self.indices, and run the
+        // usual backward shift in self.indices.
+        let len = self.entries.len();
+        let mut n_deleted = 0;
+        for i in 0..len {
+            let will_keep;
+            let hash;
+            {
+                let ent = &mut self.entries[i];
+                hash = ent.hash;
+                will_keep = keep(&mut ent.key, &mut ent.value);
+            };
+            let probe = find_existing_entry_at::<Sz>(&self.indices, hash, self.mask, i);
+            if !will_keep {
+                n_deleted += 1;
+                self.indices[probe] = Pos::none();
+                self.backward_shift_after_removal::<Sz>(probe);
+            } else if n_deleted > 0 {
+                self.indices[probe].set_pos::<Sz>(i - n_deleted);
+                self.entries.swap(i - n_deleted, i);
+            }
+        }
+        self.entries.truncate(len - n_deleted);
+    }
 }
 
 /// Find, in the indices, an entry that already exists at a known position
@@ -1522,7 +1552,7 @@ impl<K, V, S> IntoIterator for OrderMap<K, V, S>
     type IntoIter = IntoIter<K, V>;
     fn into_iter(self) -> Self::IntoIter {
         IntoIter {
-            iter: self.entries.into_iter(),
+            iter: self.core.entries.into_iter(),
         }
     }
 }

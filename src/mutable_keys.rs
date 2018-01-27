@@ -57,7 +57,7 @@ impl<K, V, S> MutableKeys for OrderMap<K, V, S>
         where Q: Hash + Equivalent<K>,
     {
         if let Some((_, found)) = self.find(key) {
-            let entry = &mut self.entries[found];
+            let entry = &mut self.core.entries[found];
             Some((found, &mut entry.key, &mut entry.value))
         } else {
             None
