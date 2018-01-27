@@ -688,15 +688,7 @@ impl<K, V, S> OrderMap<K, V, S>
     ///
     /// Computes in **O(n)** time.
     pub fn clear(&mut self) {
-        self.core.entries.clear();
-        self.clear_indices();
-    }
-
-    // clear self.core.indices to the same state as "no elements"
-    fn clear_indices(&mut self) {
-        for pos in self.core.indices.iter_mut() {
-            *pos = Pos::none();
-        }
+        self.core.clear();
     }
 
     /// Reserve capacity for `additional` more key-value pairs.
@@ -980,7 +972,7 @@ impl<K, V, S> OrderMap<K, V, S>
     /// Clears the `OrderMap`, returning all key-value pairs as a drain iterator.
     /// Keeps the allocated memory for reuse.
     pub fn drain(&mut self, range: RangeFull) -> Drain<K, V> {
-        self.clear_indices();
+        self.core.clear_indices();
 
         Drain {
             iter: self.core.entries.drain(range),
@@ -1040,6 +1032,18 @@ impl<K, V> OrderMapCore<K, V> {
 
     fn capacity(&self) -> usize {
         usable_capacity(self.raw_capacity())
+    }
+
+    fn clear(&mut self) {
+        self.entries.clear();
+        self.clear_indices();
+    }
+
+    // clear self.indices to the same state as "no elements"
+    fn clear_indices(&mut self) {
+        for pos in self.indices.iter_mut() {
+            *pos = Pos::none();
+        }
     }
 
     fn first_allocation(&mut self) {
