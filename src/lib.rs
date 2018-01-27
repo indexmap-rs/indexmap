@@ -311,6 +311,18 @@ struct Bucket<K, V> {
     value: V,
 }
 
+impl<K, V> Bucket<K, V> {
+    // field accessors -- used for `f` instead of closures in `.map(f)`
+    fn key_ref(&self) -> &K { &self.key }
+    fn value_ref(&self) -> &V { &self.value }
+    fn value_mut(&mut self) -> &mut V { &mut self.value }
+    fn key(self) -> K { self.key }
+    fn key_value(self) -> (K, V) { (self.key, self.value) }
+    fn refs(&self) -> (&K, &V) { (&self.key, &self.value) }
+    fn ref_mut(&mut self) -> (&K, &mut V) { (&self.key, &mut self.value) }
+    fn muts(&mut self) -> (&mut K, &mut V) { (&mut self.key, &mut self.value) }
+}
+
 #[inline(always)]
 fn desired_pos(mask: usize, hash: HashValue) -> usize {
     hash.0 & mask
@@ -1026,7 +1038,7 @@ impl<K, V, S> OrderMap<K, V, S> {
     ///
     /// Computes in **O(1)** time.
     pub fn get_index(&self, index: usize) -> Option<(&K, &V)> {
-        self.core.entries.get(index).map(|ent| (&ent.key, &ent.value))
+        self.core.entries.get(index).map(Bucket::refs)
     }
 
     /// Get a key-value pair by index
@@ -1035,7 +1047,7 @@ impl<K, V, S> OrderMap<K, V, S> {
     ///
     /// Computes in **O(1)** time.
     pub fn get_index_mut(&mut self, index: usize) -> Option<(&mut K, &mut V)> {
-        self.core.entries.get_mut(index).map(|ent| (&mut ent.key, &mut ent.value))
+        self.core.entries.get_mut(index).map(Bucket::muts)
     }
 
     /// Remove the key-value pair by index
@@ -1416,12 +1428,12 @@ pub struct Keys<'a, K: 'a, V: 'a> {
 impl<'a, K, V> Iterator for Keys<'a, K, V> {
     type Item = &'a K;
 
-    iterator_methods!(|entry| &entry.key);
+    iterator_methods!(Bucket::key_ref);
 }
 
 impl<'a, K, V> DoubleEndedIterator for Keys<'a, K, V> {
     fn next_back(&mut self) -> Option<&'a K> {
-        self.iter.next_back().map(|ent| &ent.key)
+        self.iter.next_back().map(Bucket::key_ref)
     }
 }
 
@@ -1438,12 +1450,12 @@ pub struct Values<'a, K: 'a, V: 'a> {
 impl<'a, K, V> Iterator for Values<'a, K, V> {
     type Item = &'a V;
 
-    iterator_methods!(|ent| &ent.value);
+    iterator_methods!(Bucket::value_ref);
 }
 
 impl<'a, K, V> DoubleEndedIterator for Values<'a, K, V> {
     fn next_back(&mut self) -> Option<Self::Item> {
-        self.iter.next_back().map(|ent| &ent.value)
+        self.iter.next_back().map(Bucket::value_ref)
     }
 }
 
@@ -1460,12 +1472,12 @@ pub struct ValuesMut<'a, K: 'a, V: 'a> {
 impl<'a, K, V> Iterator for ValuesMut<'a, K, V> {
     type Item = &'a mut V;
 
-    iterator_methods!(|ent| &mut ent.value);
+    iterator_methods!(Bucket::value_mut);
 }
 
 impl<'a, K, V> DoubleEndedIterator for ValuesMut<'a, K, V> {
     fn next_back(&mut self) -> Option<Self::Item> {
-        self.iter.next_back().map(|ent| &mut ent.value)
+        self.iter.next_back().map(Bucket::value_mut)
     }
 }
 
@@ -1482,12 +1494,12 @@ pub struct Iter<'a, K: 'a, V: 'a> {
 impl<'a, K, V> Iterator for Iter<'a, K, V> {
     type Item = (&'a K, &'a V);
 
-    iterator_methods!(|e| (&e.key, &e.value));
+    iterator_methods!(Bucket::refs);
 }
 
 impl<'a, K, V> DoubleEndedIterator for Iter<'a, K, V> {
     fn next_back(&mut self) -> Option<Self::Item> {
-        self.iter.next_back().map(|e| (&e.key, &e.value))
+        self.iter.next_back().map(Bucket::refs)
     }
 }
 
@@ -1504,12 +1516,12 @@ pub struct IterMut<'a, K: 'a, V: 'a> {
 impl<'a, K, V> Iterator for IterMut<'a, K, V> {
     type Item = (&'a K, &'a mut V);
 
-    iterator_methods!(|e| (&e.key, &mut e.value));
+    iterator_methods!(Bucket::ref_mut);
 }
 
 impl<'a, K, V> DoubleEndedIterator for IterMut<'a, K, V> {
     fn next_back(&mut self) -> Option<Self::Item> {
-        self.iter.next_back().map(|e| (&e.key, &mut e.value))
+        self.iter.next_back().map(Bucket::ref_mut)
     }
 }
 
@@ -1526,12 +1538,12 @@ pub struct IntoIter<K, V> {
 impl<K, V> Iterator for IntoIter<K, V> {
     type Item = (K, V);
 
-    iterator_methods!(|entry| (entry.key, entry.value));
+    iterator_methods!(Bucket::key_value);
 }
 
 impl<'a, K, V> DoubleEndedIterator for IntoIter<K, V> {
     fn next_back(&mut self) -> Option<Self::Item> {
-        self.iter.next_back().map(|entry| (entry.key, entry.value))
+        self.iter.next_back().map(Bucket::key_value)
     }
 }
 
@@ -1548,11 +1560,11 @@ pub struct Drain<'a, K, V> where K: 'a, V: 'a {
 impl<'a, K, V> Iterator for Drain<'a, K, V> {
     type Item = (K, V);
 
-    iterator_methods!(|bucket| (bucket.key, bucket.value));
+    iterator_methods!(Bucket::key_value);
 }
 
 impl<'a, K, V> DoubleEndedIterator for Drain<'a, K, V> {
-    double_ended_iterator_methods!(|bucket| (bucket.key, bucket.value));
+    double_ended_iterator_methods!(Bucket::key_value);
 }
 
 
