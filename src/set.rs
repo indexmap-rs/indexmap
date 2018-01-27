@@ -409,12 +409,12 @@ pub struct IntoIter<T> {
 impl<T> Iterator for IntoIter<T> {
     type Item = T;
 
-    iterator_methods!(|entry| entry.key);
+    iterator_methods!(Bucket::key);
 }
 
 impl<T> DoubleEndedIterator for IntoIter<T> {
     fn next_back(&mut self) -> Option<Self::Item> {
-        self.iter.next_back().map(|entry| entry.key)
+        self.iter.next_back().map(Bucket::key)
     }
 }
 
@@ -432,12 +432,12 @@ pub struct Iter<'a, T: 'a> {
 impl<'a, T> Iterator for Iter<'a, T> {
     type Item = &'a T;
 
-    iterator_methods!(|entry| &entry.key);
+    iterator_methods!(Bucket::key_ref);
 }
 
 impl<'a, T> DoubleEndedIterator for Iter<'a, T> {
     fn next_back(&mut self) -> Option<Self::Item> {
-        self.iter.next_back().map(|entry| &entry.key)
+        self.iter.next_back().map(Bucket::key_ref)
     }
 }
 
@@ -454,11 +454,11 @@ pub struct Drain<'a, T: 'a> {
 impl<'a, T> Iterator for Drain<'a, T> {
     type Item = T;
 
-    iterator_methods!(|bucket| bucket.key);
+    iterator_methods!(Bucket::key);
 }
 
 impl<'a, T> DoubleEndedIterator for Drain<'a, T> {
-    double_ended_iterator_methods!(|bucket| bucket.key);
+    double_ended_iterator_methods!(Bucket::key);
 }
 
 impl<'a, T, S> IntoIterator for &'a OrderSet<T, S>
