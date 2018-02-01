@@ -32,6 +32,10 @@ type Bucket<T> = super::Bucket<T, ()>;
 /// `union` produce a concatenated order, as do their matching "bitwise"
 /// operators.  See their documentation for specifics.
 ///
+/// The insertion order is preserved, with **notable exceptions** like the
+/// `.remove()` or `.swap_remove()` methods. Methods such as `.sort_by()` of
+/// course result in a new order, depending on the sorting order.
+///
 /// # Indices
 ///
 /// The values are indexed in a compact range without holes in the range
