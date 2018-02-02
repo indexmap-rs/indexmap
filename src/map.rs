@@ -238,6 +238,10 @@ impl<Sz> ShortHashProxy<Sz>
 ///
 /// All iterators traverse the map in *the order*.
 ///
+/// The insertion order is preserved, with **notable exceptions** like the
+/// `.remove()` or `.swap_remove()` methods. Methods such as `.sort_by()` of
+/// course result in a new order, depending on the sorting order.
+///
 /// # Indices
 ///
 /// The key-value pairs are indexed in a compact range without holes in the

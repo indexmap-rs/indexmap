@@ -5,7 +5,11 @@
 //! [`OrderMap`] is a hash table where the iteration order of the key-value
 //! pairs is independent of the hash values of the keys.
 //!
-//! [`OrderMap`]: struct.OrderMap.html
+//! [`OrderSet`] is a corresponding hash set using the same implementation and
+//! with similar properties.
+//!
+//! [`OrderMap`]: map/struct.OrderMap.html
+//! [`OrderSet`]: set/struct.OrderSet.html
 
 #[macro_use]
 mod macros;

@@ -97,6 +97,23 @@ Ideas that we already did
 Recent Changes
 ==============
 
+- 0.4.0
+
+  - This is the last release series for this ``ordermap`` under that name,
+    because the crate is **going to be renamed** to ``indexmap`` (with types
+    ``IndexMap``, ``IndexSet``) and no change in functionality!
+  - The map and its associated structs moved into the ``map`` submodule of the
+    crate, so that the map and set are symmetric
+
+    + The iterators, ``Entry`` and other structs are now under ``ordermap::map::``
+
+  - Internally refactored ``OrderMap<K, V, S>`` so that all the main algorithms
+    (insertion, lookup, removal etc) that don't use the ``S`` parameter (the
+    hasher) are compiled without depending on ``S``, which reduces generics bloat.
+
+  - ``Entry<K, V>`` no longer has a type parameter ``S``, which is just like
+    the standard ``HashMap``'s entry.
+
 - 0.3.5
 
   - Documentation improvements
