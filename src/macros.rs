@@ -37,6 +37,7 @@ macro_rules! indexmap {
     };
 }
 
+/// Old name; use [`indexmap!{}`](macro.indexmap.html) instead.
 #[deprecated(note = "renamed to indexmap!{ }")]
 #[macro_export]
 macro_rules! ordermap {
@@ -81,6 +82,7 @@ macro_rules! indexset {
     };
 }
 
+/// Old name; use [`indexset!{}`](macro.indexset.html) instead.
 #[deprecated(note = "renamed to indexset!{ }")]
 #[macro_export]
 macro_rules! orderset {
