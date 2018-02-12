@@ -5,10 +5,10 @@
 /// ## Example
 ///
 /// ```
-/// #[macro_use] extern crate ordermap;
+/// #[macro_use] extern crate indexmap;
 /// # fn main() {
 ///
-/// let map = ordermap!{
+/// let map = indexmap!{
 ///     "a" => 1,
 ///     "b" => 2,
 /// };
@@ -20,14 +20,14 @@
 /// assert_eq!(map.keys().next(), Some(&"a"));
 /// # }
 /// ```
-macro_rules! ordermap {
+macro_rules! indexmap {
     (@single $($x:tt)*) => (());
-    (@count $($rest:expr),*) => (<[()]>::len(&[$(ordermap!(@single $rest)),*]));
+    (@count $($rest:expr),*) => (<[()]>::len(&[$(indexmap!(@single $rest)),*]));
 
-    ($($key:expr => $value:expr,)+) => { ordermap!($($key => $value),+) };
+    ($($key:expr => $value:expr,)+) => { indexmap!($($key => $value),+) };
     ($($key:expr => $value:expr),*) => {
         {
-            let _cap = ordermap!(@count $($key),*);
+            let _cap = indexmap!(@count $($key),*);
             let mut _map = $crate::IndexMap::with_capacity(_cap);
             $(
                 _map.insert($key, $value);
@@ -43,10 +43,10 @@ macro_rules! ordermap {
 /// ## Example
 ///
 /// ```
-/// #[macro_use] extern crate ordermap;
+/// #[macro_use] extern crate indexmap;
 /// # fn main() {
 ///
-/// let set = orderset!{
+/// let set = indexset!{
 ///     "a",
 ///     "b",
 /// };
@@ -58,14 +58,14 @@ macro_rules! ordermap {
 /// assert_eq!(set.iter().next(), Some(&"a"));
 /// # }
 /// ```
-macro_rules! orderset {
+macro_rules! indexset {
     (@single $($x:tt)*) => (());
-    (@count $($rest:expr),*) => (<[()]>::len(&[$(orderset!(@single $rest)),*]));
+    (@count $($rest:expr),*) => (<[()]>::len(&[$(indexset!(@single $rest)),*]));
 
-    ($($value:expr,)+) => { orderset!($($value),+) };
+    ($($value:expr,)+) => { indexset!($($value),+) };
     ($($value:expr),*) => {
         {
-            let _cap = orderset!(@count $($value),*);
+            let _cap = indexset!(@count $($value),*);
             let mut _set = $crate::IndexSet::with_capacity(_cap);
             $(
                 _set.insert($value);

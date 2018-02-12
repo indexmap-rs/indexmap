@@ -1,7 +1,7 @@
 
-#[macro_use] extern crate ordermap;
+#[macro_use] extern crate indexmap;
 
-use ordermap::Equivalent;
+use indexmap::Equivalent;
 
 use std::hash::Hash;
 
@@ -32,7 +32,7 @@ impl<A, B, X> Equivalent<X> for Pair<A, B>
 #[test]
 fn test_lookup() {
     let s = String::from;
-    let map = ordermap! {
+    let map = indexmap! {
         (s("a"), s("b")) => 1,
         (s("a"), s("x")) => 2,
     };
@@ -44,7 +44,7 @@ fn test_lookup() {
 #[test]
 fn test_string_str() {
     let s = String::from;
-    let mut map = ordermap! {
+    let mut map = indexmap! {
         s("a") => 1, s("b") => 2,
         s("x") => 3, s("y") => 4,
     };

@@ -45,7 +45,7 @@ type Bucket<T> = super::Bucket<T, ()>;
 /// # Examples
 ///
 /// ```
-/// use ordermap::IndexSet;
+/// use indexmap::IndexSet;
 ///
 /// // Collects which letters appear in a sentence.
 /// let letters: IndexSet<_> = "a short treatise on fungi".chars().collect();

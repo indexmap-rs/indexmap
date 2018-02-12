@@ -248,7 +248,7 @@ impl<Sz> ShortHashProxy<Sz>
 /// # Examples
 ///
 /// ```
-/// use ordermap::IndexMap;
+/// use indexmap::IndexMap;
 ///
 /// // count the frequency of each letter in a sentence.
 /// let mut letters = IndexMap::new();
@@ -1865,7 +1865,7 @@ mod tests {
 
     #[test]
     fn remove_to_empty() {
-        let mut map = ordermap! { 0 => 0, 4 => 4, 5 => 5 };
+        let mut map = indexmap! { 0 => 0, 4 => 4, 5 => 5 };
         map.swap_remove(&5).unwrap();
         map.swap_remove(&4).unwrap();
         map.swap_remove(&0).unwrap();

@@ -13,9 +13,9 @@ type FnvBuilder = BuildHasherDefault<FnvHasher>;
 use test::Bencher;
 use test::black_box;
 
-extern crate ordermap;
+extern crate indexmap;
 
-use ordermap::IndexMap;
+use indexmap::IndexMap;
 
 use std::collections::HashMap;
 use std::iter::FromIterator;

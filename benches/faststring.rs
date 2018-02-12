@@ -5,9 +5,9 @@ extern crate lazy_static;
 
 use test::Bencher;
 
-extern crate ordermap;
+extern crate indexmap;
 
-use ordermap::IndexMap;
+use indexmap::IndexMap;
 
 use std::collections::HashMap;
 use std::iter::FromIterator;

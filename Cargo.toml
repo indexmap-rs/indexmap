@@ -1,9 +1,9 @@
 [package]
-name = "ordermap"
+name = "indexmap"
 version = "0.4.1"
 authors = ["bluss"]
-documentation = "https://docs.rs/ordermap/"
-repository = "https://github.com/bluss/ordermap"
+documentation = "https://docs.rs/indexmap/"
+repository = "https://github.com/bluss/indexmap"
 license = "Apache-2.0/MIT"
 description = "A hash table with consistent order and fast iteration."
 

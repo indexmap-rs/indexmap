@@ -1,12 +1,12 @@
 
-extern crate ordermap;
+extern crate indexmap;
 extern crate itertools;
 #[macro_use]
 extern crate quickcheck;
 
 extern crate fnv;
 
-use ordermap::IndexMap;
+use indexmap::IndexMap;
 use itertools::Itertools;
 
 use quickcheck::Arbitrary;
@@ -26,7 +26,7 @@ use std::ops::Deref;
 use std::cmp::min;
 
 
-use ordermap::map::Entry as OEntry;
+use indexmap::map::Entry as OEntry;
 use std::collections::hash_map::Entry as HEntry;
 
 
@@ -37,7 +37,7 @@ fn set<'a, T: 'a, I>(iter: I) -> HashSet<T>
     iter.into_iter().cloned().collect()
 }
 
-fn ordermap<'a, T: 'a, I>(iter: I) -> IndexMap<T, ()>
+fn indexmap<'a, T: 'a, I>(iter: I) -> IndexMap<T, ()>
     where I: IntoIterator<Item=&'a T>,
           T: Copy + Hash + Eq,
 {
@@ -257,9 +257,9 @@ quickcheck! {
     }
 
     fn retain_ordered(keys: Large<Vec<i8>>, remove: Large<Vec<i8>>) -> () {
-        let mut map = ordermap(keys.iter());
+        let mut map = indexmap(keys.iter());
         let initial_map = map.clone(); // deduplicated in-order input
-        let remove_map = ordermap(remove.iter());
+        let remove_map = indexmap(remove.iter());
         let keys_s = set(keys.iter());
         let remove_s = set(remove.iter());
         let answer = &keys_s - &remove_s;
