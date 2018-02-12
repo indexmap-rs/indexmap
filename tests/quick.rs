@@ -6,7 +6,7 @@ extern crate quickcheck;
 
 extern crate fnv;
 
-use ordermap::OrderMap;
+use ordermap::IndexMap;
 use itertools::Itertools;
 
 use quickcheck::Arbitrary;
@@ -15,7 +15,7 @@ use quickcheck::Gen;
 use fnv::FnvHasher;
 use std::hash::{BuildHasher, BuildHasherDefault};
 type FnvBuilder = BuildHasherDefault<FnvHasher>;
-type OrderMapFnv<K, V> = OrderMap<K, V, FnvBuilder>;
+type OrderMapFnv<K, V> = IndexMap<K, V, FnvBuilder>;
 
 use std::collections::HashSet;
 use std::collections::HashMap;
@@ -37,16 +37,16 @@ fn set<'a, T: 'a, I>(iter: I) -> HashSet<T>
     iter.into_iter().cloned().collect()
 }
 
-fn ordermap<'a, T: 'a, I>(iter: I) -> OrderMap<T, ()>
+fn ordermap<'a, T: 'a, I>(iter: I) -> IndexMap<T, ()>
     where I: IntoIterator<Item=&'a T>,
           T: Copy + Hash + Eq,
 {
-    OrderMap::from_iter(iter.into_iter().cloned().map(|k| (k, ())))
+    IndexMap::from_iter(iter.into_iter().cloned().map(|k| (k, ())))
 }
 
 quickcheck! {
     fn contains(insert: Vec<u32>) -> bool {
-        let mut map = OrderMap::new();
+        let mut map = IndexMap::new();
         for &key in &insert {
             map.insert(key, ());
         }
@@ -54,7 +54,7 @@ quickcheck! {
     }
 
     fn contains_not(insert: Vec<u8>, not: Vec<u8>) -> bool {
-        let mut map = OrderMap::new();
+        let mut map = IndexMap::new();
         for &key in &insert {
             map.insert(key, ());
         }
@@ -63,7 +63,7 @@ quickcheck! {
     }
 
     fn insert_remove(insert: Vec<u8>, remove: Vec<u8>) -> bool {
-        let mut map = OrderMap::new();
+        let mut map = IndexMap::new();
         for &key in &insert {
             map.insert(key, ());
         }
@@ -76,7 +76,7 @@ quickcheck! {
     }
 
     fn insertion_order(insert: Vec<u32>) -> bool {
-        let mut map = OrderMap::new();
+        let mut map = IndexMap::new();
         for &key in &insert {
             map.insert(key, ());
         }
@@ -85,7 +85,7 @@ quickcheck! {
     }
 
     fn pop(insert: Vec<u8>) -> bool {
-        let mut map = OrderMap::new();
+        let mut map = IndexMap::new();
         for &key in &insert {
             map.insert(key, ());
         }
@@ -100,13 +100,13 @@ quickcheck! {
     }
 
     fn with_cap(cap: usize) -> bool {
-        let map: OrderMap<u8, u8> = OrderMap::with_capacity(cap);
+        let map: IndexMap<u8, u8> = IndexMap::with_capacity(cap);
         println!("wish: {}, got: {} (diff: {})", cap, map.capacity(), map.capacity() as isize - cap as isize);
         map.capacity() >= cap
     }
 
     fn drain(insert: Vec<u8>) -> bool {
-        let mut map = OrderMap::new();
+        let mut map = IndexMap::new();
         for &key in &insert {
             map.insert(key, ());
         }
@@ -142,7 +142,7 @@ impl<K, V> Arbitrary for Op<K, V>
     }
 }
 
-fn do_ops<K, V, S>(ops: &[Op<K, V>], a: &mut OrderMap<K, V, S>, b: &mut HashMap<K, V>)
+fn do_ops<K, V, S>(ops: &[Op<K, V>], a: &mut IndexMap<K, V, S>, b: &mut HashMap<K, V>)
     where K: Hash + Eq + Clone,
           V: Clone,
           S: BuildHasher,
@@ -176,7 +176,7 @@ fn do_ops<K, V, S>(ops: &[Op<K, V>], a: &mut OrderMap<K, V, S>, b: &mut HashMap<
     }
 }
 
-fn assert_maps_equivalent<K, V>(a: &OrderMap<K, V>, b: &HashMap<K, V>) -> bool
+fn assert_maps_equivalent<K, V>(a: &IndexMap<K, V>, b: &HashMap<K, V>) -> bool
     where K: Hash + Eq + Debug,
           V: Eq + Debug,
 {
@@ -196,24 +196,24 @@ fn assert_maps_equivalent<K, V>(a: &OrderMap<K, V>, b: &HashMap<K, V>) -> bool
 
 quickcheck! {
     fn operations_i8(ops: Large<Vec<Op<i8, i8>>>) -> bool {
-        let mut map = OrderMap::new();
+        let mut map = IndexMap::new();
         let mut reference = HashMap::new();
         do_ops(&ops, &mut map, &mut reference);
         assert_maps_equivalent(&map, &reference)
     }
 
     fn operations_string(ops: Vec<Op<Alpha, i8>>) -> bool {
-        let mut map = OrderMap::new();
+        let mut map = IndexMap::new();
         let mut reference = HashMap::new();
         do_ops(&ops, &mut map, &mut reference);
         assert_maps_equivalent(&map, &reference)
     }
 
     fn keys_values(ops: Large<Vec<Op<i8, i8>>>) -> bool {
-        let mut map = OrderMap::new();
+        let mut map = IndexMap::new();
         let mut reference = HashMap::new();
         do_ops(&ops, &mut map, &mut reference);
-        let mut visit = OrderMap::new();
+        let mut visit = IndexMap::new();
         for (k, v) in map.keys().zip(map.values()) {
             assert_eq!(&map[k], v);
             assert!(!visit.contains_key(k));
@@ -224,10 +224,10 @@ quickcheck! {
     }
 
     fn keys_values_mut(ops: Large<Vec<Op<i8, i8>>>) -> bool {
-        let mut map = OrderMap::new();
+        let mut map = IndexMap::new();
         let mut reference = HashMap::new();
         do_ops(&ops, &mut map, &mut reference);
-        let mut visit = OrderMap::new();
+        let mut visit = IndexMap::new();
         let keys = Vec::from_iter(map.keys().cloned());
         for (k, v) in keys.iter().zip(map.values_mut()) {
             assert_eq!(&reference[k], v);
@@ -239,7 +239,7 @@ quickcheck! {
     }
 
     fn equality(ops1: Vec<Op<i8, i8>>, removes: Vec<usize>) -> bool {
-        let mut map = OrderMap::new();
+        let mut map = IndexMap::new();
         let mut reference = HashMap::new();
         do_ops(&ops1, &mut map, &mut reference);
         let mut ops2 = ops1.clone();
@@ -275,11 +275,11 @@ quickcheck! {
     }
 
     fn sort_1(keyvals: Large<Vec<(i8, i8)>>) -> () {
-        let mut map: OrderMap<_, _> = OrderMap::from_iter(keyvals.to_vec());
+        let mut map: IndexMap<_, _> = IndexMap::from_iter(keyvals.to_vec());
         let mut answer = keyvals.0;
         answer.sort_by_key(|t| t.0);
 
-        // reverse dedup: Because OrderMap::from_iter keeps the last value for
+        // reverse dedup: Because IndexMap::from_iter keeps the last value for
         // identical keys
         answer.reverse();
         answer.dedup_by_key(|t| t.0);
@@ -300,7 +300,7 @@ quickcheck! {
     }
 
     fn sort_2(keyvals: Large<Vec<(i8, i8)>>) -> () {
-        let mut map: OrderMap<_, _> = OrderMap::from_iter(keyvals.to_vec());
+        let mut map: IndexMap<_, _> = IndexMap::from_iter(keyvals.to_vec());
         map.sort_by(|_, v1, _, v2| Ord::cmp(v1, v2));
         assert_sorted_by_key(map, |t| t.1);
     }

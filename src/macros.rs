@@ -1,6 +1,6 @@
 
 #[macro_export]
-/// Create an `OrderMap` from a list of key-value pairs
+/// Create an `IndexMap` from a list of key-value pairs
 ///
 /// ## Example
 ///
@@ -28,7 +28,7 @@ macro_rules! ordermap {
     ($($key:expr => $value:expr),*) => {
         {
             let _cap = ordermap!(@count $($key),*);
-            let mut _map = $crate::OrderMap::with_capacity(_cap);
+            let mut _map = $crate::IndexMap::with_capacity(_cap);
             $(
                 _map.insert($key, $value);
             )*
@@ -38,7 +38,7 @@ macro_rules! ordermap {
 }
 
 #[macro_export]
-/// Create an `OrderSet` from a list of values
+/// Create an `IndexSet` from a list of values
 ///
 /// ## Example
 ///
@@ -66,7 +66,7 @@ macro_rules! orderset {
     ($($value:expr),*) => {
         {
             let _cap = orderset!(@count $($value),*);
-            let mut _set = $crate::OrderSet::with_capacity(_cap);
+            let mut _set = $crate::IndexSet::with_capacity(_cap);
             $(
                 _set.insert($value);
             )*

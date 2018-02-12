@@ -1,9 +1,7 @@
-#![allow(deprecated)]
-
-//! [`OrderMap`] is a hash table where the iteration order of the key-value
+//! [`IndexMap`] is a hash table where the iteration order of the key-value
 //! pairs is independent of the hash values of the keys.
 //!
-//! [`OrderMap`]: struct.OrderMap.html
+//! [`IndexMap`]: struct.IndexMap.html
 
 pub use mutable_keys::MutableKeys;
 
@@ -89,7 +87,7 @@ impl<Sz> From<ShortHash<Sz>> for HashValue {
 /// Note that the lower 32 bits of the hash is enough to compute desired
 /// position and probe distance in a hash map with less than 2**32 buckets.
 ///
-/// The OrderMap will simply query its **current raw capacity** to see what its
+/// The IndexMap will simply query its **current raw capacity** to see what its
 /// current size class is, and dispatch to the 32-bit or 64-bit lookup code as
 /// appropriate. Only the growth code needs some extra logic to handle the
 /// transition from one class to another
@@ -250,10 +248,10 @@ impl<Sz> ShortHashProxy<Sz>
 /// # Examples
 ///
 /// ```
-/// use ordermap::OrderMap;
+/// use ordermap::IndexMap;
 ///
 /// // count the frequency of each letter in a sentence.
-/// let mut letters = OrderMap::new();
+/// let mut letters = IndexMap::new();
 /// for ch in "a short treatise on fungi".chars() {
 ///     *letters.entry(ch).or_insert(0) += 1;
 /// }
@@ -264,13 +262,13 @@ impl<Sz> ShortHashProxy<Sz>
 /// assert_eq!(letters.get(&'y'), None);
 /// ```
 #[derive(Clone)]
-#[allow(deprecated)]
-#[deprecated(note = "the crate ordermap has been renamed with no change in \
-              functionality to indexmap; please update your dependencies")]
-pub struct OrderMap<K, V, S = RandomState> {
+pub struct IndexMap<K, V, S = RandomState> {
     core: OrderMapCore<K, V>,
     hash_builder: S,
 }
+
+#[deprecated(note = "OrderMap has been renamed to IndexMap")]
+pub type OrderMap<K, V, S = RandomState> = IndexMap<K, V, S>;
 
 // core of the map that does not depend on S
 #[derive(Clone)]
@@ -302,7 +300,7 @@ enum Inserted<V> {
     }
 }
 
-impl<K, V, S> fmt::Debug for OrderMap<K, V, S>
+impl<K, V, S> fmt::Debug for IndexMap<K, V, S>
     where K: fmt::Debug + Hash + Eq,
           V: fmt::Debug,
           S: BuildHasher,
@@ -358,7 +356,7 @@ macro_rules! probe_loop {
     }
 }
 
-impl<K, V> OrderMap<K, V> {
+impl<K, V> IndexMap<K, V> {
     /// Create a new map. (Does not allocate.)
     pub fn new() -> Self {
         Self::with_capacity(0)
@@ -373,7 +371,7 @@ impl<K, V> OrderMap<K, V> {
     }
 }
 
-impl<K, V, S> OrderMap<K, V, S>
+impl<K, V, S> IndexMap<K, V, S>
 {
     /// Create a new map with capacity for `n` key-value pairs. (Does not
     /// allocate if `n` is zero.)
@@ -383,7 +381,7 @@ impl<K, V, S> OrderMap<K, V, S>
         where S: BuildHasher
     {
         if n == 0 {
-            OrderMap {
+            IndexMap {
                 core: OrderMapCore {
                     mask: 0,
                     indices: Box::new([]),
@@ -394,7 +392,7 @@ impl<K, V, S> OrderMap<K, V, S>
         } else {
             let raw = to_raw_capacity(n);
             let raw_cap = max(raw.next_power_of_two(), 8);
-            OrderMap {
+            IndexMap {
                 core: OrderMapCore {
                     mask: raw_cap.wrapping_sub(1),
                     indices: vec![Pos::none(); raw_cap].into_boxed_slice(),
@@ -637,7 +635,7 @@ impl<'a, K, V> VacantEntry<'a, K, V> {
     }
 }
 
-impl<K, V, S> OrderMap<K, V, S>
+impl<K, V, S> IndexMap<K, V, S>
     where K: Hash + Eq,
           S: BuildHasher,
 {
@@ -948,7 +946,7 @@ impl<K, V, S> OrderMap<K, V, S>
         self.into_iter()
     }
 
-    /// Clears the `OrderMap`, returning all key-value pairs as a drain iterator.
+    /// Clears the `IndexMap`, returning all key-value pairs as a drain iterator.
     /// Keeps the allocated memory for reuse.
     pub fn drain(&mut self, range: RangeFull) -> Drain<K, V> {
         self.core.clear_indices();
@@ -965,7 +963,7 @@ fn key_cmp<K, V>(k1: &K, _v1: &V, k2: &K, _v2: &V) -> Ordering
     Ord::cmp(k1, k2)
 }
 
-impl<K, V, S> OrderMap<K, V, S> {
+impl<K, V, S> IndexMap<K, V, S> {
     /// Get a key-value pair by index
     ///
     /// Valid indices are *0 <= index < self.len()*
@@ -1382,7 +1380,7 @@ impl<K, V> OrderMapCore<K, V> {
 }
 
 /// Find, in the indices, an entry that already exists at a known position
-/// inside self.entries in the OrderMap.
+/// inside self.entries in the IndexMap.
 ///
 /// This is effectively reverse lookup, from the entries into the hash buckets.
 ///
@@ -1556,7 +1554,7 @@ impl<'a, K, V> DoubleEndedIterator for Drain<'a, K, V> {
 }
 
 
-impl<'a, K, V, S> IntoIterator for &'a OrderMap<K, V, S>
+impl<'a, K, V, S> IntoIterator for &'a IndexMap<K, V, S>
     where K: Hash + Eq,
           S: BuildHasher,
 {
@@ -1567,7 +1565,7 @@ impl<'a, K, V, S> IntoIterator for &'a OrderMap<K, V, S>
     }
 }
 
-impl<'a, K, V, S> IntoIterator for &'a mut OrderMap<K, V, S>
+impl<'a, K, V, S> IntoIterator for &'a mut IndexMap<K, V, S>
     where K: Hash + Eq,
           S: BuildHasher,
 {
@@ -1578,7 +1576,7 @@ impl<'a, K, V, S> IntoIterator for &'a mut OrderMap<K, V, S>
     }
 }
 
-impl<K, V, S> IntoIterator for OrderMap<K, V, S>
+impl<K, V, S> IntoIterator for IndexMap<K, V, S>
     where K: Hash + Eq,
           S: BuildHasher,
 {
@@ -1593,7 +1591,7 @@ impl<K, V, S> IntoIterator for OrderMap<K, V, S>
 
 use std::ops::{Index, IndexMut};
 
-impl<'a, K, V, Q: ?Sized, S> Index<&'a Q> for OrderMap<K, V, S>
+impl<'a, K, V, Q: ?Sized, S> Index<&'a Q> for IndexMap<K, V, S>
     where Q: Hash + Equivalent<K>,
           K: Hash + Eq,
           S: BuildHasher,
@@ -1605,7 +1603,7 @@ impl<'a, K, V, Q: ?Sized, S> Index<&'a Q> for OrderMap<K, V, S>
         if let Some(v) = self.get(key) {
             v
         } else {
-            panic!("OrderMap: key not found")
+            panic!("IndexMap: key not found")
         }
     }
 }
@@ -1614,7 +1612,7 @@ impl<'a, K, V, Q: ?Sized, S> Index<&'a Q> for OrderMap<K, V, S>
 /// pairs that are already present.
 ///
 /// You can **not** insert new pairs with index syntax, use `.insert()`.
-impl<'a, K, V, Q: ?Sized, S> IndexMut<&'a Q> for OrderMap<K, V, S>
+impl<'a, K, V, Q: ?Sized, S> IndexMut<&'a Q> for IndexMap<K, V, S>
     where Q: Hash + Equivalent<K>,
           K: Hash + Eq,
           S: BuildHasher,
@@ -1624,16 +1622,16 @@ impl<'a, K, V, Q: ?Sized, S> IndexMut<&'a Q> for OrderMap<K, V, S>
         if let Some(v) = self.get_mut(key) {
             v
         } else {
-            panic!("OrderMap: key not found")
+            panic!("IndexMap: key not found")
         }
     }
 }
 
-impl<K, V, S> FromIterator<(K, V)> for OrderMap<K, V, S>
+impl<K, V, S> FromIterator<(K, V)> for IndexMap<K, V, S>
     where K: Hash + Eq,
           S: BuildHasher + Default,
 {
-    /// Create an `OrderMap` from the sequence of key-value pairs in the
+    /// Create an `IndexMap` from the sequence of key-value pairs in the
     /// iterable.
     ///
     /// `from_iter` uses the same logic as `extend`. See
@@ -1647,7 +1645,7 @@ impl<K, V, S> FromIterator<(K, V)> for OrderMap<K, V, S>
     }
 }
 
-impl<K, V, S> Extend<(K, V)> for OrderMap<K, V, S>
+impl<K, V, S> Extend<(K, V)> for IndexMap<K, V, S>
     where K: Hash + Eq,
           S: BuildHasher,
 {
@@ -1665,7 +1663,7 @@ impl<K, V, S> Extend<(K, V)> for OrderMap<K, V, S>
     }
 }
 
-impl<'a, K, V, S> Extend<(&'a K, &'a V)> for OrderMap<K, V, S>
+impl<'a, K, V, S> Extend<(&'a K, &'a V)> for IndexMap<K, V, S>
     where K: Hash + Eq + Copy,
           V: Copy,
           S: BuildHasher,
@@ -1678,22 +1676,22 @@ impl<'a, K, V, S> Extend<(&'a K, &'a V)> for OrderMap<K, V, S>
     }
 }
 
-impl<K, V, S> Default for OrderMap<K, V, S>
+impl<K, V, S> Default for IndexMap<K, V, S>
     where S: BuildHasher + Default,
 {
-    /// Return an empty `OrderMap`
+    /// Return an empty `IndexMap`
     fn default() -> Self {
         Self::with_capacity_and_hasher(0, S::default())
     }
 }
 
-impl<K, V1, S1, V2, S2> PartialEq<OrderMap<K, V2, S2>> for OrderMap<K, V1, S1>
+impl<K, V1, S1, V2, S2> PartialEq<IndexMap<K, V2, S2>> for IndexMap<K, V1, S1>
     where K: Hash + Eq,
           V1: PartialEq<V2>,
           S1: BuildHasher,
           S2: BuildHasher
 {
-    fn eq(&self, other: &OrderMap<K, V2, S2>) -> bool {
+    fn eq(&self, other: &IndexMap<K, V2, S2>) -> bool {
         if self.len() != other.len() {
             return false;
         }
@@ -1702,7 +1700,7 @@ impl<K, V1, S1, V2, S2> PartialEq<OrderMap<K, V2, S2>> for OrderMap<K, V1, S1>
     }
 }
 
-impl<K, V, S> Eq for OrderMap<K, V, S>
+impl<K, V, S> Eq for IndexMap<K, V, S>
     where K: Eq + Hash,
           V: Eq,
           S: BuildHasher
@@ -1716,7 +1714,7 @@ mod tests {
 
     #[test]
     fn it_works() {
-        let mut map = OrderMap::new();
+        let mut map = IndexMap::new();
         assert_eq!(map.is_empty(), true);
         map.insert(1, ());
         map.insert(1, ());
@@ -1727,7 +1725,7 @@ mod tests {
 
     #[test]
     fn new() {
-        let map = OrderMap::<String, String>::new();
+        let map = IndexMap::<String, String>::new();
         println!("{:?}", map);
         assert_eq!(map.capacity(), 0);
         assert_eq!(map.len(), 0);
@@ -1738,7 +1736,7 @@ mod tests {
     fn insert() {
         let insert = [0, 4, 2, 12, 8, 7, 11, 5];
         let not_present = [1, 3, 6, 9, 10];
-        let mut map = OrderMap::with_capacity(insert.len());
+        let mut map = IndexMap::with_capacity(insert.len());
 
         for (i, &elt) in enumerate(&insert) {
             assert_eq!(map.len(), i);
@@ -1756,7 +1754,7 @@ mod tests {
 
     #[test]
     fn insert_2() {
-        let mut map = OrderMap::with_capacity(16);
+        let mut map = IndexMap::with_capacity(16);
 
         let mut keys = vec![];
         keys.extend(0..16);
@@ -1782,7 +1780,7 @@ mod tests {
     #[test]
     fn insert_order() {
         let insert = [0, 4, 2, 12, 8, 7, 11, 5, 3, 17, 19, 22, 23];
-        let mut map = OrderMap::new();
+        let mut map = IndexMap::new();
 
         for &elt in &insert {
             map.insert(elt, ());
@@ -1802,7 +1800,7 @@ mod tests {
     fn grow() {
         let insert = [0, 4, 2, 12, 8, 7, 11];
         let not_present = [1, 3, 6, 9, 10];
-        let mut map = OrderMap::with_capacity(insert.len());
+        let mut map = IndexMap::with_capacity(insert.len());
 
 
         for (i, &elt) in enumerate(&insert) {
@@ -1832,7 +1830,7 @@ mod tests {
     #[test]
     fn remove() {
         let insert = [0, 4, 2, 12, 8, 7, 11, 5, 3, 17, 19, 22, 23];
-        let mut map = OrderMap::new();
+        let mut map = IndexMap::new();
 
         for &elt in &insert {
             map.insert(elt, elt);
@@ -1877,7 +1875,7 @@ mod tests {
     #[test]
     fn swap_remove_index() {
         let insert = [0, 4, 2, 12, 8, 7, 11, 5, 3, 17, 19, 22, 23];
-        let mut map = OrderMap::new();
+        let mut map = IndexMap::new();
 
         for &elt in &insert {
             map.insert(elt, elt * 2);
@@ -1901,7 +1899,7 @@ mod tests {
 
     #[test]
     fn partial_eq_and_eq() {
-        let mut map_a = OrderMap::new();
+        let mut map_a = IndexMap::new();
         map_a.insert(1, "1");
         map_a.insert(2, "2");
         let mut map_b = map_a.clone();
@@ -1909,14 +1907,14 @@ mod tests {
         map_b.remove(&1);
         assert_ne!(map_a, map_b);
 
-        let map_c: OrderMap<_, String> = map_b.into_iter().map(|(k, v)| (k, v.to_owned())).collect();
+        let map_c: IndexMap<_, String> = map_b.into_iter().map(|(k, v)| (k, v.to_owned())).collect();
         assert_ne!(map_a, map_c);
         assert_ne!(map_c, map_a);
     }
 
     #[test]
     fn extend() {
-        let mut map = OrderMap::new();
+        let mut map = IndexMap::new();
         map.extend(vec![(&1, &2), (&3, &4)]);
         map.extend(vec![(5, 6)]);
         assert_eq!(map.into_iter().collect::<Vec<_>>(), vec![(1, 2), (3, 4), (5, 6)]);
@@ -1924,7 +1922,7 @@ mod tests {
 
     #[test]
     fn entry() {
-        let mut map = OrderMap::new();
+        let mut map = IndexMap::new();
         
         map.insert(1, "1");
         map.insert(2, "2");

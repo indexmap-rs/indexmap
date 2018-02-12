@@ -7,7 +7,7 @@ use test::Bencher;
 
 extern crate ordermap;
 
-use ordermap::OrderMap;
+use ordermap::IndexMap;
 
 use std::collections::HashMap;
 use std::iter::FromIterator;
@@ -102,7 +102,7 @@ fn insert_hashmap_string_oneshot_10_000(b: &mut Bencher) {
 fn insert_orderedmap_string_10_000(b: &mut Bencher) {
     let c = 10_000;
     b.iter(|| {
-        let mut map = OrderMap::with_capacity(c);
+        let mut map = IndexMap::with_capacity(c);
         for x in 0..c {
             map.insert(x.to_string(), ());
         }
@@ -149,7 +149,7 @@ fn lookup_hashmap_10_000_exist_string_oneshot(b: &mut Bencher) {
 #[bench]
 fn lookup_ordermap_10_000_exist_string(b: &mut Bencher) {
     let c = 10_000;
-    let mut map = OrderMap::with_capacity(c);
+    let mut map = IndexMap::with_capacity(c);
     let keys = shuffled_keys(0..c);
     for &key in &keys {
         map.insert(key.to_string(), 1);
@@ -167,7 +167,7 @@ fn lookup_ordermap_10_000_exist_string(b: &mut Bencher) {
 #[bench]
 fn lookup_ordermap_10_000_exist_string_oneshot(b: &mut Bencher) {
     let c = 10_000;
-    let mut map = OrderMap::with_capacity(c);
+    let mut map = IndexMap::with_capacity(c);
     let keys = shuffled_keys(0..c);
     for &key in &keys {
         map.insert(OneShot(key.to_string()), 1);

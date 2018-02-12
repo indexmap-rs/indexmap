@@ -33,7 +33,7 @@ fn test_serde_set() {
 
 #[test]
 fn test_serde_fnv_hasher() {
-    let mut map: ::ordermap::OrderMap<i32, i32, ::fnv::FnvBuildHasher> = Default::default();
+    let mut map: ::ordermap::IndexMap<i32, i32, ::fnv::FnvBuildHasher> = Default::default();
     map.insert(1, 2);
     map.insert(3, 4);
     assert_tokens(&map,
@@ -47,7 +47,7 @@ fn test_serde_fnv_hasher() {
 
 #[test]
 fn test_serde_map_fnv_hasher() {
-    let mut set: ::ordermap::OrderSet<i32, ::fnv::FnvBuildHasher> = Default::default();
+    let mut set: ::ordermap::IndexSet<i32, ::fnv::FnvBuildHasher> = Default::default();
     set.extend(1..5);
     assert_tokens(&set,
                   &[Token::Seq { len: Some(4) },
