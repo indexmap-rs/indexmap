@@ -1,3 +1,4 @@
+#![allow(deprecated)]
 
 //! [`OrderMap`] is a hash table where the iteration order of the key-value
 //! pairs is independent of the hash values of the keys.
@@ -263,6 +264,9 @@ impl<Sz> ShortHashProxy<Sz>
 /// assert_eq!(letters.get(&'y'), None);
 /// ```
 #[derive(Clone)]
+#[allow(deprecated)]
+#[deprecated(note = "the crate ordermap has been renamed with no change in \
+              functionality to indexmap; please update your dependencies")]
 pub struct OrderMap<K, V, S = RandomState> {
     core: OrderMapCore<K, V>,
     hash_builder: S,
