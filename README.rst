@@ -3,16 +3,22 @@ Awesome hash table implementation in just Rust (stable, no unsafe code).
 
 Please read the `API documentation here`__
 
-__ https://docs.rs/ordermap/
+__ https://docs.rs/indexmap/
 
 |build_status|_ |crates|_
 
-.. |crates| image:: https://img.shields.io/crates/v/ordermap.svg
-.. _crates: https://crates.io/crates/ordermap
+.. |crates| image:: https://img.shields.io/crates/v/indexmap.svg
+.. _crates: https://crates.io/crates/indexmap
 
-.. |build_status| image:: https://travis-ci.org/bluss/ordermap.svg
-.. _build_status: https://travis-ci.org/bluss/ordermap
+.. |build_status| image:: https://travis-ci.org/bluss/indexmap.svg
+.. _build_status: https://travis-ci.org/bluss/indexmap
 
+Crate Name
+==========
+
+This crate was originally released under the name ``ordermap``, but it was
+renamed (with no change in functionality) to ``indexmap`` to better emphasize
+its features.
 
 Background
 ==========
@@ -21,7 +27,7 @@ This was inspired by Python 3.6's new dict implementation (which remembers
 the insertion order and is fast to iterate, and is compact in memory).
 
 Some of those features were translated to Rust, and some were not. The result
-was ordermap, a hash table that has following properties:
+was indexmap, a hash table that has following properties:
 
 - Order is **independent of hash function** and hash values of keys.
 - Fast to iterate.
