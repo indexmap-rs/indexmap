@@ -1,4 +1,5 @@
 //! A hash set implemented using `OrderMap`
+#![allow(deprecated)]
 
 use std::cmp::Ordering;
 use std::collections::hash_map::RandomState;
@@ -56,6 +57,8 @@ type Bucket<T> = super::Bucket<T, ()>;
 /// assert!(!letters.contains(&'y'));
 /// ```
 #[derive(Clone)]
+#[deprecated(note = "the crate ordermap has been renamed with no change in \
+              functionality to indexmap; please update your dependencies")]
 pub struct OrderSet<T, S = RandomState> {
     map: OrderMap<T, (), S>,
 }

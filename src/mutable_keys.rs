@@ -2,6 +2,7 @@
 use std::hash::Hash;
 use std::hash::BuildHasher;
 
+#[allow(deprecated)]
 use super::{OrderMap, Equivalent};
 
 pub struct PrivateMarker { }
@@ -43,6 +44,7 @@ pub trait MutableKeys {
     fn __private_marker(&self) -> PrivateMarker;
 }
 
+#[allow(deprecated)]
 /// Opt-in mutable access to keys.
 ///
 /// See [`MutableKeys`](trait.MutableKeys.html) for more information.

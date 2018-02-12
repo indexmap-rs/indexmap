@@ -23,7 +23,9 @@ pub mod set;
 pub mod map;
 
 pub use equivalent::Equivalent;
+#[allow(deprecated)]
 pub use set::OrderSet;
+#[allow(deprecated)]
 pub use map::OrderMap;
 
 
