@@ -97,6 +97,11 @@ Ideas that we already did
 Recent Changes
 ==============
 
+- 0.4.1
+
+  - Renamed crate to ``indexmap``; the ``ordermap`` crate is now deprecated
+    and the types ``OrderMap/Set`` now have a deprecation notice.
+
 - 0.4.0
 
   - This is the last release series for this ``ordermap`` under that name,
@@ -113,6 +118,8 @@ Recent Changes
 
   - ``Entry<K, V>`` no longer has a type parameter ``S``, which is just like
     the standard ``HashMap``'s entry.
+
+  - Minimum Rust version requirement increased to Rust 1.18
 
 - 0.3.5
 
