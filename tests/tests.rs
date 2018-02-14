@@ -1,12 +1,12 @@
 
 #[macro_use]
-extern crate ordermap;
+extern crate indexmap;
 extern crate itertools;
 
 
 #[test]
 fn test_sort() {
-    let m = ordermap! {
+    let m = indexmap! {
         1 => 2,
         7 => 1,
         2 => 2,
@@ -20,7 +20,7 @@ fn test_sort() {
 
 #[test]
 fn test_sort_set() {
-    let s = orderset! {
+    let s = indexset! {
         1,
         7,
         2,

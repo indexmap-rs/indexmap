@@ -1,14 +1,14 @@
 
 #[macro_export]
-/// Create an `OrderMap` from a list of key-value pairs
+/// Create an `IndexMap` from a list of key-value pairs
 ///
 /// ## Example
 ///
 /// ```
-/// #[macro_use] extern crate ordermap;
+/// #[macro_use] extern crate indexmap;
 /// # fn main() {
 ///
-/// let map = ordermap!{
+/// let map = indexmap!{
 ///     "a" => 1,
 ///     "b" => 2,
 /// };
@@ -20,15 +20,15 @@
 /// assert_eq!(map.keys().next(), Some(&"a"));
 /// # }
 /// ```
-macro_rules! ordermap {
+macro_rules! indexmap {
     (@single $($x:tt)*) => (());
-    (@count $($rest:expr),*) => (<[()]>::len(&[$(ordermap!(@single $rest)),*]));
+    (@count $($rest:expr),*) => (<[()]>::len(&[$(indexmap!(@single $rest)),*]));
 
-    ($($key:expr => $value:expr,)+) => { ordermap!($($key => $value),+) };
+    ($($key:expr => $value:expr,)+) => { indexmap!($($key => $value),+) };
     ($($key:expr => $value:expr),*) => {
         {
-            let _cap = ordermap!(@count $($key),*);
-            let mut _map = $crate::OrderMap::with_capacity(_cap);
+            let _cap = indexmap!(@count $($key),*);
+            let mut _map = $crate::IndexMap::with_capacity(_cap);
             $(
                 _map.insert($key, $value);
             )*
@@ -37,16 +37,23 @@ macro_rules! ordermap {
     };
 }
 
+/// Old name; use [`indexmap!{}`](macro.indexmap.html) instead.
+#[deprecated(note = "renamed to indexmap!{ }")]
 #[macro_export]
-/// Create an `OrderSet` from a list of values
+macro_rules! ordermap {
+    ($($t:tt)*) => { indexmap!($($t)*) }
+}
+
+#[macro_export]
+/// Create an `IndexSet` from a list of values
 ///
 /// ## Example
 ///
 /// ```
-/// #[macro_use] extern crate ordermap;
+/// #[macro_use] extern crate indexmap;
 /// # fn main() {
 ///
-/// let set = orderset!{
+/// let set = indexset!{
 ///     "a",
 ///     "b",
 /// };
@@ -58,21 +65,28 @@ macro_rules! ordermap {
 /// assert_eq!(set.iter().next(), Some(&"a"));
 /// # }
 /// ```
-macro_rules! orderset {
+macro_rules! indexset {
     (@single $($x:tt)*) => (());
-    (@count $($rest:expr),*) => (<[()]>::len(&[$(orderset!(@single $rest)),*]));
+    (@count $($rest:expr),*) => (<[()]>::len(&[$(indexset!(@single $rest)),*]));
 
-    ($($value:expr,)+) => { orderset!($($value),+) };
+    ($($value:expr,)+) => { indexset!($($value),+) };
     ($($value:expr),*) => {
         {
-            let _cap = orderset!(@count $($value),*);
-            let mut _set = $crate::OrderSet::with_capacity(_cap);
+            let _cap = indexset!(@count $($value),*);
+            let mut _set = $crate::IndexSet::with_capacity(_cap);
             $(
                 _set.insert($value);
             )*
             _set
         }
     };
+}
+
+/// Old name; use [`indexset!{}`](macro.indexset.html) instead.
+#[deprecated(note = "renamed to indexset!{ }")]
+#[macro_export]
+macro_rules! orderset {
+    ($($t:tt)*) => { indexset!($($t)*) }
 }
 
 // generate all the Iterator methods by just forwarding to the underlying

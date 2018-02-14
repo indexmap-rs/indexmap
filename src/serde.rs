@@ -8,10 +8,10 @@ use std::fmt::{self, Formatter};
 use std::hash::{BuildHasher, Hash};
 use std::marker::PhantomData;
 
-use OrderMap;
+use IndexMap;
 
 /// Requires crate feature `"serde-1"`
-impl<K, V, S> Serialize for OrderMap<K, V, S>
+impl<K, V, S> Serialize for IndexMap<K, V, S>
     where K: Serialize + Hash + Eq,
           V: Serialize,
           S: BuildHasher
@@ -34,7 +34,7 @@ impl<'de, K, V, S> Visitor<'de> for OrderMapVisitor<K, V, S>
           V: Deserialize<'de>,
           S: Default + BuildHasher
 {
-    type Value = OrderMap<K, V, S>;
+    type Value = IndexMap<K, V, S>;
 
     fn expecting(&self, formatter: &mut Formatter) -> fmt::Result {
         write!(formatter, "a map")
@@ -43,7 +43,7 @@ impl<'de, K, V, S> Visitor<'de> for OrderMapVisitor<K, V, S>
     fn visit_map<A>(self, mut map: A) -> Result<Self::Value, A::Error>
         where A: MapAccess<'de>
     {
-        let mut values = OrderMap::with_capacity_and_hasher(map.size_hint().unwrap_or(0), S::default());
+        let mut values = IndexMap::with_capacity_and_hasher(map.size_hint().unwrap_or(0), S::default());
 
         while let Some((key, value)) = try!(map.next_entry()) {
             values.insert(key, value);
@@ -54,7 +54,7 @@ impl<'de, K, V, S> Visitor<'de> for OrderMapVisitor<K, V, S>
 }
 
 /// Requires crate feature `"serde-1"`
-impl<'de, K, V, S> Deserialize<'de> for OrderMap<K, V, S>
+impl<'de, K, V, S> Deserialize<'de> for IndexMap<K, V, S>
     where K: Deserialize<'de> + Eq + Hash,
           V: Deserialize<'de>,
           S: Default + BuildHasher
@@ -67,10 +67,10 @@ impl<'de, K, V, S> Deserialize<'de> for OrderMap<K, V, S>
 }
 
 
-use OrderSet;
+use IndexSet;
 
 /// Requires crate feature `"serde-1"`
-impl<T, S> Serialize for OrderSet<T, S>
+impl<T, S> Serialize for IndexSet<T, S>
     where T: Serialize + Hash + Eq,
           S: BuildHasher
 {
@@ -91,7 +91,7 @@ impl<'de, T, S> Visitor<'de> for OrderSetVisitor<T, S>
     where T: Deserialize<'de> + Eq + Hash,
           S: Default + BuildHasher
 {
-    type Value = OrderSet<T, S>;
+    type Value = IndexSet<T, S>;
 
     fn expecting(&self, formatter: &mut Formatter) -> fmt::Result {
         write!(formatter, "a set")
@@ -100,7 +100,7 @@ impl<'de, T, S> Visitor<'de> for OrderSetVisitor<T, S>
     fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
         where A: SeqAccess<'de>
     {
-        let mut values = OrderSet::with_capacity_and_hasher(seq.size_hint().unwrap_or(0), S::default());
+        let mut values = IndexSet::with_capacity_and_hasher(seq.size_hint().unwrap_or(0), S::default());
 
         while let Some(value) = try!(seq.next_element()) {
             values.insert(value);
@@ -111,7 +111,7 @@ impl<'de, T, S> Visitor<'de> for OrderSetVisitor<T, S>
 }
 
 /// Requires crate feature `"serde-1"`
-impl<'de, T, S> Deserialize<'de> for OrderSet<T, S>
+impl<'de, T, S> Deserialize<'de> for IndexSet<T, S>
     where T: Deserialize<'de> + Eq + Hash,
           S: Default + BuildHasher
 {

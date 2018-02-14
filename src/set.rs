@@ -1,5 +1,4 @@
-//! A hash set implemented using `OrderMap`
-#![allow(deprecated)]
+//! A hash set implemented using `IndexMap`
 
 use std::cmp::Ordering;
 use std::collections::hash_map::RandomState;
@@ -11,7 +10,7 @@ use std::ops::{BitAnd, BitOr, BitXor, Sub};
 use std::slice;
 use std::vec;
 
-use super::{OrderMap, Equivalent};
+use super::{IndexMap, Equivalent};
 
 type Bucket<T> = super::Bucket<T, ()>;
 
@@ -46,10 +45,10 @@ type Bucket<T> = super::Bucket<T, ()>;
 /// # Examples
 ///
 /// ```
-/// use ordermap::OrderSet;
+/// use indexmap::IndexSet;
 ///
 /// // Collects which letters appear in a sentence.
-/// let letters: OrderSet<_> = "a short treatise on fungi".chars().collect();
+/// let letters: IndexSet<_> = "a short treatise on fungi".chars().collect();
 /// 
 /// assert!(letters.contains(&'s'));
 /// assert!(letters.contains(&'t'));
@@ -57,13 +56,15 @@ type Bucket<T> = super::Bucket<T, ()>;
 /// assert!(!letters.contains(&'y'));
 /// ```
 #[derive(Clone)]
-#[deprecated(note = "the crate ordermap has been renamed with no change in \
-              functionality to indexmap; please update your dependencies")]
-pub struct OrderSet<T, S = RandomState> {
-    map: OrderMap<T, (), S>,
+pub struct IndexSet<T, S = RandomState> {
+    map: IndexMap<T, (), S>,
 }
 
-impl<T, S> fmt::Debug for OrderSet<T, S>
+/// Old name; use [`IndexSet`](struct.IndexSet.html) instead.
+#[deprecated(note = "OrderSet has been renamed to IndexSet")]
+pub type OrderSet<T, S = RandomState> = IndexSet<T, S>;
+
+impl<T, S> fmt::Debug for IndexSet<T, S>
     where T: fmt::Debug + Hash + Eq,
           S: BuildHasher,
 {
@@ -71,16 +72,16 @@ impl<T, S> fmt::Debug for OrderSet<T, S>
         if cfg!(not(feature = "test_debug")) {
             f.debug_set().entries(self.iter()).finish()
         } else {
-            // Let the inner `OrderMap` print all of its details
-            f.debug_struct("OrderSet").field("map", &self.map).finish()
+            // Let the inner `IndexMap` print all of its details
+            f.debug_struct("IndexSet").field("map", &self.map).finish()
         }
     }
 }
 
-impl<T> OrderSet<T> {
+impl<T> IndexSet<T> {
     /// Create a new set. (Does not allocate.)
     pub fn new() -> Self {
-        OrderSet { map: OrderMap::new() }
+        IndexSet { map: IndexMap::new() }
     }
 
     /// Create a new set with capacity for `n` elements.
@@ -88,11 +89,11 @@ impl<T> OrderSet<T> {
     ///
     /// Computes in **O(n)** time.
     pub fn with_capacity(n: usize) -> Self {
-        OrderSet { map: OrderMap::with_capacity(n) }
+        IndexSet { map: IndexMap::with_capacity(n) }
     }
 }
 
-impl<T, S> OrderSet<T, S> {
+impl<T, S> IndexSet<T, S> {
     /// Create a new set with capacity for `n` elements.
     /// (Does not allocate if `n` is zero.)
     ///
@@ -100,7 +101,7 @@ impl<T, S> OrderSet<T, S> {
     pub fn with_capacity_and_hasher(n: usize, hash_builder: S) -> Self
         where S: BuildHasher
     {
-        OrderSet { map: OrderMap::with_capacity_and_hasher(n, hash_builder) }
+        IndexSet { map: IndexMap::with_capacity_and_hasher(n, hash_builder) }
     }
 
     /// Return the number of elements in the set.
@@ -121,7 +122,7 @@ impl<T, S> OrderSet<T, S> {
     pub fn with_hasher(hash_builder: S) -> Self
         where S: BuildHasher
     {
-        OrderSet { map: OrderMap::with_hasher(hash_builder) }
+        IndexSet { map: IndexMap::with_hasher(hash_builder) }
     }
 
     /// Return a reference to the set's `BuildHasher`.
@@ -137,7 +138,7 @@ impl<T, S> OrderSet<T, S> {
     }
 }
 
-impl<T, S> OrderSet<T, S>
+impl<T, S> IndexSet<T, S>
     where T: Hash + Eq,
           S: BuildHasher,
 {
@@ -175,7 +176,7 @@ impl<T, S> OrderSet<T, S>
     /// Return an iterator over the values that are in `self` but not `other`.
     ///
     /// Values are produced in the same order that they appear in `self`.
-    pub fn difference<'a, S2>(&'a self, other: &'a OrderSet<T, S2>) -> Difference<'a, T, S2>
+    pub fn difference<'a, S2>(&'a self, other: &'a IndexSet<T, S2>) -> Difference<'a, T, S2>
         where S2: BuildHasher
     {
         Difference {
@@ -189,7 +190,7 @@ impl<T, S> OrderSet<T, S>
     ///
     /// Values from `self` are produced in their original order, followed by
     /// values from `other` in their original order.
-    pub fn symmetric_difference<'a, S2>(&'a self, other: &'a OrderSet<T, S2>)
+    pub fn symmetric_difference<'a, S2>(&'a self, other: &'a IndexSet<T, S2>)
         -> SymmetricDifference<'a, T, S, S2>
         where S2: BuildHasher
     {
@@ -201,7 +202,7 @@ impl<T, S> OrderSet<T, S>
     /// Return an iterator over the values that are in both `self` and `other`.
     ///
     /// Values are produced in the same order that they appear in `self`.
-    pub fn intersection<'a, S2>(&'a self, other: &'a OrderSet<T, S2>) -> Intersection<'a, T, S2>
+    pub fn intersection<'a, S2>(&'a self, other: &'a IndexSet<T, S2>) -> Intersection<'a, T, S2>
         where S2: BuildHasher
     {
         Intersection {
@@ -214,7 +215,7 @@ impl<T, S> OrderSet<T, S>
     ///
     /// Values from `self` are produced in their original order, followed by
     /// values that are unique to `other` in their original order.
-    pub fn union<'a, S2>(&'a self, other: &'a OrderSet<T, S2>) -> Union<'a, T, S>
+    pub fn union<'a, S2>(&'a self, other: &'a IndexSet<T, S2>) -> Union<'a, T, S>
         where S2: BuildHasher
     {
         Union {
@@ -374,7 +375,7 @@ impl<T, S> OrderSet<T, S>
         }
     }
 
-    /// Clears the `OrderSet`, returning all values as a drain iterator.
+    /// Clears the `IndexSet`, returning all values as a drain iterator.
     /// Keeps the allocated memory for reuse.
     pub fn drain(&mut self, range: RangeFull) -> Drain<T> {
         Drain {
@@ -383,7 +384,7 @@ impl<T, S> OrderSet<T, S>
     }
 }
 
-impl<T, S> OrderSet<T, S> {
+impl<T, S> IndexSet<T, S> {
     /// Get a value by index
     ///
     /// Valid indices are *0 <= index < self.len()*
@@ -463,7 +464,7 @@ impl<'a, T> DoubleEndedIterator for Drain<'a, T> {
     double_ended_iterator_methods!(Bucket::key);
 }
 
-impl<'a, T, S> IntoIterator for &'a OrderSet<T, S>
+impl<'a, T, S> IntoIterator for &'a IndexSet<T, S>
     where T: Hash + Eq,
           S: BuildHasher,
 {
@@ -475,7 +476,7 @@ impl<'a, T, S> IntoIterator for &'a OrderSet<T, S>
     }
 }
 
-impl<T, S> IntoIterator for OrderSet<T, S>
+impl<T, S> IntoIterator for IndexSet<T, S>
     where T: Hash + Eq,
           S: BuildHasher,
 {
@@ -489,17 +490,17 @@ impl<T, S> IntoIterator for OrderSet<T, S>
     }
 }
 
-impl<T, S> FromIterator<T> for OrderSet<T, S>
+impl<T, S> FromIterator<T> for IndexSet<T, S>
     where T: Hash + Eq,
           S: BuildHasher + Default,
 {
     fn from_iter<I: IntoIterator<Item=T>>(iterable: I) -> Self {
         let iter = iterable.into_iter().map(|x| (x, ()));
-        OrderSet { map: OrderMap::from_iter(iter) }
+        IndexSet { map: IndexMap::from_iter(iter) }
     }
 }
 
-impl<T, S> Extend<T> for OrderSet<T, S>
+impl<T, S> Extend<T> for IndexSet<T, S>
     where T: Hash + Eq,
           S: BuildHasher,
 {
@@ -509,7 +510,7 @@ impl<T, S> Extend<T> for OrderSet<T, S>
     }
 }
 
-impl<'a, T, S> Extend<&'a T> for OrderSet<T, S>
+impl<'a, T, S> Extend<&'a T> for IndexSet<T, S>
     where T: Hash + Eq + Copy,
           S: BuildHasher,
 {
@@ -520,37 +521,37 @@ impl<'a, T, S> Extend<&'a T> for OrderSet<T, S>
 }
 
 
-impl<T, S> Default for OrderSet<T, S>
+impl<T, S> Default for IndexSet<T, S>
     where S: BuildHasher + Default,
 {
-    /// Return an empty `OrderSet`
+    /// Return an empty `IndexSet`
     fn default() -> Self {
-        OrderSet { map: OrderMap::default() }
+        IndexSet { map: IndexMap::default() }
     }
 }
 
-impl<T, S1, S2> PartialEq<OrderSet<T, S2>> for OrderSet<T, S1>
+impl<T, S1, S2> PartialEq<IndexSet<T, S2>> for IndexSet<T, S1>
     where T: Hash + Eq,
           S1: BuildHasher,
           S2: BuildHasher
 {
-    fn eq(&self, other: &OrderSet<T, S2>) -> bool {
+    fn eq(&self, other: &IndexSet<T, S2>) -> bool {
         self.len() == other.len() && self.is_subset(other)
     }
 }
 
-impl<T, S> Eq for OrderSet<T, S>
+impl<T, S> Eq for IndexSet<T, S>
     where T: Eq + Hash,
           S: BuildHasher
 {
 }
 
-impl<T, S> OrderSet<T, S>
+impl<T, S> IndexSet<T, S>
     where T: Eq + Hash,
           S: BuildHasher
 {
     /// Returns `true` if `self` has no elements in common with `other`.
-    pub fn is_disjoint<S2>(&self, other: &OrderSet<T, S2>) -> bool
+    pub fn is_disjoint<S2>(&self, other: &IndexSet<T, S2>) -> bool
         where S2: BuildHasher
     {
         if self.len() <= other.len() {
@@ -561,14 +562,14 @@ impl<T, S> OrderSet<T, S>
     }
 
     /// Returns `true` if all elements of `self` are contained in `other`.
-    pub fn is_subset<S2>(&self, other: &OrderSet<T, S2>) -> bool
+    pub fn is_subset<S2>(&self, other: &IndexSet<T, S2>) -> bool
         where S2: BuildHasher
     {
         self.len() <= other.len() && self.iter().all(move |value| other.contains(value))
     }
 
     /// Returns `true` if all elements of `other` are contained in `self`.
-    pub fn is_superset<S2>(&self, other: &OrderSet<T, S2>) -> bool
+    pub fn is_superset<S2>(&self, other: &IndexSet<T, S2>) -> bool
         where S2: BuildHasher
     {
         other.is_subset(self)
@@ -578,7 +579,7 @@ impl<T, S> OrderSet<T, S>
 
 pub struct Difference<'a, T: 'a, S: 'a> {
     iter: Iter<'a, T>,
-    other: &'a OrderSet<T, S>,
+    other: &'a IndexSet<T, S>,
 }
 
 impl<'a, T, S> Iterator for Difference<'a, T, S>
@@ -618,7 +619,7 @@ impl<'a, T, S> DoubleEndedIterator for Difference<'a, T, S>
 
 pub struct Intersection<'a, T: 'a, S: 'a> {
     iter: Iter<'a, T>,
-    other: &'a OrderSet<T, S>,
+    other: &'a IndexSet<T, S>,
 }
 
 impl<'a, T, S> Iterator for Intersection<'a, T, S>
@@ -728,64 +729,64 @@ impl<'a, T, S> DoubleEndedIterator for Union<'a, T, S>
 }
 
 
-impl<'a, 'b, T, S1, S2> BitAnd<&'b OrderSet<T, S2>> for &'a OrderSet<T, S1>
+impl<'a, 'b, T, S1, S2> BitAnd<&'b IndexSet<T, S2>> for &'a IndexSet<T, S1>
     where T: Eq + Hash + Clone,
           S1: BuildHasher + Default,
           S2: BuildHasher,
 {
-    type Output = OrderSet<T, S1>;
+    type Output = IndexSet<T, S1>;
 
     /// Returns the set intersection, cloned into a new set.
     ///
     /// Values are collected in the same order that they appear in `self`.
-    fn bitand(self, other: &'b OrderSet<T, S2>) -> Self::Output {
+    fn bitand(self, other: &'b IndexSet<T, S2>) -> Self::Output {
         self.intersection(other).cloned().collect()
     }
 }
 
-impl<'a, 'b, T, S1, S2> BitOr<&'b OrderSet<T, S2>> for &'a OrderSet<T, S1>
+impl<'a, 'b, T, S1, S2> BitOr<&'b IndexSet<T, S2>> for &'a IndexSet<T, S1>
     where T: Eq + Hash + Clone,
           S1: BuildHasher + Default,
           S2: BuildHasher,
 {
-    type Output = OrderSet<T, S1>;
+    type Output = IndexSet<T, S1>;
 
     /// Returns the set union, cloned into a new set.
     ///
     /// Values from `self` are collected in their original order, followed by
     /// values that are unique to `other` in their original order.
-    fn bitor(self, other: &'b OrderSet<T, S2>) -> Self::Output {
+    fn bitor(self, other: &'b IndexSet<T, S2>) -> Self::Output {
         self.union(other).cloned().collect()
     }
 }
 
-impl<'a, 'b, T, S1, S2> BitXor<&'b OrderSet<T, S2>> for &'a OrderSet<T, S1>
+impl<'a, 'b, T, S1, S2> BitXor<&'b IndexSet<T, S2>> for &'a IndexSet<T, S1>
     where T: Eq + Hash + Clone,
           S1: BuildHasher + Default,
           S2: BuildHasher,
 {
-    type Output = OrderSet<T, S1>;
+    type Output = IndexSet<T, S1>;
 
     /// Returns the set symmetric-difference, cloned into a new set.
     ///
     /// Values from `self` are collected in their original order, followed by
     /// values from `other` in their original order.
-    fn bitxor(self, other: &'b OrderSet<T, S2>) -> Self::Output {
+    fn bitxor(self, other: &'b IndexSet<T, S2>) -> Self::Output {
         self.symmetric_difference(other).cloned().collect()
     }
 }
 
-impl<'a, 'b, T, S1, S2> Sub<&'b OrderSet<T, S2>> for &'a OrderSet<T, S1>
+impl<'a, 'b, T, S1, S2> Sub<&'b IndexSet<T, S2>> for &'a IndexSet<T, S1>
     where T: Eq + Hash + Clone,
           S1: BuildHasher + Default,
           S2: BuildHasher,
 {
-    type Output = OrderSet<T, S1>;
+    type Output = IndexSet<T, S1>;
 
     /// Returns the set difference, cloned into a new set.
     ///
     /// Values are collected in the same order that they appear in `self`.
-    fn sub(self, other: &'b OrderSet<T, S2>) -> Self::Output {
+    fn sub(self, other: &'b IndexSet<T, S2>) -> Self::Output {
         self.difference(other).cloned().collect()
     }
 }
@@ -798,7 +799,7 @@ mod tests {
 
     #[test]
     fn it_works() {
-        let mut set = OrderSet::new();
+        let mut set = IndexSet::new();
         assert_eq!(set.is_empty(), true);
         set.insert(1);
         set.insert(1);
@@ -809,7 +810,7 @@ mod tests {
 
     #[test]
     fn new() {
-        let set = OrderSet::<String>::new();
+        let set = IndexSet::<String>::new();
         println!("{:?}", set);
         assert_eq!(set.capacity(), 0);
         assert_eq!(set.len(), 0);
@@ -820,7 +821,7 @@ mod tests {
     fn insert() {
         let insert = [0, 4, 2, 12, 8, 7, 11, 5];
         let not_present = [1, 3, 6, 9, 10];
-        let mut set = OrderSet::with_capacity(insert.len());
+        let mut set = IndexSet::with_capacity(insert.len());
 
         for (i, &elt) in enumerate(&insert) {
             assert_eq!(set.len(), i);
@@ -837,7 +838,7 @@ mod tests {
 
     #[test]
     fn insert_2() {
-        let mut set = OrderSet::with_capacity(16);
+        let mut set = IndexSet::with_capacity(16);
 
         let mut values = vec![];
         values.extend(0..16);
@@ -863,7 +864,7 @@ mod tests {
     #[test]
     fn insert_dup() {
         let mut elements = vec![0, 2, 4, 6, 8];
-        let mut set: OrderSet<u8> = elements.drain(..).collect();
+        let mut set: IndexSet<u8> = elements.drain(..).collect();
         {
             let (i, v) = set.get_full(&0).unwrap();
             assert_eq!(set.len(), 5);
@@ -883,7 +884,7 @@ mod tests {
     #[test]
     fn insert_order() {
         let insert = [0, 4, 2, 12, 8, 7, 11, 5, 3, 17, 19, 22, 23];
-        let mut set = OrderSet::new();
+        let mut set = IndexSet::new();
 
         for &elt in &insert {
             set.insert(elt);
@@ -903,7 +904,7 @@ mod tests {
     fn grow() {
         let insert = [0, 4, 2, 12, 8, 7, 11];
         let not_present = [1, 3, 6, 9, 10];
-        let mut set = OrderSet::with_capacity(insert.len());
+        let mut set = IndexSet::with_capacity(insert.len());
 
 
         for (i, &elt) in enumerate(&insert) {
@@ -932,7 +933,7 @@ mod tests {
     #[test]
     fn remove() {
         let insert = [0, 4, 2, 12, 8, 7, 11, 5, 3, 17, 19, 22, 23];
-        let mut set = OrderSet::new();
+        let mut set = IndexSet::new();
 
         for &elt in &insert {
             set.insert(elt);
@@ -968,7 +969,7 @@ mod tests {
     #[test]
     fn swap_remove_index() {
         let insert = [0, 4, 2, 12, 8, 7, 11, 5, 3, 17, 19, 22, 23];
-        let mut set = OrderSet::new();
+        let mut set = IndexSet::new();
 
         for &elt in &insert {
             set.insert(elt);
@@ -992,7 +993,7 @@ mod tests {
 
     #[test]
     fn partial_eq_and_eq() {
-        let mut set_a = OrderSet::new();
+        let mut set_a = IndexSet::new();
         set_a.insert(1);
         set_a.insert(2);
         let mut set_b = set_a.clone();
@@ -1000,14 +1001,14 @@ mod tests {
         set_b.remove(&1);
         assert_ne!(set_a, set_b);
 
-        let set_c: OrderSet<_> = set_b.into_iter().collect();
+        let set_c: IndexSet<_> = set_b.into_iter().collect();
         assert_ne!(set_a, set_c);
         assert_ne!(set_c, set_a);
     }
 
     #[test]
     fn extend() {
-        let mut set = OrderSet::new();
+        let mut set = IndexSet::new();
         set.extend(vec![&1, &2, &3, &4]);
         set.extend(vec![5, 6]);
         assert_eq!(set.into_iter().collect::<Vec<_>>(), vec![1, 2, 3, 4, 5, 6]);
@@ -1015,10 +1016,10 @@ mod tests {
 
     #[test]
     fn comparisons() {
-        let set_a: OrderSet<_> = (0..3).collect();
-        let set_b: OrderSet<_> = (3..6).collect();
-        let set_c: OrderSet<_> = (0..6).collect();
-        let set_d: OrderSet<_> = (3..9).collect();
+        let set_a: IndexSet<_> = (0..3).collect();
+        let set_b: IndexSet<_> = (3..6).collect();
+        let set_c: IndexSet<_> = (0..6).collect();
+        let set_d: IndexSet<_> = (3..9).collect();
 
         assert!(!set_a.is_disjoint(&set_a));
         assert!(set_a.is_subset(&set_a));
@@ -1057,10 +1058,10 @@ mod tests {
             assert!(iter1.cloned().eq(iter2));
         }
 
-        let set_a: OrderSet<_> = (0..3).collect();
-        let set_b: OrderSet<_> = (3..6).collect();
-        let set_c: OrderSet<_> = (0..6).collect();
-        let set_d: OrderSet<_> = (3..9).rev().collect();
+        let set_a: IndexSet<_> = (0..3).collect();
+        let set_b: IndexSet<_> = (3..6).collect();
+        let set_c: IndexSet<_> = (0..6).collect();
+        let set_d: IndexSet<_> = (3..9).rev().collect();
 
         check(set_a.difference(&set_a), empty());
         check(set_a.symmetric_difference(&set_a), empty());
@@ -1097,11 +1098,11 @@ mod tests {
 
     #[test]
     fn ops() {
-        let empty = OrderSet::<i32>::new();
-        let set_a: OrderSet<_> = (0..3).collect();
-        let set_b: OrderSet<_> = (3..6).collect();
-        let set_c: OrderSet<_> = (0..6).collect();
-        let set_d: OrderSet<_> = (3..9).rev().collect();
+        let empty = IndexSet::<i32>::new();
+        let set_a: IndexSet<_> = (0..3).collect();
+        let set_b: IndexSet<_> = (3..6).collect();
+        let set_c: IndexSet<_> = (0..6).collect();
+        let set_d: IndexSet<_> = (3..9).rev().collect();
 
         assert_eq!(&set_a & &set_a, set_a);
         assert_eq!(&set_a | &set_a, set_a);

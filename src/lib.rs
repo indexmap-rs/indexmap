@@ -1,15 +1,15 @@
 
 #![deny(unsafe_code)]
-#![doc(html_root_url = "https://docs.rs/ordermap/0.4/")]
+#![doc(html_root_url = "https://docs.rs/indexmap/0.4/")]
 
-//! [`OrderMap`] is a hash table where the iteration order of the key-value
+//! [`IndexMap`] is a hash table where the iteration order of the key-value
 //! pairs is independent of the hash values of the keys.
 //!
-//! [`OrderSet`] is a corresponding hash set using the same implementation and
+//! [`IndexSet`] is a corresponding hash set using the same implementation and
 //! with similar properties.
 //!
-//! [`OrderMap`]: map/struct.OrderMap.html
-//! [`OrderSet`]: set/struct.OrderSet.html
+//! [`IndexMap`]: map/struct.IndexMap.html
+//! [`IndexSet`]: set/struct.IndexSet.html
 
 #[macro_use]
 mod macros;
@@ -23,11 +23,12 @@ pub mod set;
 pub mod map;
 
 pub use equivalent::Equivalent;
-#[allow(deprecated)]
-pub use set::OrderSet;
+pub use map::IndexMap;
+pub use set::IndexSet;
 #[allow(deprecated)]
 pub use map::OrderMap;
-
+#[allow(deprecated)]
+pub use set::OrderSet;
 
 // shared private items
 

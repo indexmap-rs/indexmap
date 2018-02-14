@@ -2,8 +2,7 @@
 use std::hash::Hash;
 use std::hash::BuildHasher;
 
-#[allow(deprecated)]
-use super::{OrderMap, Equivalent};
+use super::{IndexMap, Equivalent};
 
 pub struct PrivateMarker { }
 
@@ -18,7 +17,7 @@ pub struct PrivateMarker { }
 /// This is sound (memory safe) but a logical error hazard (just like
 /// implementing PartialEq, Eq, or Hash incorrectly would be).
 ///
-/// `use` this trait to enable its methods for `OrderMap`.
+/// `use` this trait to enable its methods for `IndexMap`.
 pub trait MutableKeys {
     type Key;
     type Value;
@@ -44,11 +43,10 @@ pub trait MutableKeys {
     fn __private_marker(&self) -> PrivateMarker;
 }
 
-#[allow(deprecated)]
 /// Opt-in mutable access to keys.
 ///
 /// See [`MutableKeys`](trait.MutableKeys.html) for more information.
-impl<K, V, S> MutableKeys for OrderMap<K, V, S>
+impl<K, V, S> MutableKeys for IndexMap<K, V, S>
     where K: Eq + Hash,
           S: BuildHasher,
 {

@@ -3,16 +3,22 @@ Awesome hash table implementation in just Rust (stable, no unsafe code).
 
 Please read the `API documentation here`__
 
-__ https://docs.rs/ordermap/
+__ https://docs.rs/indexmap/
 
 |build_status|_ |crates|_
 
-.. |crates| image:: https://img.shields.io/crates/v/ordermap.svg
-.. _crates: https://crates.io/crates/ordermap
+.. |crates| image:: https://img.shields.io/crates/v/indexmap.svg
+.. _crates: https://crates.io/crates/indexmap
 
-.. |build_status| image:: https://travis-ci.org/bluss/ordermap.svg
-.. _build_status: https://travis-ci.org/bluss/ordermap
+.. |build_status| image:: https://travis-ci.org/bluss/indexmap.svg
+.. _build_status: https://travis-ci.org/bluss/indexmap
 
+Crate Name
+==========
+
+This crate was originally released under the name ``ordermap``, but it was
+renamed (with no change in functionality) to ``indexmap`` to better emphasize
+its features.
 
 Background
 ==========
@@ -21,7 +27,7 @@ This was inspired by Python 3.6's new dict implementation (which remembers
 the insertion order and is fast to iterate, and is compact in memory).
 
 Some of those features were translated to Rust, and some were not. The result
-was ordermap, a hash table that has following properties:
+was indexmap, a hash table that has following properties:
 
 - Order is **independent of hash function** and hash values of keys.
 - Fast to iterate.
@@ -40,7 +46,7 @@ Does not implement (Yet)
 Performance
 -----------
 
-``OrderMap`` derives a couple of performance facts directly from how it is constructed,
+``IndexMap`` derives a couple of performance facts directly from how it is constructed,
 which is roughly:
 
   Two vectors, the first, sparse, with hashes and key-value indices, and the
@@ -53,9 +59,9 @@ which is roughly:
   Lookup also is slow-ish since hashes and key-value pairs are stored in
   separate places. (Visible when cpu caches size is limiting.)
 
-- In practice, ``OrderMap`` has been tested out as the hashmap in rustc in PR45282_ and
+- In practice, ``IndexMap`` has been tested out as the hashmap in rustc in PR45282_ and
   the performance was roughly on par across the whole workload. 
-- If you want the properties of ``OrderMap``, or its strongest performance points
+- If you want the properties of ``IndexMap``, or its strongest performance points
   fits your workload, it might be the best hash table implementation.
 
 .. _PR45282: https://github.com/rust-lang/rust/pull/45282
@@ -65,7 +71,7 @@ Interesting Features
 
 - Insertion order is preserved (``.swap_remove()`` perturbs the order, like the method name says).
 - Implements ``.pop() -> Option<(K, V)>`` in O(1) time.
-- ``OrderMap::new()`` is empty and uses no allocation until you insert something.
+- ``IndexMap::new()`` is empty and uses no allocation until you insert something.
 - Lookup key-value pairs by index and vice versa.
 - No ``unsafe``.
 - Supports ``IndexMut``.
