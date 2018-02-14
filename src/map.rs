@@ -1,7 +1,5 @@
-//! [`IndexMap`] is a hash table where the iteration order of the key-value
+//! `IndexMap` is a hash table where the iteration order of the key-value
 //! pairs is independent of the hash values of the keys.
-//!
-//! [`IndexMap`]: struct.IndexMap.html
 
 pub use mutable_keys::MutableKeys;
 
