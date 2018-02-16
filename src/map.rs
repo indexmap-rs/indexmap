@@ -3,6 +3,9 @@
 
 pub use mutable_keys::MutableKeys;
 
+#[cfg(feature = "rayon")]
+pub use rayon::map::{IntoParIter, ParIter, ParIterMut};
+
 use std::hash::Hash;
 use std::hash::BuildHasher;
 use std::hash::Hasher;
@@ -19,6 +22,7 @@ use util::{third, ptrdistance, enumerate};
 use equivalent::Equivalent;
 use {
     Bucket,
+    Entries,
     HashValue,
 };
 
@@ -278,6 +282,22 @@ struct OrderMapCore<K, V> {
 #[inline(always)]
 fn desired_pos(mask: usize, hash: HashValue) -> usize {
     hash.0 & mask
+}
+
+impl<K, V, S> Entries for IndexMap<K, V, S> {
+    type Entry = Bucket<K, V>;
+
+    fn into_entries(self) -> Vec<Self::Entry> {
+        self.core.entries
+    }
+
+    fn as_entries(&self) -> &[Self::Entry] {
+        &self.core.entries
+    }
+
+    fn as_entries_mut(&mut self) -> &mut [Self::Entry] {
+        &mut self.core.entries
+    }
 }
 
 /// The number of steps that `current` is forward of the desired position for hash

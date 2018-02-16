@@ -23,6 +23,8 @@
 
 #[macro_use]
 mod macros;
+#[cfg(feature = "rayon")]
+mod rayon;
 #[cfg(feature = "serde-1")]
 mod serde;
 mod util;
@@ -78,3 +80,9 @@ impl<K, V> Bucket<K, V> {
     fn muts(&mut self) -> (&mut K, &mut V) { (&mut self.key, &mut self.value) }
 }
 
+trait Entries {
+    type Entry;
+    fn into_entries(self) -> Vec<Self::Entry>;
+    fn as_entries(&self) -> &[Self::Entry];
+    fn as_entries_mut(&mut self) -> &mut [Self::Entry];
+}
