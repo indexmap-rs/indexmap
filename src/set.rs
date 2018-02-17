@@ -1,7 +1,8 @@
 //! A hash set implemented using `IndexMap`
 
 #[cfg(feature = "rayon")]
-pub use rayon::set::{IntoParIter, ParIter};
+pub use rayon::set::{IntoParIter, ParIter, ParDifference, ParSymmetricDifference,
+                     ParIntersection, ParUnion};
 
 use std::cmp::Ordering;
 use std::collections::hash_map::RandomState;

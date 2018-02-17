@@ -69,6 +69,144 @@ impl<'a, T: Sync> IndexedParallelIterator for ParIter<'a, T> {
 }
 
 
+impl<T, S> IndexSet<T, S>
+    where T: Hash + Eq + Sync,
+          S: BuildHasher + Sync,
+{
+    pub fn par_difference<'a, S2>(&'a self, other: &'a IndexSet<T, S2>)
+        -> ParDifference<'a, T, S, S2>
+        where S2: BuildHasher + Sync
+    {
+        ParDifference {
+            set1: self,
+            set2: other,
+        }
+    }
+
+    pub fn par_symmetric_difference<'a, S2>(&'a self, other: &'a IndexSet<T, S2>)
+        -> ParSymmetricDifference<'a, T, S, S2>
+        where S2: BuildHasher + Sync
+    {
+        ParSymmetricDifference {
+            set1: self,
+            set2: other,
+        }
+    }
+
+    pub fn par_intersection<'a, S2>(&'a self, other: &'a IndexSet<T, S2>)
+        -> ParIntersection<'a, T, S, S2>
+        where S2: BuildHasher + Sync
+    {
+        ParIntersection {
+            set1: self,
+            set2: other,
+        }
+    }
+
+    pub fn par_union<'a, S2>(&'a self, other: &'a IndexSet<T, S2>)
+        -> ParUnion<'a, T, S, S2>
+        where S2: BuildHasher + Sync
+    {
+        ParUnion {
+            set1: self,
+            set2: other,
+        }
+    }
+}
+
+pub struct ParDifference<'a, T: 'a, S1: 'a, S2: 'a> {
+    set1: &'a IndexSet<T, S1>,
+    set2: &'a IndexSet<T, S2>,
+}
+
+impl<'a, T, S1, S2> ParallelIterator for ParDifference<'a, T, S1, S2>
+    where T: Hash + Eq + Sync,
+          S1: BuildHasher + Sync,
+          S2: BuildHasher + Sync,
+{
+    type Item = &'a T;
+
+    fn drive_unindexed<C>(self, consumer: C) -> C::Result
+        where C: UnindexedConsumer<Self::Item>
+    {
+        let Self { set1, set2 } = self;
+
+        set1.par_iter()
+            .filter(move |&item| !set2.contains(item))
+            .drive_unindexed(consumer)
+    }
+}
+
+pub struct ParIntersection<'a, T: 'a, S1: 'a, S2: 'a> {
+    set1: &'a IndexSet<T, S1>,
+    set2: &'a IndexSet<T, S2>,
+}
+
+impl<'a, T, S1, S2> ParallelIterator for ParIntersection<'a, T, S1, S2>
+    where T: Hash + Eq + Sync,
+          S1: BuildHasher + Sync,
+          S2: BuildHasher + Sync,
+{
+    type Item = &'a T;
+
+    fn drive_unindexed<C>(self, consumer: C) -> C::Result
+        where C: UnindexedConsumer<Self::Item>
+    {
+        let Self { set1, set2 } = self;
+
+        set1.par_iter()
+            .filter(move |&item| set2.contains(item))
+            .drive_unindexed(consumer)
+    }
+}
+
+pub struct ParSymmetricDifference<'a, T: 'a, S1: 'a, S2: 'a> {
+    set1: &'a IndexSet<T, S1>,
+    set2: &'a IndexSet<T, S2>,
+}
+
+impl<'a, T, S1, S2> ParallelIterator for ParSymmetricDifference<'a, T, S1, S2>
+    where T: Hash + Eq + Sync,
+          S1: BuildHasher + Sync,
+          S2: BuildHasher + Sync,
+{
+    type Item = &'a T;
+
+    fn drive_unindexed<C>(self, consumer: C) -> C::Result
+        where C: UnindexedConsumer<Self::Item>
+    {
+        let Self { set1, set2 } = self;
+
+        set1.par_difference(set2)
+            .chain(set2.par_difference(set1))
+            .drive_unindexed(consumer)
+    }
+}
+
+pub struct ParUnion<'a, T: 'a, S1: 'a, S2: 'a> {
+    set1: &'a IndexSet<T, S1>,
+    set2: &'a IndexSet<T, S2>,
+}
+
+impl<'a, T, S1, S2> ParallelIterator for ParUnion<'a, T, S1, S2>
+    where T: Hash + Eq + Sync,
+          S1: BuildHasher + Sync,
+          S2: BuildHasher + Sync,
+{
+    type Item = &'a T;
+
+    fn drive_unindexed<C>(self, consumer: C) -> C::Result
+        where C: UnindexedConsumer<Self::Item>
+    {
+        let Self { set1, set2 } = self;
+
+        set1.par_iter()
+            .chain(set2.par_difference(set1))
+            .drive_unindexed(consumer)
+    }
+}
+
+
 impl<T, S> FromParallelIterator<T> for IndexSet<T, S>
     where T: Eq + Hash + Send,
           S: BuildHasher + Default + Send,
