@@ -3,6 +3,7 @@ use super::collect;
 use super::rayon::prelude::*;
 use super::rayon::iter::plumbing::{Consumer, UnindexedConsumer, ProducerCallback};
 
+use std::cmp::Ordering;
 use std::hash::Hash;
 use std::hash::BuildHasher;
 
@@ -203,6 +204,36 @@ impl<'a, T, S1, S2> ParallelIterator for ParUnion<'a, T, S1, S2>
         set1.par_iter()
             .chain(set2.par_difference(set1))
             .drive_unindexed(consumer)
+    }
+}
+
+
+impl<T, S> IndexSet<T, S>
+    where T: Hash + Eq + Send,
+          S: BuildHasher + Send,
+{
+    pub fn par_sort(&mut self)
+        where T: Ord,
+    {
+        self.with_entries(|entries| {
+            entries.par_sort_by(|a, b| T::cmp(&a.key, &b.key));
+        });
+    }
+
+    pub fn par_sort_by<F>(&mut self, cmp: F)
+        where F: Fn(&T, &T) -> Ordering + Sync,
+    {
+        self.with_entries(|entries| {
+            entries.par_sort_by(move |a, b| cmp(&a.key, &b.key));
+        });
+    }
+
+    pub fn par_sorted_by<F>(self, cmp: F) -> IntoParIter<T>
+        where F: Fn(&T, &T) -> Ordering + Sync
+    {
+        let mut entries = self.into_entries();
+        entries.par_sort_by(move |a, b| cmp(&a.key, &b.key));
+        IntoParIter { entries }
     }
 }
 

@@ -3,6 +3,7 @@ use super::collect;
 use super::rayon::prelude::*;
 use super::rayon::iter::plumbing::{Consumer, UnindexedConsumer, ProducerCallback};
 
+use std::cmp::Ordering;
 use std::hash::Hash;
 use std::hash::BuildHasher;
 
@@ -156,6 +157,30 @@ impl<K, V, S> IndexMap<K, V, S>
         ParValuesMut {
             entries: self.as_entries_mut(),
         }
+    }
+
+    pub fn par_sort_keys(&mut self)
+        where K: Ord,
+    {
+        self.with_entries(|entries| {
+            entries.par_sort_by(|a, b| K::cmp(&a.key, &b.key));
+        });
+    }
+
+    pub fn par_sort_by<F>(&mut self, cmp: F)
+        where F: Fn(&K, &V, &K, &V) -> Ordering + Sync,
+    {
+        self.with_entries(|entries| {
+            entries.par_sort_by(move |a, b| cmp(&a.key, &a.value, &b.key, &b.value));
+        });
+    }
+
+    pub fn par_sorted_by<F>(self, cmp: F) -> IntoParIter<K, V>
+        where F: Fn(&K, &V, &K, &V) -> Ordering + Sync
+    {
+        let mut entries = self.into_entries();
+        entries.par_sort_by(move |a, b| cmp(&a.key, &a.value, &b.key, &b.value));
+        IntoParIter { entries }
     }
 }
 

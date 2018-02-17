@@ -85,4 +85,6 @@ trait Entries {
     fn into_entries(self) -> Vec<Self::Entry>;
     fn as_entries(&self) -> &[Self::Entry];
     fn as_entries_mut(&mut self) -> &mut [Self::Entry];
+    fn with_entries<F>(&mut self, f: F)
+        where F: FnOnce(&mut [Self::Entry]);
 }

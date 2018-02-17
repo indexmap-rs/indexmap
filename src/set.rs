@@ -78,6 +78,12 @@ impl<T, S> Entries for IndexSet<T, S> {
     fn as_entries_mut(&mut self) -> &mut [Self::Entry] {
         self.map.as_entries_mut()
     }
+
+    fn with_entries<F>(&mut self, f: F)
+        where F: FnOnce(&mut [Self::Entry])
+    {
+        self.map.with_entries(f);
+    }
 }
 
 impl<T, S> fmt::Debug for IndexSet<T, S>
