@@ -100,6 +100,80 @@ impl<'a, K: Sync + Send, V: Send> IndexedParallelIterator for ParIterMut<'a, K, 
 }
 
 
+impl<K, V, S> IndexMap<K, V, S>
+    where K: Hash + Eq + Sync,
+          V: Sync,
+          S: BuildHasher,
+{
+    pub fn par_keys(&self) -> ParKeys<K, V> {
+        ParKeys {
+            entries: self.as_entries(),
+        }
+    }
+
+    pub fn par_values(&self) -> ParValues<K, V> {
+        ParValues {
+            entries: self.as_entries(),
+        }
+    }
+}
+
+pub struct ParKeys<'a, K: 'a, V: 'a> {
+    entries: &'a [Bucket<K, V>],
+}
+
+impl<'a, K: Sync, V: Sync> ParallelIterator for ParKeys<'a, K, V> {
+    type Item = &'a K;
+
+    parallel_iterator_methods!(Bucket::key_ref);
+}
+
+impl<'a, K: Sync, V: Sync> IndexedParallelIterator for ParKeys<'a, K, V> {
+    indexed_parallel_iterator_methods!(Bucket::key_ref);
+}
+
+pub struct ParValues<'a, K: 'a, V: 'a> {
+    entries: &'a [Bucket<K, V>],
+}
+
+impl<'a, K: Sync, V: Sync> ParallelIterator for ParValues<'a, K, V> {
+    type Item = &'a V;
+
+    parallel_iterator_methods!(Bucket::value_ref);
+}
+
+impl<'a, K: Sync, V: Sync> IndexedParallelIterator for ParValues<'a, K, V> {
+    indexed_parallel_iterator_methods!(Bucket::value_ref);
+}
+
+
+impl<K, V, S> IndexMap<K, V, S>
+    where K: Hash + Eq + Send,
+          V: Send,
+          S: BuildHasher,
+{
+    pub fn par_values_mut(&mut self) -> ParValuesMut<K, V> {
+        ParValuesMut {
+            entries: self.as_entries_mut(),
+        }
+    }
+}
+
+pub struct ParValuesMut<'a, K: 'a, V: 'a> {
+    entries: &'a mut [Bucket<K, V>],
+}
+
+impl<'a, K: Send, V: Send> ParallelIterator for ParValuesMut<'a, K, V> {
+    type Item = &'a mut V;
+
+    parallel_iterator_methods!(Bucket::value_mut);
+}
+
+impl<'a, K: Send, V: Send> IndexedParallelIterator for ParValuesMut<'a, K, V> {
+    indexed_parallel_iterator_methods!(Bucket::value_mut);
+}
+
+
 impl<K, V, S> FromParallelIterator<(K, V)> for IndexMap<K, V, S>
     where K: Eq + Hash + Send,
           V: Send,
