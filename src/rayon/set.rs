@@ -113,6 +113,34 @@ impl<T, S> IndexSet<T, S>
             set2: other,
         }
     }
+
+    pub fn par_eq<S2>(&self, other: &IndexSet<T, S2>) -> bool
+        where S2: BuildHasher + Sync
+    {
+        self.len() == other.len() && self.par_is_subset(other)
+    }
+
+    pub fn par_is_disjoint<S2>(&self, other: &IndexSet<T, S2>) -> bool
+        where S2: BuildHasher + Sync
+    {
+        if self.len() <= other.len() {
+            self.par_iter().all(move |value| !other.contains(value))
+        } else {
+            other.par_iter().all(move |value| !self.contains(value))
+        }
+    }
+
+    pub fn par_is_superset<S2>(&self, other: &IndexSet<T, S2>) -> bool
+        where S2: BuildHasher + Sync
+    {
+        other.par_is_subset(self)
+    }
+
+    pub fn par_is_subset<S2>(&self, other: &IndexSet<T, S2>) -> bool
+        where S2: BuildHasher + Sync
+    {
+        self.len() <= other.len() && self.par_iter().all(move |value| other.contains(value))
+    }
 }
 
 pub struct ParDifference<'a, T: 'a, S1: 'a, S2: 'a> {

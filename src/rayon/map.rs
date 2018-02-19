@@ -117,6 +117,17 @@ impl<K, V, S> IndexMap<K, V, S>
             entries: self.as_entries(),
         }
     }
+
+    pub fn par_eq<V2, S2>(&self, other: &IndexMap<K, V2, S2>) -> bool
+        where V: PartialEq<V2>,
+              V2: Sync,
+              S2: BuildHasher + Sync
+    {
+        self.len() == other.len() &&
+            self.par_iter().all(move |(key, value)| {
+                other.get(key).map_or(false, |v| *value == *v)
+            })
+    }
 }
 
 pub struct ParKeys<'a, K: 'a, V: 'a> {
