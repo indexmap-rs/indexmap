@@ -175,7 +175,7 @@ impl Pos {
 
     /// Like resolve, but the Pos **must** be non-none. Return its index.
     #[inline]
-    fn resolve_existing_index<Sz>(&self) -> usize 
+    fn resolve_existing_index<Sz>(&self) -> usize
         where Sz: Size
     {
         debug_assert!(!self.is_none(), "datastructure inconsistent: none where valid Pos expected");
@@ -253,7 +253,7 @@ impl<Sz> ShortHashProxy<Sz>
 /// for ch in "a short treatise on fungi".chars() {
 ///     *letters.entry(ch).or_insert(0) += 1;
 /// }
-/// 
+///
 /// assert_eq!(letters[&'s'], 2);
 /// assert_eq!(letters[&'t'], 3);
 /// assert_eq!(letters[&'u'], 1);
@@ -355,7 +355,9 @@ macro_rules! probe_loop {
     }
 }
 
-impl<K, V> IndexMap<K, V> {
+impl<K, V, S> IndexMap<K, V, S>
+    where S: BuildHasher + Default,
+{
     /// Create a new map. (Does not allocate.)
     pub fn new() -> Self {
         Self::with_capacity(0)
@@ -366,7 +368,16 @@ impl<K, V> IndexMap<K, V> {
     ///
     /// Computes in **O(n)** time.
     pub fn with_capacity(n: usize) -> Self {
-        Self::with_capacity_and_hasher(n, <_>::default())
+        Self::with_capacity_and_hasher(n, S::default())
+    }
+}
+
+impl<K, V, S> Default for IndexMap<K, V, S>
+    where S: BuildHasher + Default,
+{
+    /// Return an empty `IndexMap`
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -1675,15 +1686,6 @@ impl<'a, K, V, S> Extend<(&'a K, &'a V)> for IndexMap<K, V, S>
     }
 }
 
-impl<K, V, S> Default for IndexMap<K, V, S>
-    where S: BuildHasher + Default,
-{
-    /// Return an empty `IndexMap`
-    fn default() -> Self {
-        Self::with_capacity_and_hasher(0, S::default())
-    }
-}
-
 impl<K, V1, S1, V2, S2> PartialEq<IndexMap<K, V2, S2>> for IndexMap<K, V1, S1>
     where K: Hash + Eq,
           V1: PartialEq<V2>,
@@ -1729,6 +1731,21 @@ mod tests {
         assert_eq!(map.capacity(), 0);
         assert_eq!(map.len(), 0);
         assert_eq!(map.is_empty(), true);
+
+        #[derive(Default)]
+        struct CustomTestHasher;
+
+        impl Hasher for CustomTestHasher {
+            fn write(&mut self, bytes: &[u8]) {
+                unreachable!()
+            }
+
+            fn finish(&self) -> u64 {
+                unreachable!()
+            }
+        }
+
+        let _map = IndexMap::<String, String, BuildHasherDefault<CustomTestHasher>>::new();
     }
 
     #[test]
@@ -1922,7 +1939,7 @@ mod tests {
     #[test]
     fn entry() {
         let mut map = IndexMap::new();
-        
+
         map.insert(1, "1");
         map.insert(2, "2");
         {
@@ -1931,7 +1948,7 @@ mod tests {
             let e = e.or_insert("3");
             assert_eq!(e, &"3");
         }
-        
+
         let e = map.entry(2);
         assert_eq!(e.index(), 1);
         assert_eq!(e.key(), &2);
