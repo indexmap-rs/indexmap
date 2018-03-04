@@ -588,8 +588,9 @@ impl<'a, K, V> OccupiedEntry<'a, K, V> {
         &mut self.map.entries[self.index].value
     }
 
-    pub fn insert(self, value: V) -> V {
-        replace(&mut self.into_mut(), value)
+    /// Sets the value of the entry to `value`, and returns the entry's old value.
+    pub fn insert(&mut self, value: V) -> V {
+        replace(self.get_mut(), value)
     }
 
     pub fn remove(self) -> V {
