@@ -8,7 +8,18 @@ authors = [
 documentation = "https://docs.rs/indexmap/"
 repository = "https://github.com/bluss/indexmap"
 license = "Apache-2.0/MIT"
-description = "A hash table with consistent order and fast iteration."
+description = """
+A hash table with consistent order and fast iteration.
+
+The indexmap is a hash table where the iteration order of the key-value
+pairs is independent of the hash values of the keys. It has the usual
+hash table functionality, it preserves insertion order except after
+removals, and it allows lookup of its elements by either hash table key
+or numerical index. A corresponding hash set type is also provided.
+
+This crate was initially published under the name ordermap, but it was renamed to
+indexmap.
+"""
 
 keywords = ["hashmap"]
 categories = ["data-structures"]

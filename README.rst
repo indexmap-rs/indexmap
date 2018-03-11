@@ -103,6 +103,17 @@ Ideas that we already did
 Recent Changes
 ==============
 
+- 1.0.0
+
+  - This is the 1.0 release for ``indexmap``! (the crate and datastructure
+    formerly known as “ordermap”)
+  - ``OccupiedEntry::insert`` changed its signature, to use ``&mut self`` for
+    the method receiver, matching the equivalent method for a standard
+    ``HashMap``.  Thanks to @dtolnay for finding this bug.
+  - The deprecated old names from ordermap were removed: ``OrderMap``,
+    ``OrderSet``, ``ordermap!{}``, ``orderset!{}``. Use the new ``IndexMap``
+    etc names instead.
+
 - 0.4.1
 
   - Renamed crate to ``indexmap``; the ``ordermap`` crate is now deprecated

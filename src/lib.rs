@@ -1,6 +1,6 @@
 
 #![deny(unsafe_code)]
-#![doc(html_root_url = "https://docs.rs/indexmap/0.4/")]
+#![doc(html_root_url = "https://docs.rs/indexmap/1/")]
 
 //! [`IndexMap`] is a hash table where the iteration order of the key-value
 //! pairs is independent of the hash values of the keys.
