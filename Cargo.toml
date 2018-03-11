@@ -1,7 +1,10 @@
 [package]
 name = "indexmap"
-version = "0.4.1"
-authors = ["bluss"]
+version = "1.0.0"
+authors = [
+"bluss",
+"Josh Stone <cuviper@gmail.com>"
+]
 documentation = "https://docs.rs/indexmap/"
 repository = "https://github.com/bluss/indexmap"
 license = "Apache-2.0/MIT"
