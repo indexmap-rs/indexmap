@@ -37,13 +37,6 @@ macro_rules! indexmap {
     };
 }
 
-/// Old name; use [`indexmap!{}`](macro.indexmap.html) instead.
-#[deprecated(note = "renamed to indexmap!{ }")]
-#[macro_export]
-macro_rules! ordermap {
-    ($($t:tt)*) => { indexmap!($($t)*) }
-}
-
 #[macro_export]
 /// Create an `IndexSet` from a list of values
 ///
@@ -80,13 +73,6 @@ macro_rules! indexset {
             _set
         }
     };
-}
-
-/// Old name; use [`indexset!{}`](macro.indexset.html) instead.
-#[deprecated(note = "renamed to indexset!{ }")]
-#[macro_export]
-macro_rules! orderset {
-    ($($t:tt)*) => { indexset!($($t)*) }
 }
 
 // generate all the Iterator methods by just forwarding to the underlying

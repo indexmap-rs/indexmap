@@ -265,10 +265,6 @@ pub struct IndexMap<K, V, S = RandomState> {
     hash_builder: S,
 }
 
-/// Old name; use [`IndexMap`](struct.IndexMap.html) instead.
-#[deprecated(note = "OrderMap has been renamed to IndexMap")]
-pub type OrderMap<K, V, S = RandomState> = IndexMap<K, V, S>;
-
 // core of the map that does not depend on S
 #[derive(Clone)]
 struct OrderMapCore<K, V> {

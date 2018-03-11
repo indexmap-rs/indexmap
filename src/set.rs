@@ -60,10 +60,6 @@ pub struct IndexSet<T, S = RandomState> {
     map: IndexMap<T, (), S>,
 }
 
-/// Old name; use [`IndexSet`](struct.IndexSet.html) instead.
-#[deprecated(note = "OrderSet has been renamed to IndexSet")]
-pub type OrderSet<T, S = RandomState> = IndexSet<T, S>;
-
 impl<T, S> fmt::Debug for IndexSet<T, S>
     where T: fmt::Debug + Hash + Eq,
           S: BuildHasher,

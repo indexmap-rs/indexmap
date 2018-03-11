@@ -25,10 +25,6 @@ pub mod map;
 pub use equivalent::Equivalent;
 pub use map::IndexMap;
 pub use set::IndexSet;
-#[allow(deprecated)]
-pub use map::OrderMap;
-#[allow(deprecated)]
-pub use set::OrderSet;
 
 // shared private items
 
