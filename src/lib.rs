@@ -12,7 +12,7 @@
 //! [`IndexSet`]: set/struct.IndexSet.html
 //!
 //!
-//! # Minimum Rust Version
+//! ## Rust Version
 //!
 //! This version of indexmap requires Rust 1.18 or later.
 //!
