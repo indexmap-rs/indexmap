@@ -103,6 +103,10 @@ Ideas that we already did
 Recent Changes
 ==============
 
+- 1.0.1
+
+  - Document Rust version policy for the crate (see rustdoc)
+
 - 1.0.0
 
   - This is the 1.0 release for ``indexmap``! (the crate and datastructure
