@@ -165,21 +165,21 @@ impl<T, S> IndexSet<T, S>
     /// Insert the value into the set, and get its index.
     ///
     /// If an equivalent item already exists in the set, it returns
-    /// `false` and the index of the existing item, leaving the
+    /// the index of the existing item and `false`, leaving the
     /// original value in the set and without altering its insertion
-    /// order. Otherwise, it inserts the new item and returns `true`
-    /// and the index of the inserted item.
+    /// order. Otherwise, it inserts the new item and returns the index
+    /// of the inserted item and `true`.
     ///
     /// Computes in **O(1)** time (amortized average).
-    pub fn insert_full(&mut self, value: T) -> (bool, usize) {
+    pub fn insert_full(&mut self, value: T) -> (usize, bool) {
         use super::map::Entry::*;
 
         match self.map.entry(value) {
-            Occupied(e) => (false, e.index()),
+            Occupied(e) => (e.index(), false),
             Vacant(e) => {
                 let index = e.index();
                 e.insert(());
-                (true, index)
+                (index, true)
             }
         }
     }
@@ -862,7 +862,7 @@ mod tests {
 
         for (i, &elt) in enumerate(&insert) {
             assert_eq!(set.len(), i);
-            let (success, index) = set.insert_full(elt);
+            let (index, success) = set.insert_full(elt);
             assert!(success);
             assert_eq!(Some(index), set.get_full(&elt).map(|x| x.0));
             assert_eq!(set.len(), i + 1);
@@ -870,7 +870,7 @@ mod tests {
 
         let len = set.len();
         for &elt in &present {
-            let (success, index) = set.insert_full(elt);
+            let (index, success) = set.insert_full(elt);
             assert!(!success);
             assert_eq!(Some(index), set.get_full(&elt).map(|x| x.0));
             assert_eq!(set.len(), len);
