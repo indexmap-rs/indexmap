@@ -1,11 +1,7 @@
+indexmap
+========
 
-Awesome hash table implementation in just Rust (stable, no unsafe code).
-
-Please read the `API documentation here`__
-
-__ https://docs.rs/indexmap/
-
-|build_status|_ |crates|_
+|build_status|_ |crates|_ |docs|_ |rustc|_
 
 .. |crates| image:: https://img.shields.io/crates/v/indexmap.svg
 .. _crates: https://crates.io/crates/indexmap
@@ -13,12 +9,21 @@ __ https://docs.rs/indexmap/
 .. |build_status| image:: https://travis-ci.org/bluss/indexmap.svg
 .. _build_status: https://travis-ci.org/bluss/indexmap
 
-Crate Name
-==========
+.. |docs| image:: https://docs.rs/indexmap/badge.svg
+.. _docs: https://docs.rs/indexmap
 
-This crate was originally released under the name ``ordermap``, but it was
-renamed (with no change in functionality) to ``indexmap`` to better emphasize
-its features.
+.. |rustc| image:: https://img.shields.io/badge/rust-1.18%2B-orange.svg
+.. _rustc: https://img.shields.io/badge/rust-1.18%2B-orange.svg
+
+A safe, pure-Rust hash table which preserves insertion order.
+
+This crate implements compact map and set data-structures,
+where the iteration order of the keys is independent from their hash or
+value. It preserves insertion order (except after removals), and it
+allows lookup of entries by either hash table key or numerical index.
+
+Note: this crate was originally released under the name ``ordermap``,
+but it was renamed to ``indexmap`` to better reflect its features.
 
 Background
 ==========
