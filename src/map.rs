@@ -718,6 +718,32 @@ impl<K, V, S> IndexMap<K, V, S>
         }
     }
 
+    /// Insert a key-value pair in the map, and get their index.
+    ///
+    /// If an equivalent key already exists in the map: the key remains and
+    /// retains in its place in the order, its corresponding value is updated
+    /// with `value` and the older value is returned inside `(index, Some(_))`.
+    ///
+    /// If no equivalent key existed in the map: the new key-value pair is
+    /// inserted, last in order, and `(index, None)` is returned.
+    ///
+    /// Computes in **O(1)** time (amortized average).
+    ///
+    /// See also [`entry`](#method.entry) if you you want to insert *or* modify
+    /// or if you need to get the index of the corresponding key-value pair.
+    pub fn insert_full(&mut self, key: K, value: V) -> (usize, Option<V>) {
+        let entry = self.entry(key);
+        let index = entry.index();
+
+        match entry {
+            Entry::Occupied(mut entry) => (index, Some(entry.insert(value))),
+            Entry::Vacant(entry) => {
+                entry.insert(value);
+                (index, None)
+            }
+        }
+    }
+
     /// Get the given key’s corresponding entry in the map for insertion and/or
     /// in-place manipulation.
     ///
@@ -1745,6 +1771,29 @@ mod tests {
 
         for &elt in &not_present {
             assert!(map.get(&elt).is_none());
+        }
+    }
+
+    #[test]
+    fn insert_full() {
+        let insert = vec![9, 2, 7, 1, 4, 6, 13];
+        let present = vec![1, 6, 2];
+        let mut map = IndexMap::with_capacity(insert.len());
+
+        for (i, &elt) in enumerate(&insert) {
+            assert_eq!(map.len(), i);
+            let (index, existing) = map.insert_full(elt, elt);
+            assert_eq!(existing, None);
+            assert_eq!(Some(index), map.get_full(&elt).map(|x| x.0));
+            assert_eq!(map.len(), i + 1);
+        }
+
+        let len = map.len();
+        for &elt in &present {
+            let (index, existing) = map.insert_full(elt, elt);
+            assert_eq!(existing, Some(elt));
+            assert_eq!(Some(index), map.get_full(&elt).map(|x| x.0));
+            assert_eq!(map.len(), len);
         }
     }
 
