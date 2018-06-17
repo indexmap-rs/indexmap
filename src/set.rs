@@ -162,6 +162,28 @@ impl<T, S> IndexSet<T, S>
         self.map.insert(value, ()).is_none()
     }
 
+    /// Insert the value into the set, and get its index.
+    ///
+    /// If an equivalent item already exists in the set, it returns
+    /// the index of the existing item and `false`, leaving the
+    /// original value in the set and without altering its insertion
+    /// order. Otherwise, it inserts the new item and returns the index
+    /// of the inserted item and `true`.
+    ///
+    /// Computes in **O(1)** time (amortized average).
+    pub fn insert_full(&mut self, value: T) -> (usize, bool) {
+        use super::map::Entry::*;
+
+        match self.map.entry(value) {
+            Occupied(e) => (e.index(), false),
+            Vacant(e) => {
+                let index = e.index();
+                e.insert(());
+                (index, true)
+            }
+        }
+    }
+
     /// Return an iterator over the values of the set, in their order
     pub fn iter(&self) -> Iter<T> {
         Iter {
@@ -829,6 +851,29 @@ mod tests {
 
         for &elt in &not_present {
             assert!(set.get(&elt).is_none());
+        }
+    }
+
+    #[test]
+    fn insert_full() {
+        let insert = vec![9, 2, 7, 1, 4, 6, 13];
+        let present = vec![1, 6, 2];
+        let mut set = IndexSet::with_capacity(insert.len());
+
+        for (i, &elt) in enumerate(&insert) {
+            assert_eq!(set.len(), i);
+            let (index, success) = set.insert_full(elt);
+            assert!(success);
+            assert_eq!(Some(index), set.get_full(&elt).map(|x| x.0));
+            assert_eq!(set.len(), i + 1);
+        }
+
+        let len = set.len();
+        for &elt in &present {
+            let (index, success) = set.insert_full(elt);
+            assert!(!success);
+            assert_eq!(Some(index), set.get_full(&elt).map(|x| x.0));
+            assert_eq!(set.len(), len);
         }
     }
 
