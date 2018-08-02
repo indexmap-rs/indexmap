@@ -552,6 +552,19 @@ impl<'a, K, V> Entry<'a, K, V> {
             Entry::Vacant(ref entry) => entry.index(),
         }
     }
+
+    /// Modifies the entry if it is occupied.
+    pub fn and_modify<F>(self, f: F) -> Self
+        where F: FnOnce(&mut V),
+    {
+        match self {
+            Entry::Occupied(mut o) => {
+                f(o.get_mut());
+                Entry::Occupied(o)
+            }
+            x => x,
+        }
+    }
 }
 
 pub struct OccupiedEntry<'a, K: 'a, V: 'a> {
@@ -1986,5 +1999,17 @@ mod tests {
             Entry::Vacant(_) => panic!()
         }
         assert_eq!(e.or_insert("4"), &"2");
+    }
+
+    #[test]
+    fn entry_and_modify() {
+        let mut map = IndexMap::new();
+
+        map.insert(1, "1");
+        map.entry(1).and_modify(|x| *x = "2");
+        assert_eq!(Some(&"2"), map.get(&1));
+
+        map.entry(2).and_modify(|x| *x = "doesn't exist");
+        assert_eq!(None, map.get(&2));
     }
 }
