@@ -565,6 +565,19 @@ impl<'a, K, V> Entry<'a, K, V> {
             x => x,
         }
     }
+
+    /// Inserts a default-constructed value in the entry if it is vacant and returns a mutable
+    /// reference to it. Otherwise a mutable reference to an already existent value is returned.
+    ///
+    /// Computes in **O(1)** time (amortized average).
+    pub fn or_default(self) -> &'a mut V
+        where V: Default
+    {
+        match self {
+            Entry::Occupied(entry) => entry.into_mut(),
+            Entry::Vacant(entry) => entry.insert(V::default()),
+        }
+    }
 }
 
 pub struct OccupiedEntry<'a, K: 'a, V: 'a> {
@@ -2011,5 +2024,27 @@ mod tests {
 
         map.entry(2).and_modify(|x| *x = "doesn't exist");
         assert_eq!(None, map.get(&2));
+    }
+
+    #[test]
+    fn entry_or_default() {
+        let mut map = IndexMap::new();
+
+        #[derive(Debug, PartialEq)]
+        enum TestEnum {
+            DefaultValue,
+            NonDefaultValue,
+        }
+
+        impl Default for TestEnum {
+            fn default() -> Self {
+                TestEnum::DefaultValue
+            }
+        }
+
+        map.insert(1, TestEnum::NonDefaultValue);
+        assert_eq!(&mut TestEnum::NonDefaultValue, map.entry(1).or_default());
+
+        assert_eq!(&mut TestEnum::DefaultValue, map.entry(2).or_default());
     }
 }
