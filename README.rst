@@ -108,6 +108,17 @@ Ideas that we already did
 Recent Changes
 ==============
 
+- 1.0.2
+
+  - The new methods ``IndexMap::insert_full`` and ``IndexSet::insert_full`` are
+    both like ``insert`` with the index included in the return value.
+
+  - The new method ``Entry::and_modify`` can be used to modify occupied
+    entries, matching the new methods of ``std`` maps in Rust 1.26.
+
+  - The new method ``Entry::or_default`` inserts a default value in unoccupied
+    entries, matching the new methods of ``std`` maps in Rust 1.28.
+
 - 1.0.1
 
   - Document Rust version policy for the crate (see rustdoc)
