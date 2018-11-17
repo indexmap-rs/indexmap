@@ -1,6 +1,9 @@
 
 Awesome hash table implementation in just Rust (stable, no unsafe code).
 
+**Note: the crate ordermap has been renamed with no change in functionality
+to indexmap; please use it under its new name.**
+
 Please read the `API documentation here`__
 
 __ https://docs.rs/ordermap/
@@ -96,6 +99,12 @@ Ideas that we already did
 
 Recent Changes
 ==============
+
+- 0.4.2 (ordermap)
+
+  - Inserted more deprecation information in the documentation.
+    Note: the crate ordermap has been renamed with no change in functionality
+    to indexmap; please use it under its new name.
 
 - 0.4.1
 

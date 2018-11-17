@@ -1,11 +1,11 @@
 [package]
 name = "ordermap"
-version = "0.4.1"
+version = "0.4.2"
 authors = ["bluss"]
 documentation = "https://docs.rs/ordermap/"
 repository = "https://github.com/bluss/ordermap"
 license = "Apache-2.0/MIT"
-description = "A hash table with consistent order and fast iteration."
+description = "A hash table with consistent order and fast iteration. NOTE: This crate was renamed to indexmap. Please use it under its new name."
 
 keywords = ["hashmap"]
 categories = ["data-structures"]
@@ -40,3 +40,7 @@ no-dev-version = true
 
 [package.metadata.docs.rs]
 features = ["serde-1"]
+
+[badges]
+# This crate has been renamed to 'indexmap', use it under its new name
+maintenance = { status = "deprecated" }
