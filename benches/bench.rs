@@ -20,7 +20,12 @@ use indexmap::IndexMap;
 use std::collections::HashMap;
 use std::iter::FromIterator;
 
-use rand::{weak_rng, Rng};
+use rand::{thread_rng, Rng, SeedableRng};
+use rand::rngs::SmallRng;
+
+fn weak_rng() -> SmallRng {
+    SmallRng::from_rng(thread_rng()).unwrap()
+}
 
 #[bench]
 fn new_hashmap(b: &mut Bencher) {

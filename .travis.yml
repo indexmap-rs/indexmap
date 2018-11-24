@@ -8,6 +8,7 @@ matrix:
         # (we only use it in benchmarks anyway...)
         - cargo generate-lockfile
         - cargo update -p lazy_static --precise 1.0.2
+    - rust: 1.22.1
     - rust: stable
       env:
        - FEATURES='serde-1'
