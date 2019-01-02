@@ -580,6 +580,27 @@ impl<'a, K, V> Entry<'a, K, V> {
     }
 }
 
+impl<'a, K: 'a + fmt::Debug, V: 'a + fmt::Debug> fmt::Debug for Entry<'a, K, V> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match *self {
+            Entry::Vacant(ref v) => {
+                f.debug_tuple("Entry")
+                    .field(v)
+                    .finish()
+            }
+            Entry::Occupied(ref o) => {
+                f.debug_tuple("Entry")
+                    .field(o)
+                    .finish()
+            }
+        }
+    }
+}
+
+/// A view into an occupied entry in a `IndexMap`.
+/// It is part of the [`Entry`] enum.
+///
+/// [`Entry`]: enum.Entry.html
 pub struct OccupiedEntry<'a, K: 'a, V: 'a> {
     map: &'a mut OrderMapCore<K, V>,
     key: K,
@@ -625,7 +646,19 @@ impl<'a, K, V> OccupiedEntry<'a, K, V> {
     }
 }
 
+impl<'a, K: 'a + fmt::Debug, V: 'a + fmt::Debug> fmt::Debug for OccupiedEntry<'a, K, V> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("OccupiedEntry")
+            .field("key", self.key())
+            .field("value", self.get())
+            .finish()
+    }
+}
 
+/// A view into a vacant entry in a `IndexMap`.
+/// It is part of the [`Entry`] enum.
+///
+/// [`Entry`]: enum.Entry.html
 pub struct VacantEntry<'a, K: 'a, V: 'a> {
     map: &'a mut OrderMapCore<K, V>,
     key: K,
@@ -654,6 +687,14 @@ impl<'a, K, V> VacantEntry<'a, K, V> {
         let old_pos = Pos::with_hash::<Sz>(index, self.hash);
         self.map.insert_phase_2::<Sz>(self.probe, old_pos);
         &mut {self.map}.entries[index].value
+    }
+}
+
+impl<'a, K: 'a + fmt::Debug, V: 'a> fmt::Debug for VacantEntry<'a, K, V> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_tuple("VacantEntry")
+            .field(self.key())
+            .finish()
     }
 }
 
@@ -1455,6 +1496,13 @@ use std::slice::Iter as SliceIter;
 use std::slice::IterMut as SliceIterMut;
 use std::vec::IntoIter as VecIntoIter;
 
+/// An iterator over the keys of a `IndexMap`.
+///
+/// This `struct` is created by the [`keys`] method on [`IndexMap`]. See its
+/// documentation for more.
+///
+/// [`keys`]: struct.IndexMap.html#method.keys
+/// [`IndexMap`]: struct.IndexMap.html
 pub struct Keys<'a, K: 'a, V: 'a> {
     pub(crate) iter: SliceIter<'a, Bucket<K, V>>,
 }
@@ -1477,6 +1525,28 @@ impl<'a, K, V> ExactSizeIterator for Keys<'a, K, V> {
     }
 }
 
+// FIXME(#26925) Remove in favor of `#[derive(Clone)]`
+impl<'a, K, V> Clone for Keys<'a, K, V> {
+    fn clone(&self) -> Keys<'a, K, V> {
+        Keys { iter: self.iter.clone() }
+    }
+}
+
+impl<'a, K: fmt::Debug, V> fmt::Debug for Keys<'a, K, V> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_list()
+            .entries(self.clone())
+            .finish()
+    }
+}
+
+/// An iterator over the values of a `IndexMap`.
+///
+/// This `struct` is created by the [`values`] method on [`IndexMap`]. See its
+/// documentation for more.
+///
+/// [`values`]: struct.IndexMap.html#method.values
+/// [`IndexMap`]: struct.IndexMap.html
 pub struct Values<'a, K: 'a, V: 'a> {
     iter: SliceIter<'a, Bucket<K, V>>,
 }
@@ -1499,6 +1569,28 @@ impl<'a, K, V> ExactSizeIterator for Values<'a, K, V> {
     }
 }
 
+// FIXME(#26925) Remove in favor of `#[derive(Clone)]`
+impl<'a, K, V> Clone for Values<'a, K, V> {
+    fn clone(&self) -> Values<'a, K, V> {
+        Values { iter: self.iter.clone() }
+    }
+}
+
+impl<'a, K, V: fmt::Debug> fmt::Debug for Values<'a, K, V> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_list()
+            .entries(self.clone())
+            .finish()
+    }
+}
+
+/// A mutable iterator over the values of a `IndexMap`.
+///
+/// This `struct` is created by the [`values_mut`] method on [`IndexMap`]. See its
+/// documentation for more.
+///
+/// [`values_mut`]: struct.IndexMap.html#method.values_mut
+/// [`IndexMap`]: struct.IndexMap.html
 pub struct ValuesMut<'a, K: 'a, V: 'a> {
     iter: SliceIterMut<'a, Bucket<K, V>>,
 }
@@ -1521,6 +1613,13 @@ impl<'a, K, V> ExactSizeIterator for ValuesMut<'a, K, V> {
     }
 }
 
+/// An iterator over the entries of a `IndexMap`.
+///
+/// This `struct` is created by the [`iter`] method on [`IndexMap`]. See its
+/// documentation for more.
+///
+/// [`iter`]: struct.IndexMap.html#method.iter
+/// [`IndexMap`]: struct.IndexMap.html
 pub struct Iter<'a, K: 'a, V: 'a> {
     iter: SliceIter<'a, Bucket<K, V>>,
 }
@@ -1543,6 +1642,28 @@ impl<'a, K, V> ExactSizeIterator for Iter<'a, K, V> {
     }
 }
 
+// FIXME(#26925) Remove in favor of `#[derive(Clone)]`
+impl<'a, K, V> Clone for Iter<'a, K, V> {
+    fn clone(&self) -> Iter<'a, K, V> {
+        Iter { iter: self.iter.clone() }
+    }
+}
+
+impl<'a, K: fmt::Debug, V: fmt::Debug> fmt::Debug for Iter<'a, K, V> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_list()
+            .entries(self.clone())
+            .finish()
+    }
+}
+
+/// A mutable iterator over the entries of a `IndexMap`.
+///
+/// This `struct` is created by the [`iter_mut`] method on [`IndexMap`]. See its
+/// documentation for more.
+///
+/// [`iter_mut`]: struct.IndexMap.html#method.iter_mut
+/// [`IndexMap`]: struct.IndexMap.html
 pub struct IterMut<'a, K: 'a, V: 'a> {
     iter: SliceIterMut<'a, Bucket<K, V>>,
 }
@@ -1565,6 +1686,13 @@ impl<'a, K, V> ExactSizeIterator for IterMut<'a, K, V> {
     }
 }
 
+/// An owning iterator over the entries of a `IndexMap`.
+///
+/// This `struct` is created by the [`into_iter`] method on [`IndexMap`]
+/// (provided by the `IntoIterator` trait). See its documentation for more.
+///
+/// [`into_iter`]: struct.IndexMap.html#method.into_iter
+/// [`IndexMap`]: struct.IndexMap.html
 pub struct IntoIter<K, V> {
     pub(crate) iter: VecIntoIter<Bucket<K, V>>,
 }
@@ -1587,6 +1715,13 @@ impl<K, V> ExactSizeIterator for IntoIter<K, V> {
     }
 }
 
+/// A draining iterator over the entries of a `IndexMap`.
+///
+/// This `struct` is created by the [`drain`] method on [`IndexMap`]. See its
+/// documentation for more.
+///
+/// [`drain`]: struct.IndexMap.html#method.drain
+/// [`IndexMap`]: struct.IndexMap.html
 pub struct Drain<'a, K, V> where K: 'a, V: 'a {
     pub(crate) iter: ::std::vec::Drain<'a, Bucket<K, V>>
 }
@@ -2046,5 +2181,41 @@ mod tests {
         assert_eq!(&mut TestEnum::NonDefaultValue, map.entry(1).or_default());
 
         assert_eq!(&mut TestEnum::DefaultValue, map.entry(2).or_default());
+    }
+
+    #[test]
+    fn keys() {
+        let vec = vec![(1, 'a'), (2, 'b'), (3, 'c')];
+        let map: IndexMap<_, _> = vec.into_iter().collect();
+        let keys: Vec<_> = map.keys().cloned().collect();
+        assert_eq!(keys.len(), 3);
+        assert!(keys.contains(&1));
+        assert!(keys.contains(&2));
+        assert!(keys.contains(&3));
+    }
+
+    #[test]
+    fn values() {
+        let vec = vec![(1, 'a'), (2, 'b'), (3, 'c')];
+        let map: IndexMap<_, _> = vec.into_iter().collect();
+        let values: Vec<_> = map.values().cloned().collect();
+        assert_eq!(values.len(), 3);
+        assert!(values.contains(&'a'));
+        assert!(values.contains(&'b'));
+        assert!(values.contains(&'c'));
+    }
+
+    #[test]
+    fn values_mut() {
+        let vec = vec![(1, 1), (2, 2), (3, 3)];
+        let mut map: IndexMap<_, _> = vec.into_iter().collect();
+        for value in map.values_mut() {
+            *value = (*value) * 2
+        }
+        let values: Vec<_> = map.values().cloned().collect();
+        assert_eq!(values.len(), 3);
+        assert!(values.contains(&2));
+        assert!(values.contains(&4));
+        assert!(values.contains(&6));
     }
 }
