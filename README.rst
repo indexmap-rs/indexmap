@@ -110,11 +110,11 @@ Recent Changes
 
 - 1.1.0
 
-  - Implemented ``Clone`` for ``Keys``, ``Values``, ``Iter`` (for map and set),
-    ``Difference``, ``Intersection``, ``SymmetricDifference`` and ``Union``
+  - Implemented ``Clone`` for ``map::{Iter, Keys, Values}`` and
+    ``set::{Difference, Intersection, Iter, SymmetricDifference, Union}``
 
-  - Implemented ``Debug`` for ``Keys``, ``Values``, ``Iter`` (for map and set),
-    ``Entry``, ``Difference``, ``Intersection``, ``SymmetricDifference`` and ``Union``
+  - Implemented ``Debug`` for ``map::{Entry, IntoIter, Iter, Keys, Values}`` and
+    ``set::{Difference, Intersection, IntoIter, Iter, SymmetricDifference, Union}``
 
 - 1.0.2
 

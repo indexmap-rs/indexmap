@@ -1715,6 +1715,13 @@ impl<K, V> ExactSizeIterator for IntoIter<K, V> {
     }
 }
 
+impl<K: fmt::Debug, V: fmt::Debug> fmt::Debug for IntoIter<K, V> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let iter = self.iter.as_slice().iter().map(Bucket::refs);
+        f.debug_list().entries(iter).finish()
+    }
+}
+
 /// A draining iterator over the entries of a `IndexMap`.
 ///
 /// This `struct` is created by the [`drain`] method on [`IndexMap`]. See its

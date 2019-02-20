@@ -452,6 +452,13 @@ impl<T> ExactSizeIterator for IntoIter<T> {
     }
 }
 
+impl<T: fmt::Debug> fmt::Debug for IntoIter<T> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let iter = self.iter.as_slice().iter().map(Bucket::key_ref);
+        f.debug_list().entries(iter).finish()
+    }
+}
+
 
 /// An iterator over the items of a `IndexSet`.
 ///
