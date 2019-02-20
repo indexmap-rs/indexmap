@@ -108,6 +108,14 @@ Ideas that we already did
 Recent Changes
 ==============
 
+- 1.1.0
+
+  - Implemented ``Clone`` for ``map::{Iter, Keys, Values}`` and
+    ``set::{Difference, Intersection, Iter, SymmetricDifference, Union}``
+
+  - Implemented ``Debug`` for ``map::{Entry, IntoIter, Iter, Keys, Values}`` and
+    ``set::{Difference, Intersection, IntoIter, Iter, SymmetricDifference, Union}``
+
 - 1.0.2
 
   - The new methods ``IndexMap::insert_full`` and ``IndexSet::insert_full`` are

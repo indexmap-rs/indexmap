@@ -423,6 +423,13 @@ impl<T, S> IndexSet<T, S> {
 }
 
 
+/// An owning iterator over the items of a `IndexSet`.
+///
+/// This `struct` is created by the [`into_iter`] method on [`IndexSet`]
+/// (provided by the `IntoIterator` trait). See its documentation for more.
+///
+/// [`IndexSet`]: struct.IndexSet.html
+/// [`into_iter`]: struct.IndexSet.html#method.into_iter
 pub struct IntoIter<T> {
     iter: vec::IntoIter<Bucket<T>>,
 }
@@ -445,7 +452,21 @@ impl<T> ExactSizeIterator for IntoIter<T> {
     }
 }
 
+impl<T: fmt::Debug> fmt::Debug for IntoIter<T> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let iter = self.iter.as_slice().iter().map(Bucket::key_ref);
+        f.debug_list().entries(iter).finish()
+    }
+}
 
+
+/// An iterator over the items of a `IndexSet`.
+///
+/// This `struct` is created by the [`iter`] method on [`IndexSet`].
+/// See its documentation for more.
+///
+/// [`IndexSet`]: struct.IndexSet.html
+/// [`iter`]: struct.IndexSet.html#method.iter
 pub struct Iter<'a, T: 'a> {
     iter: slice::Iter<'a, Bucket<T>>,
 }
@@ -468,6 +489,25 @@ impl<'a, T> ExactSizeIterator for Iter<'a, T> {
     }
 }
 
+impl<'a, T> Clone for Iter<'a, T> {
+    fn clone(&self) -> Self {
+        Iter { iter: self.iter.clone() }
+    }
+}
+
+impl<'a, T: fmt::Debug> fmt::Debug for Iter<'a, T> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_list().entries(self.clone()).finish()
+    }
+}
+
+/// A draining iterator over the items of a `IndexSet`.
+///
+/// This `struct` is created by the [`drain`] method on [`IndexSet`].
+/// See its documentation for more.
+///
+/// [`IndexSet`]: struct.IndexSet.html
+/// [`drain`]: struct.IndexSet.html#method.drain
 pub struct Drain<'a, T: 'a> {
     iter: vec::Drain<'a, Bucket<T>>,
 }
@@ -595,6 +635,13 @@ impl<T, S> IndexSet<T, S>
 }
 
 
+/// A lazy iterator producing elements in the difference of `IndexSet`s.
+///
+/// This `struct` is created by the [`difference`] method on [`IndexSet`].
+/// See its documentation for more.
+///
+/// [`IndexSet`]: struct.IndexSet.html
+/// [`difference`]: struct.IndexSet.html#method.difference
 pub struct Difference<'a, T: 'a, S: 'a> {
     iter: Iter<'a, T>,
     other: &'a IndexSet<T, S>,
@@ -634,7 +681,29 @@ impl<'a, T, S> DoubleEndedIterator for Difference<'a, T, S>
     }
 }
 
+impl<'a, T, S> Clone for Difference<'a, T, S> {
+    fn clone(&self) -> Self {
+        Difference { iter: self.iter.clone(), ..*self }
+    }
+}
 
+impl<'a, T, S> fmt::Debug for Difference<'a, T, S>
+    where T: fmt::Debug + Eq + Hash,
+          S: BuildHasher
+{
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_list().entries(self.clone()).finish()
+    }
+}
+
+
+/// A lazy iterator producing elements in the intersection of `IndexSet`s.
+///
+/// This `struct` is created by the [`intersection`] method on [`IndexSet`].
+/// See its documentation for more.
+///
+/// [`IndexSet`]: struct.IndexSet.html
+/// [`intersection`]: struct.IndexSet.html#method.intersection
 pub struct Intersection<'a, T: 'a, S: 'a> {
     iter: Iter<'a, T>,
     other: &'a IndexSet<T, S>,
@@ -674,7 +743,29 @@ impl<'a, T, S> DoubleEndedIterator for Intersection<'a, T, S>
     }
 }
 
+impl<'a, T, S> Clone for Intersection<'a, T, S> {
+    fn clone(&self) -> Self {
+        Intersection { iter: self.iter.clone(), ..*self }
+    }
+}
 
+impl<'a, T, S> fmt::Debug for Intersection<'a, T, S>
+    where T: fmt::Debug + Eq + Hash,
+          S: BuildHasher,
+{
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_list().entries(self.clone()).finish()
+    }
+}
+
+
+/// A lazy iterator producing elements in the symmetric difference of `IndexSet`s.
+///
+/// This `struct` is created by the [`symmetric_difference`] method on
+/// [`IndexSet`]. See its documentation for more.
+///
+/// [`IndexSet`]: struct.IndexSet.html
+/// [`symmetric_difference`]: struct.IndexSet.html#method.symmetric_difference
 pub struct SymmetricDifference<'a, T: 'a, S1: 'a, S2: 'a> {
     iter: Chain<Difference<'a, T, S2>, Difference<'a, T, S1>>,
 }
@@ -711,7 +802,30 @@ impl<'a, T, S1, S2> DoubleEndedIterator for SymmetricDifference<'a, T, S1, S2>
     }
 }
 
+impl<'a, T, S1, S2> Clone for SymmetricDifference<'a, T, S1, S2> {
+    fn clone(&self) -> Self {
+        SymmetricDifference { iter: self.iter.clone() }
+    }
+}
 
+impl<'a, T, S1, S2> fmt::Debug for SymmetricDifference<'a, T, S1, S2>
+    where T: fmt::Debug + Eq + Hash,
+          S1: BuildHasher,
+          S2: BuildHasher,
+{
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_list().entries(self.clone()).finish()
+    }
+}
+
+
+/// A lazy iterator producing elements in the union of `IndexSet`s.
+///
+/// This `struct` is created by the [`union`] method on [`IndexSet`].
+/// See its documentation for more.
+///
+/// [`IndexSet`]: struct.IndexSet.html
+/// [`union`]: struct.IndexSet.html#method.union
 pub struct Union<'a, T: 'a, S: 'a> {
     iter: Chain<Iter<'a, T>, Difference<'a, T, S>>,
 }
@@ -743,6 +857,21 @@ impl<'a, T, S> DoubleEndedIterator for Union<'a, T, S>
 {
     fn next_back(&mut self) -> Option<Self::Item> {
         self.iter.next_back()
+    }
+}
+
+impl<'a, T, S> Clone for Union<'a, T, S> {
+    fn clone(&self) -> Self {
+        Union { iter: self.iter.clone() }
+    }
+}
+
+impl<'a, T, S> fmt::Debug for Union<'a, T, S>
+    where T: fmt::Debug + Eq + Hash,
+          S: BuildHasher,
+{
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_list().entries(self.clone()).finish()
     }
 }
 
