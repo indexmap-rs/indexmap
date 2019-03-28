@@ -664,6 +664,7 @@ impl<'a, K, V> OccupiedEntry<'a, K, V> {
         replace(self.get_mut(), value)
     }
 
+    #[deprecated(note = "use `swap_remove`")]
     pub fn remove(self) -> V {
         self.swap_remove()
     }
@@ -680,6 +681,7 @@ impl<'a, K, V> OccupiedEntry<'a, K, V> {
     }
 
     /// Remove and return the key, value pair stored in the map for this entry
+    #[deprecated(note = "use `swap_remove_entry`")]
     pub fn remove_entry(self) -> (K, V) {
         self.swap_remove_entry()
     }
@@ -977,6 +979,7 @@ impl<K, V, S> IndexMap<K, V, S>
     /// NOTE: Same as .swap_remove
     ///
     /// Computes in **O(1)** time (average).
+    #[deprecated(note = "use `swap_remove`")]
     pub fn remove<Q: ?Sized>(&mut self, key: &Q) -> Option<V>
         where Q: Hash + Equivalent<K>,
     {
@@ -2173,7 +2176,7 @@ mod tests {
         map_a.insert(2, "2");
         let mut map_b = map_a.clone();
         assert_eq!(map_a, map_b);
-        map_b.remove(&1);
+        map_b.swap_remove(&1);
         assert_ne!(map_a, map_b);
 
         let map_c: IndexMap<_, String> = map_b.into_iter().map(|(k, v)| (k, v.to_owned())).collect();

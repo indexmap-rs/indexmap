@@ -309,6 +309,7 @@ impl<T, S> IndexSet<T, S>
     /// FIXME Same as .swap_remove
     ///
     /// Computes in **O(1)** time (average).
+    #[deprecated(note = "use `swap_remove`")]
     pub fn remove<Q: ?Sized>(&mut self, value: &Q) -> bool
         where Q: Hash + Equivalent<T>,
     {
@@ -1193,7 +1194,7 @@ mod tests {
         set_a.insert(2);
         let mut set_b = set_a.clone();
         assert_eq!(set_a, set_b);
-        set_b.remove(&1);
+        set_b.swap_remove(&1);
         assert_ne!(set_a, set_b);
 
         let set_c: IndexSet<_> = set_b.into_iter().collect();
