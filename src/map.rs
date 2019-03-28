@@ -670,7 +670,7 @@ impl<'a, K, V> OccupiedEntry<'a, K, V> {
 
     /// Remove and return the key, value pair stored in the map for this entry
     pub fn remove_entry(self) -> (K, V) {
-        self.map.remove_found(self.probe, self.index)
+        self.map.swap_remove_found(self.probe, self.index)
     }
 }
 
@@ -992,7 +992,7 @@ impl<K, V, S> IndexMap<K, V, S>
             None => return None,
             Some(t) => t,
         };
-        let (k, v) = self.core.remove_found(probe, found);
+        let (k, v) = self.core.swap_remove_found(probe, found);
         Some((found, k, v))
     }
 
@@ -1111,7 +1111,7 @@ impl<K, V, S> IndexMap<K, V, S> {
             None => return None,
             Some(t) => t,
         };
-        Some(self.core.remove_found(probe, found))
+        Some(self.core.swap_remove_found(probe, found))
     }
 }
 
@@ -1225,7 +1225,7 @@ impl<K, V> OrderMapCore<K, V> {
             Some(t) => t,
         };
         debug_assert_eq!(found, self.entries.len() - 1);
-        Some(self.remove_found(probe, found))
+        Some(self.swap_remove_found(probe, found))
     }
 
     // FIXME: reduce duplication (compare with insert)
@@ -1375,11 +1375,11 @@ impl<K, V> OrderMapCore<K, V> {
         (probe, actual_pos)
     }
 
-    fn remove_found(&mut self, probe: usize, found: usize) -> (K, V) {
-        dispatch_32_vs_64!(self.remove_found_impl(probe, found))
+    fn swap_remove_found(&mut self, probe: usize, found: usize) -> (K, V) {
+        dispatch_32_vs_64!(self.swap_remove_found_impl(probe, found))
     }
 
-    fn remove_found_impl<Sz>(&mut self, probe: usize, found: usize) -> (K, V)
+    fn swap_remove_found_impl<Sz>(&mut self, probe: usize, found: usize) -> (K, V)
         where Sz: Size
     {
         // index `probe` and entry `found` is to be removed
