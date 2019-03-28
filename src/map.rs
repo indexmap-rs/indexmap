@@ -665,11 +665,33 @@ impl<'a, K, V> OccupiedEntry<'a, K, V> {
     }
 
     pub fn remove(self) -> V {
-        self.remove_entry().1
+        self.swap_remove()
+    }
+
+    /// Remove the key, value pair stored in the map for this entry, and return the value.
+    ///
+    /// Like `Vec::swap_remove`, the pair is removed by swapping it with the
+    /// last element of the map and popping it off. **This perturbs
+    /// the postion of what used to be the last element!**
+    ///
+    /// Computes in **O(1)** time (average).
+    pub fn swap_remove(self) -> V {
+        self.swap_remove_entry().1
     }
 
     /// Remove and return the key, value pair stored in the map for this entry
     pub fn remove_entry(self) -> (K, V) {
+        self.swap_remove_entry()
+    }
+
+    /// Remove and return the key, value pair stored in the map for this entry
+    ///
+    /// Like `Vec::swap_remove`, the pair is removed by swapping it with the
+    /// last element of the map and popping it off. **This perturbs
+    /// the postion of what used to be the last element!**
+    ///
+    /// Computes in **O(1)** time (average).
+    pub fn swap_remove_entry(self) -> (K, V) {
         self.map.swap_remove_found(self.probe, self.index)
     }
 }
