@@ -574,7 +574,7 @@ fn ordermap_merge_shuffle(b: &mut Bencher) {
 }
 
 #[bench]
-fn remove_ordermap_100_000(b: &mut Bencher) {
+fn swap_remove_ordermap_100_000(b: &mut Bencher) {
     let map = OMAP_100K.clone();
     let mut keys = Vec::from_iter(map.keys().cloned());
     let mut rng = SmallRng::from_entropy();
@@ -584,6 +584,44 @@ fn remove_ordermap_100_000(b: &mut Bencher) {
         let mut map = map.clone();
         for key in &keys {
             map.swap_remove(key);
+        }
+        assert_eq!(map.len(), 0);
+        map
+    });
+}
+
+#[bench]
+fn shift_remove_ordermap_100_000_few(b: &mut Bencher) {
+    let map = OMAP_100K.clone();
+    let mut keys = Vec::from_iter(map.keys().cloned());
+    let mut rng = SmallRng::from_entropy();
+    keys.shuffle(&mut rng);
+    keys.truncate(50);
+
+    b.iter(|| {
+        let mut map = map.clone();
+        for key in &keys {
+            map.shift_remove(key);
+        }
+        assert_eq!(map.len(), OMAP_100K.len() - keys.len());
+        map
+    });
+}
+
+#[bench]
+fn shift_remove_ordermap_2_000_full(b: &mut Bencher) {
+    let mut keys = KEYS[..2_000].to_vec();
+    let mut map = IndexMap::with_capacity(keys.len());
+    for &key in &keys {
+        map.insert(key, key);
+    }
+    let mut rng = SmallRng::from_entropy();
+    keys.shuffle(&mut rng);
+
+    b.iter(|| {
+        let mut map = map.clone();
+        for key in &keys {
+            map.shift_remove(key);
         }
         assert_eq!(map.len(), 0);
         map
