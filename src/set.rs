@@ -349,6 +349,7 @@ impl<T, S> IndexSet<T, S>
     /// FIXME Same as .swap_take
     ///
     /// Computes in **O(1)** time (average).
+    #[deprecated(note = "use `swap_take` or `shift_take`")]
     pub fn take<Q: ?Sized>(&mut self, value: &Q) -> Option<T>
         where Q: Hash + Equivalent<T>,
     {
@@ -369,6 +370,22 @@ impl<T, S> IndexSet<T, S>
         where Q: Hash + Equivalent<T>,
     {
         self.map.swap_remove_full(value).map(|(_, x, ())| x)
+    }
+
+    /// Removes and returns the value in the set, if any, that is equal to the
+    /// given one.
+    ///
+    /// Like `Vec::remove`, the value is removed by shifting all of the
+    /// elements that follow it, preserving their relative order.
+    /// **This perturbs the index of all of those elements!**
+    ///
+    /// Return `None` if `value` was not in the set.
+    ///
+    /// Computes in **O(n)** time (average).
+    pub fn shift_take<Q: ?Sized>(&mut self, value: &Q) -> Option<T>
+        where Q: Hash + Equivalent<T>,
+    {
+        self.map.shift_remove_full(value).map(|(_, x, ())| x)
     }
 
     /// Remove the value from the set return it and the index it had.
