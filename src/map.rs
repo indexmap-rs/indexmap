@@ -1499,17 +1499,32 @@ impl<K, V> OrderMapCore<K, V> {
         let entry = self.entries.remove(found);
 
         // correct indices that point to the entries that followed the removed entry.
-        // TODO use a heuristic between a full sweep vs. a `probe_loop!` of a few items?
-        if found < self.entries.len() {
-            // was not last element
+        // use a heuristic between a full sweep vs. a `probe_loop!` for every shifted item.
+        if self.indices.len() < (self.entries.len() - found) * 2 {
             // shift all indices greater than `found`
             for pos in self.indices.iter_mut() {
                 if let Some((i, _)) = pos.resolve::<Sz>() {
                     if i > found {
-                        // shift it
+                        // shift the index
                         pos.set_pos::<Sz>(i - 1);
                     }
                 }
+            }
+        } else {
+            // find each following entry to shift its index
+            for (offset, entry) in enumerate(&self.entries[found..]) {
+                let index = found + offset;
+                let mut probe = desired_pos(self.mask, entry.hash);
+                probe_loop!(probe < self.indices.len(), {
+                    let pos = &mut self.indices[probe];
+                    if let Some((i, _)) = pos.resolve::<Sz>() {
+                        if i == index + 1 {
+                            // found it, shift it
+                            pos.set_pos::<Sz>(index);
+                            break;
+                        }
+                    }
+                });
             }
         }
 
@@ -1538,10 +1553,11 @@ impl<K, V> OrderMapCore<K, V> {
             // examine new element in `found` and find it in indices
             let mut probe = desired_pos(self.mask, entry.hash);
             probe_loop!(probe < self.indices.len(), {
-                if let Some((i, _)) = self.indices[probe].resolve::<Sz>() {
+                let pos = &mut self.indices[probe];
+                if let Some((i, _)) = pos.resolve::<Sz>() {
                     if i >= self.entries.len() {
                         // found it
-                        self.indices[probe] = Pos::with_hash::<Sz>(found, entry.hash);
+                        pos.set_pos::<Sz>(found);
                         break;
                     }
                 }
