@@ -29,6 +29,7 @@ bench = false
 
 [dependencies]
 serde = { version = "1.0", optional = true }
+hashmap_core = { version = "0.1.10", optional = true }
 
 [dev-dependencies]
 itertools = "0.7.0" # 0.8 not compiles on Rust 1.18
@@ -39,6 +40,10 @@ lazy_static = "1"
 serde_test = "1.0.5"
 
 [features]
+default = ["std"]
+std = []
+core = ["hashmap_core"]
+
 # Serialization with serde 1.0
 serde-1 = ["serde"]
 

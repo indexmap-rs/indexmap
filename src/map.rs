@@ -9,6 +9,8 @@ use std::hash::Hasher;
 use std::iter::FromIterator;
 use std::collections::hash_map::RandomState;
 use std::ops::RangeFull;
+use std::boxed::Box;
+use std::vec::Vec;
 
 use std::cmp::{max, Ordering};
 use std::fmt;

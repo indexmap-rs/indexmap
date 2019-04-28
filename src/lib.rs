@@ -20,6 +20,34 @@
 //! upgrade policy, where in a later 1.x version, we will raise the minimum
 //! required Rust version.
 
+#![cfg_attr(not(feature = "std"), no_std)]
+
+#[cfg(not(feature = "std"))]
+#[macro_use]
+extern crate alloc;
+
+#[cfg(not(feature = "std"))]
+extern crate hashmap_core;
+
+#[cfg(not(feature = "std"))]
+mod std {
+    pub use core::*;
+
+    pub mod vec {
+        pub use alloc::vec::*;
+    }
+
+    pub mod boxed {
+        pub use alloc::boxed::*;
+    }
+
+    pub mod collections {
+        pub mod hash_map {
+            pub use hashmap_core::map::*;
+        }
+    }
+}
+
 #[macro_use]
 mod macros;
 #[cfg(feature = "serde-1")]
