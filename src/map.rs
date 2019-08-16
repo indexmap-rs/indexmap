@@ -7,7 +7,6 @@ use core::hash::Hash;
 use core::hash::BuildHasher;
 use core::hash::Hasher;
 use core::iter::FromIterator;
-use hashbrown::hash_map::DefaultHashBuilder;
 use core::ops::RangeFull;
 
 use core::cmp::{max, Ordering};
@@ -265,7 +264,15 @@ impl<Sz> ShortHashProxy<Sz>
 /// assert_eq!(letters.get(&'y'), None);
 /// ```
 #[derive(Clone)]
-pub struct IndexMap<K, V, S = DefaultHashBuilder> {
+#[cfg(any(has_std, feature = "force_std", test))]
+pub struct IndexMap<K, V, S = ::std::collections::hash_map::RandomState> {
+    core: OrderMapCore<K, V>,
+    hash_builder: S,
+}
+
+#[derive(Clone)]
+#[cfg(not(any(has_std, feature = "force_std", test)))]
+pub struct IndexMap<K, V, S> {
     core: OrderMapCore<K, V>,
     hash_builder: S,
 }
@@ -356,7 +363,8 @@ macro_rules! probe_loop {
     }
 }
 
-impl<K, V> IndexMap<K, V> {
+#[cfg(any(has_std, feature = "force_std", test))]
+impl<K, V> IndexMap<K, V, ::std::collections::hash_map::RandomState> {
     /// Create a new map. (Does not allocate.)
     pub fn new() -> Self {
         Self::with_capacity(0)

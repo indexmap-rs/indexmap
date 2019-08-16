@@ -25,6 +25,12 @@ indexmap.
 keywords = ["hashmap"]
 categories = ["data-structures"]
 
+[package.metadata.release]
+no-dev-version = true
+
+[package.metadata.docs.rs]
+features = ["serde-1"]
+
 [lib]
 bench = false
 
@@ -48,11 +54,34 @@ serde-1 = ["serde"]
 test_low_transition_point = []
 test_debug = []
 
+force_std = []
+
 [profile.bench]
 debug = true
 
-[package.metadata.release]
-no-dev-version = true
+[build-dependencies]
+autocfg = "0.1.5"
 
-[package.metadata.docs.rs]
-features = ["serde-1"]
+[[test]]
+name = "tests"
+required-features = [ "force_std" ]
+
+[[test]]
+name = "serde"
+required-features = [ "force_std" ]
+
+[[test]]
+name = "quick"
+required-features = [ "force_std" ]
+
+[[test]]
+name = "equivalent_trait"
+required-features = [ "force_std" ]
+
+[[bench]]
+name = "bench"
+required-features = [ "force_std" ]
+
+[[bench]]
+name = "faststring"
+required-features = [ "force_std" ]

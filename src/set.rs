@@ -1,7 +1,6 @@
 //! A hash set implemented using `IndexMap`
 
 use core::cmp::Ordering;
-use hashbrown::hash_map::DefaultHashBuilder;
 use core::fmt;
 use core::iter::{FromIterator, Chain};
 use core::hash::{Hash, BuildHasher};
@@ -57,7 +56,14 @@ type Bucket<T> = super::Bucket<T, ()>;
 /// assert!(!letters.contains(&'y'));
 /// ```
 #[derive(Clone)]
-pub struct IndexSet<T, S = DefaultHashBuilder> {
+#[cfg(any(has_std, feature = "force_std", test))]
+pub struct IndexSet<T, S = ::std::collections::hash_map::RandomState> {
+    map: IndexMap<T, (), S>,
+}
+
+#[derive(Clone)]
+#[cfg(not(any(has_std, feature = "force_std", test)))]
+pub struct IndexSet<T, S> {
     map: IndexMap<T, (), S>,
 }
 
@@ -75,6 +81,7 @@ impl<T, S> fmt::Debug for IndexSet<T, S>
     }
 }
 
+#[cfg(any(has_std, feature = "force_std", test))]
 impl<T> IndexSet<T> {
     /// Create a new set. (Does not allocate.)
     pub fn new() -> Self {

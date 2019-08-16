@@ -14,18 +14,25 @@
 //!
 //! ## Rust Version
 //!
-//! This version of indexmap requires Rust 1.36 or later.
+//! This version of indexmap requires Rust 1.18 or later.
 //!
 //! The indexmap 1.x release series will use a carefully considered version
 //! upgrade policy, where in a later 1.x version, we will raise the minimum
 //! required Rust version.
 
-#![cfg_attr(not(test), no_std)]
+#![cfg_attr(all(not(test), has_alloc, not(feature = "force_std")), no_std)]
 
 #[cfg(test)]
 extern crate core;
 
+#[cfg(all(has_alloc, not(feature = "force_std")))]
 extern crate alloc;
+
+#[cfg(all(has_alloc, has_std))]
+extern crate std;
+
+#[cfg(any(not(has_alloc), feature = "force_std"))]
+extern crate std as alloc;
 
 #[macro_use]
 mod macros;

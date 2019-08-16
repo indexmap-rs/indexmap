@@ -1,4 +1,3 @@
-
 #[macro_use] extern crate indexmap;
 
 use indexmap::Equivalent;

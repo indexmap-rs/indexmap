@@ -2,7 +2,12 @@ language: rust
 sudo: false
 matrix:
   include:
-    - rust: 1.36.0
+    - rust: 1.18.0
+      before_script:
+        # lazy_static 1.1 requires Rust 1.21+, so downgrade it.
+        # (we only use it in benchmarks anyway...)
+        - cargo generate-lockfile
+        - cargo update -p lazy_static --precise 1.0.2
     - rust: stable
       env:
        - FEATURES='serde-1'
@@ -17,6 +22,6 @@ branches:
 script:
   - |
       cargo build --verbose --features "$FEATURES" &&
-      cargo test --verbose --features "$FEATURES" &&
-      cargo test --release --verbose --features "$FEATURES" &&
+      cargo test --verbose --features "$FEATURES",force_std &&
+      cargo test --release --verbose --features "$FEATURES",force_std &&
       cargo doc --verbose --features "$FEATURES"

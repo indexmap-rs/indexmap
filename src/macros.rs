@@ -1,5 +1,5 @@
 #[macro_export]
-/// Create an `IndexMap` from a list of key-value pairs
+/// Create an `IndexMap` from a list of key-value pairs. Requires `std` to be available.
 ///
 /// ## Example
 ///
@@ -21,6 +21,7 @@
 /// assert_eq!(map.keys().next(), Some(&"a"));
 /// # }
 /// ```
+#[cfg(any(has_std, feature = "force_std", test))]
 macro_rules! indexmap {
     (@single $($x:tt)*) => (());
     (@count $($rest:expr),*) => (<[()]>::len(&[$(indexmap!(@single $rest)),*]));
@@ -60,6 +61,7 @@ macro_rules! indexmap {
 /// assert_eq!(set.iter().next(), Some(&"a"));
 /// # }
 /// ```
+#[cfg(any(has_std, feature = "force_std", test))]
 macro_rules! indexset {
     (@single $($x:tt)*) => (());
     (@count $($rest:expr),*) => (<[()]>::len(&[$(indexset!(@single $rest)),*]));
