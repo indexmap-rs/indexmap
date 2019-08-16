@@ -1,5 +1,5 @@
 
-use std::borrow::Borrow;
+use core::borrow::Borrow;
 
 /// Key equivalence trait.
 ///

@@ -1,7 +1,5 @@
 #![feature(test)]
 extern crate test;
-extern crate rand;
-extern crate fnv;
 #[macro_use]
 extern crate lazy_static;
 
@@ -12,8 +10,6 @@ type FnvBuilder = BuildHasherDefault<FnvHasher>;
 
 use test::Bencher;
 use test::black_box;
-
-extern crate indexmap;
 
 use indexmap::IndexMap;
 
@@ -580,7 +576,7 @@ fn remove_ordermap_100_000(b: &mut Bencher) {
     b.iter(|| {
         let mut map = map.clone();
         for key in &keys {
-            map.remove(key).is_some();
+            let _ = map.remove(key).is_some();
         }
         assert_eq!(map.len(), 0);
         map

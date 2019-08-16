@@ -20,6 +20,13 @@
 //! upgrade policy, where in a later 1.x version, we will raise the minimum
 //! required Rust version.
 
+#![cfg_attr(not(test), no_std)]
+
+#[cfg(test)]
+extern crate core;
+
+extern crate alloc;
+
 #[macro_use]
 mod macros;
 #[cfg(feature = "serde-1")]

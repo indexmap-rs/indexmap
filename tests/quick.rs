@@ -1,10 +1,6 @@
 
-extern crate indexmap;
-extern crate itertools;
 #[macro_use]
 extern crate quickcheck;
-
-extern crate fnv;
 
 use indexmap::IndexMap;
 use itertools::Itertools;
@@ -337,7 +333,7 @@ impl Arbitrary for Alpha {
         }).collect())
     }
 
-    fn shrink(&self) -> Box<Iterator<Item=Self>> {
+    fn shrink(&self) -> Box<dyn Iterator<Item=Self>> {
         Box::new((**self).shrink().map(Alpha))
     }
 }
@@ -359,7 +355,7 @@ impl<T> Arbitrary for Large<Vec<T>>
         Large((0..len).map(|_| T::arbitrary(g)).collect())
     }
 
-    fn shrink(&self) -> Box<Iterator<Item=Self>> {
+    fn shrink(&self) -> Box<dyn Iterator<Item=Self>> {
         Box::new((**self).shrink().map(Large))
     }
 }

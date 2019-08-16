@@ -1,23 +1,27 @@
 //! `IndexMap` is a hash table where the iteration order of the key-value
 //! pairs is independent of the hash values of the keys.
 
-pub use mutable_keys::MutableKeys;
+pub use crate::mutable_keys::MutableKeys;
 
-use std::hash::Hash;
-use std::hash::BuildHasher;
-use std::hash::Hasher;
-use std::iter::FromIterator;
-use std::collections::hash_map::RandomState;
-use std::ops::RangeFull;
+use core::hash::Hash;
+use core::hash::BuildHasher;
+use core::hash::Hasher;
+use core::iter::FromIterator;
+use hashbrown::hash_map::DefaultHashBuilder;
+use core::ops::RangeFull;
 
-use std::cmp::{max, Ordering};
-use std::fmt;
-use std::mem::{replace};
-use std::marker::PhantomData;
+use core::cmp::{max, Ordering};
+use core::fmt;
+use core::mem::{replace};
+use core::marker::PhantomData;
 
-use util::{third, ptrdistance, enumerate};
-use equivalent::Equivalent;
-use {
+use alloc::vec::Vec;
+use alloc::boxed::Box;
+use alloc::vec;
+
+use crate::util::{third, ptrdistance, enumerate};
+use crate::equivalent::Equivalent;
+use crate::{
     Bucket,
     HashValue,
 };
@@ -246,6 +250,7 @@ impl<Sz> ShortHashProxy<Sz>
 /// # Examples
 ///
 /// ```
+/// # extern crate std;
 /// use indexmap::IndexMap;
 ///
 /// // count the frequency of each letter in a sentence.
@@ -260,7 +265,7 @@ impl<Sz> ShortHashProxy<Sz>
 /// assert_eq!(letters.get(&'y'), None);
 /// ```
 #[derive(Clone)]
-pub struct IndexMap<K, V, S = RandomState> {
+pub struct IndexMap<K, V, S = DefaultHashBuilder> {
     core: OrderMapCore<K, V>,
     hash_builder: S,
 }
@@ -301,28 +306,28 @@ impl<K, V, S> fmt::Debug for IndexMap<K, V, S>
           S: BuildHasher,
 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        try!(f.debug_map().entries(self.iter()).finish());
+        f.debug_map().entries(self.iter()).finish()?;
         if cfg!(not(feature = "test_debug")) {
             return Ok(());
         }
-        try!(writeln!(f, ""));
+        writeln!(f, "")?;
         for (i, index) in enumerate(&*self.core.indices) {
-            try!(write!(f, "{}: {:?}", i, index));
+            write!(f, "{}: {:?}", i, index)?;
             if let Some(pos) = index.pos() {
                 let hash = self.core.entries[pos].hash;
                 let key = &self.core.entries[pos].key;
                 let desire = desired_pos(self.core.mask, hash);
-                try!(write!(f, ", desired={}, probe_distance={}, key={:?}",
+                write!(f, ", desired={}, probe_distance={}, key={:?}",
                               desire,
                               probe_distance(self.core.mask, hash, i),
-                              key));
+                              key)?;
             }
-            try!(writeln!(f, ""));
+            writeln!(f, "")?;
         }
-        try!(writeln!(f, "cap={}, raw_cap={}, entries.cap={}",
+        writeln!(f, "cap={}, raw_cap={}, entries.cap={}",
                       self.capacity(),
                       self.raw_capacity(),
-                      self.core.entries.capacity()));
+                      self.core.entries.capacity())?;
         Ok(())
     }
 }
@@ -1492,9 +1497,9 @@ fn find_existing_entry_at<Sz>(indices: &[Pos], hash: HashValue,
     });
 }
 
-use std::slice::Iter as SliceIter;
-use std::slice::IterMut as SliceIterMut;
-use std::vec::IntoIter as VecIntoIter;
+use core::slice::Iter as SliceIter;
+use core::slice::IterMut as SliceIterMut;
+use alloc::vec::IntoIter as VecIntoIter;
 
 /// An iterator over the keys of a `IndexMap`.
 ///
@@ -1730,7 +1735,7 @@ impl<K: fmt::Debug, V: fmt::Debug> fmt::Debug for IntoIter<K, V> {
 /// [`drain`]: struct.IndexMap.html#method.drain
 /// [`IndexMap`]: struct.IndexMap.html
 pub struct Drain<'a, K, V> where K: 'a, V: 'a {
-    pub(crate) iter: ::std::vec::Drain<'a, Bucket<K, V>>
+    pub(crate) iter: ::alloc::vec::Drain<'a, Bucket<K, V>>
 }
 
 impl<'a, K, V> Iterator for Drain<'a, K, V> {
@@ -1779,7 +1784,7 @@ impl<K, V, S> IntoIterator for IndexMap<K, V, S>
     }
 }
 
-use std::ops::{Index, IndexMut};
+use core::ops::{Index, IndexMut};
 
 impl<'a, K, V, Q: ?Sized, S> Index<&'a Q> for IndexMap<K, V, S>
     where Q: Hash + Equivalent<K>,
@@ -1900,7 +1905,7 @@ impl<K, V, S> Eq for IndexMap<K, V, S>
 #[cfg(test)]
 mod tests {
     use super::*;
-    use util::enumerate;
+    use crate::util::enumerate;
 
     #[test]
     fn it_works() {

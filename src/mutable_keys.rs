@@ -1,6 +1,6 @@
 
-use std::hash::Hash;
-use std::hash::BuildHasher;
+use core::hash::Hash;
+use core::hash::BuildHasher;
 
 use super::{IndexMap, Equivalent};
 

@@ -1,10 +1,11 @@
-
 #[macro_export]
 /// Create an `IndexMap` from a list of key-value pairs
 ///
 /// ## Example
 ///
 /// ```
+/// # extern crate std;
+/// 
 /// #[macro_use] extern crate indexmap;
 /// # fn main() {
 ///
@@ -43,6 +44,7 @@ macro_rules! indexmap {
 /// ## Example
 ///
 /// ```
+/// # extern crate std;
 /// #[macro_use] extern crate indexmap;
 /// # fn main() {
 ///

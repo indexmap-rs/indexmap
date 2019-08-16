@@ -1,7 +1,6 @@
 
 #[macro_use]
 extern crate indexmap;
-extern crate itertools;
 
 
 #[test]

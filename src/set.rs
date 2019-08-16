@@ -1,14 +1,14 @@
 //! A hash set implemented using `IndexMap`
 
-use std::cmp::Ordering;
-use std::collections::hash_map::RandomState;
-use std::fmt;
-use std::iter::{FromIterator, Chain};
-use std::hash::{Hash, BuildHasher};
-use std::ops::RangeFull;
-use std::ops::{BitAnd, BitOr, BitXor, Sub};
-use std::slice;
-use std::vec;
+use core::cmp::Ordering;
+use hashbrown::hash_map::DefaultHashBuilder;
+use core::fmt;
+use core::iter::{FromIterator, Chain};
+use core::hash::{Hash, BuildHasher};
+use core::ops::RangeFull;
+use core::ops::{BitAnd, BitOr, BitXor, Sub};
+use core::slice;
+use alloc::vec;
 
 use super::{IndexMap, Equivalent};
 
@@ -45,6 +45,7 @@ type Bucket<T> = super::Bucket<T, ()>;
 /// # Examples
 ///
 /// ```
+/// # extern crate std;
 /// use indexmap::IndexSet;
 ///
 /// // Collects which letters appear in a sentence.
@@ -56,7 +57,7 @@ type Bucket<T> = super::Bucket<T, ()>;
 /// assert!(!letters.contains(&'y'));
 /// ```
 #[derive(Clone)]
-pub struct IndexSet<T, S = RandomState> {
+pub struct IndexSet<T, S = DefaultHashBuilder> {
     map: IndexMap<T, (), S>,
 }
 
@@ -942,7 +943,7 @@ impl<'a, 'b, T, S1, S2> Sub<&'b IndexSet<T, S2>> for &'a IndexSet<T, S1>
 #[cfg(test)]
 mod tests {
     use super::*;
-    use util::enumerate;
+    use crate::util::enumerate;
 
     #[test]
     fn it_works() {

@@ -1,6 +1,6 @@
 
-use std::iter::Enumerate;
-use std::mem::size_of;
+use core::iter::Enumerate;
+use core::mem::size_of;
 
 pub fn third<A, B, C>(t: (A, B, C)) -> C { t.2 }
 
