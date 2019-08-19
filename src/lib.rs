@@ -22,7 +22,6 @@
 
 #![cfg_attr(all(not(test), has_alloc, not(feature = "force_std")), no_std)]
 
-#[cfg(test)]
 extern crate core;
 
 #[cfg(all(has_alloc, not(feature = "force_std")))]

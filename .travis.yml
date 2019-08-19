@@ -8,20 +8,28 @@ matrix:
         # (we only use it in benchmarks anyway...)
         - cargo generate-lockfile
         - cargo update -p lazy_static --precise 1.0.2
+      env:
+       - FEATURES='force_std'
     - rust: stable
       env:
        - FEATURES='serde-1'
+       - TEST_FEATURES='force_std'
     - rust: beta
+      env:
+       - TEST_FEATURES='force_std'
     - rust: nightly
+      env:
+       - TEST_FEATURES='force_std'
     - rust: nightly
       env:
        - FEATURES='test_low_transition_point'
+       - TEST_FEATURES='force_std'
 branches:
   only:
     - master
 script:
   - |
       cargo build --verbose --features "$FEATURES" &&
-      cargo test --verbose --features "$FEATURES",force_std &&
-      cargo test --release --verbose --features "$FEATURES",force_std &&
+      cargo test --verbose --features "$FEATURES $TEST_FEATURES" &&
+      cargo test --release --verbose --features "$FEATURES $TEST_FEATURES" &&
       cargo doc --verbose --features "$FEATURES"

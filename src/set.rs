@@ -44,7 +44,7 @@ type Bucket<T> = super::Bucket<T, ()>;
 /// # Examples
 ///
 /// ```
-/// # extern crate std;
+/// # extern crate indexmap;
 /// use indexmap::IndexSet;
 ///
 /// // Collects which letters appear in a sentence.
@@ -950,7 +950,7 @@ impl<'a, 'b, T, S1, S2> Sub<&'b IndexSet<T, S2>> for &'a IndexSet<T, S1>
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::util::enumerate;
+    use util::enumerate;
 
     #[test]
     fn it_works() {

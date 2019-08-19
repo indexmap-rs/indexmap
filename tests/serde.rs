@@ -2,6 +2,8 @@
 
 #[macro_use]
 extern crate indexmap;
+extern crate serde_test;
+extern crate fnv;
 
 use serde_test::{Token, assert_tokens};
 

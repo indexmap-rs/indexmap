@@ -1,7 +1,6 @@
 [package]
 name = "indexmap"
 version = "1.1.0"
-edition = "2018"
 authors = [
 "bluss",
 "Josh Stone <cuviper@gmail.com>"
@@ -35,11 +34,10 @@ features = ["serde-1"]
 bench = false
 
 [dependencies]
-serde = { version = "1.0", optional = true, default-features = false }
-hashbrown = "0.6.0"
+serde = { version = "1.0", optional = true }
 
 [dev-dependencies]
-itertools = "0.8.0"
+itertools = "0.7.0"
 rand = "0.4"
 quickcheck = { version = "0.6", default-features = false }
 fnv = "1.0"

@@ -1,13 +1,15 @@
 
-use serde::ser::{Serialize, Serializer, SerializeMap, SerializeSeq};
-use serde::de::{Deserialize, Deserializer, Error, IntoDeserializer, MapAccess, SeqAccess, Visitor};
-use serde::de::value::{MapDeserializer, SeqDeserializer};
+extern crate serde;
 
-use core::fmt::{self, Formatter};
-use core::hash::{BuildHasher, Hash};
-use core::marker::PhantomData;
+use self::serde::ser::{Serialize, Serializer, SerializeMap, SerializeSeq};
+use self::serde::de::{Deserialize, Deserializer, Error, IntoDeserializer, MapAccess, SeqAccess, Visitor};
+use self::serde::de::value::{MapDeserializer, SeqDeserializer};
 
-use crate::IndexMap;
+use std::fmt::{self, Formatter};
+use std::hash::{BuildHasher, Hash};
+use std::marker::PhantomData;
+
+use IndexMap;
 
 /// Requires crate feature `"serde-1"`
 impl<K, V, S> Serialize for IndexMap<K, V, S>
@@ -18,9 +20,9 @@ impl<K, V, S> Serialize for IndexMap<K, V, S>
     fn serialize<T>(&self, serializer: T) -> Result<T::Ok, T::Error>
         where T: Serializer
     {
-        let mut map_serializer = serializer.serialize_map(Some(self.len()))?;
+        let mut map_serializer = try!(serializer.serialize_map(Some(self.len())));
         for (key, value) in self {
-            map_serializer.serialize_entry(key, value)?;
+            try!(map_serializer.serialize_entry(key, value));
         }
         map_serializer.end()
     }
@@ -44,7 +46,7 @@ impl<'de, K, V, S> Visitor<'de> for OrderMapVisitor<K, V, S>
     {
         let mut values = IndexMap::with_capacity_and_hasher(map.size_hint().unwrap_or(0), S::default());
 
-        while let Some((key, value)) = map.next_entry()? {
+        while let Some((key, value)) = try!(map.next_entry()) {
             values.insert(key, value);
         }
 
@@ -79,7 +81,7 @@ impl<'de, K, V, S, E> IntoDeserializer<'de, E> for IndexMap<K, V, S>
 }
 
 
-use crate::IndexSet;
+use IndexSet;
 
 /// Requires crate feature `"serde-1"`
 impl<T, S> Serialize for IndexSet<T, S>
@@ -89,9 +91,9 @@ impl<T, S> Serialize for IndexSet<T, S>
     fn serialize<Se>(&self, serializer: Se) -> Result<Se::Ok, Se::Error>
         where Se: Serializer
     {
-        let mut set_serializer = serializer.serialize_seq(Some(self.len()))?;
+        let mut set_serializer = try!(serializer.serialize_seq(Some(self.len())));
         for value in self {
-            set_serializer.serialize_element(value)?;
+            try!(set_serializer.serialize_element(value));
         }
         set_serializer.end()
     }
@@ -114,7 +116,7 @@ impl<'de, T, S> Visitor<'de> for OrderSetVisitor<T, S>
     {
         let mut values = IndexSet::with_capacity_and_hasher(seq.size_hint().unwrap_or(0), S::default());
 
-        while let Some(value) = seq.next_element()? {
+        while let Some(value) = try!(seq.next_element()) {
             values.insert(value);
         }
 

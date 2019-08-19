@@ -1,7 +1,7 @@
 //! `IndexMap` is a hash table where the iteration order of the key-value
 //! pairs is independent of the hash values of the keys.
 
-pub use crate::mutable_keys::MutableKeys;
+pub use mutable_keys::MutableKeys;
 
 use core::hash::Hash;
 use core::hash::BuildHasher;
@@ -18,9 +18,9 @@ use alloc::vec::Vec;
 use alloc::boxed::Box;
 use alloc::vec;
 
-use crate::util::{third, ptrdistance, enumerate};
-use crate::equivalent::Equivalent;
-use crate::{
+use util::{third, ptrdistance, enumerate};
+use equivalent::Equivalent;
+use {
     Bucket,
     HashValue,
 };
@@ -249,7 +249,7 @@ impl<Sz> ShortHashProxy<Sz>
 /// # Examples
 ///
 /// ```
-/// # extern crate std;
+/// # extern crate indexmap;
 /// use indexmap::IndexMap;
 ///
 /// // count the frequency of each letter in a sentence.
@@ -313,28 +313,28 @@ impl<K, V, S> fmt::Debug for IndexMap<K, V, S>
           S: BuildHasher,
 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_map().entries(self.iter()).finish()?;
+        try!(f.debug_map().entries(self.iter()).finish());
         if cfg!(not(feature = "test_debug")) {
             return Ok(());
         }
-        writeln!(f, "")?;
+        try!(writeln!(f, ""));
         for (i, index) in enumerate(&*self.core.indices) {
-            write!(f, "{}: {:?}", i, index)?;
+            try!(write!(f, "{}: {:?}", i, index));
             if let Some(pos) = index.pos() {
                 let hash = self.core.entries[pos].hash;
                 let key = &self.core.entries[pos].key;
                 let desire = desired_pos(self.core.mask, hash);
-                write!(f, ", desired={}, probe_distance={}, key={:?}",
+                try!(write!(f, ", desired={}, probe_distance={}, key={:?}",
                               desire,
                               probe_distance(self.core.mask, hash, i),
-                              key)?;
+                              key));
             }
-            writeln!(f, "")?;
+            try!(writeln!(f, ""));
         }
-        writeln!(f, "cap={}, raw_cap={}, entries.cap={}",
+        try!(writeln!(f, "cap={}, raw_cap={}, entries.cap={}",
                       self.capacity(),
                       self.raw_capacity(),
-                      self.core.entries.capacity())?;
+                      self.core.entries.capacity()));
         Ok(())
     }
 }
@@ -1913,7 +1913,7 @@ impl<K, V, S> Eq for IndexMap<K, V, S>
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::util::enumerate;
+    use util::enumerate;
 
     #[test]
     fn it_works() {

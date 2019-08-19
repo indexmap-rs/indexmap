@@ -4,7 +4,6 @@
 /// ## Example
 ///
 /// ```
-/// # extern crate std;
 /// 
 /// #[macro_use] extern crate indexmap;
 /// # fn main() {
@@ -45,7 +44,6 @@ macro_rules! indexmap {
 /// ## Example
 ///
 /// ```
-/// # extern crate std;
 /// #[macro_use] extern crate indexmap;
 /// # fn main() {
 ///
