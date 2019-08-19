@@ -23,8 +23,6 @@
 
 #[macro_use]
 mod macros;
-#[cfg(feature = "rayon")]
-mod rayon;
 #[cfg(feature = "serde-1")]
 mod serde;
 mod util;
@@ -33,6 +31,11 @@ mod mutable_keys;
 
 pub mod set;
 pub mod map;
+
+// Placed after `map` and `set` so new `rayon` methods on the types
+// are documented after the "normal" methods.
+#[cfg(feature = "rayon")]
+mod rayon;
 
 pub use equivalent::Equivalent;
 pub use map::IndexMap;
