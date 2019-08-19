@@ -30,6 +30,13 @@ impl<K, V, S> IntoParallelIterator for IndexMap<K, V, S>
     }
 }
 
+/// A parallel owning iterator over the entries of a `IndexMap`.
+///
+/// This `struct` is created by the [`into_par_iter`] method on [`IndexMap`]
+/// (provided by rayon's `IntoParallelIterator` trait). See its documentation for more.
+///
+/// [`into_par_iter`]: ../struct.IndexMap.html#method.into_par_iter
+/// [`IndexMap`]: ../struct.IndexMap.html
 pub struct IntoParIter<K, V> {
     entries: Vec<Bucket<K, V>>,
 }
@@ -60,6 +67,13 @@ impl<'a, K, V, S> IntoParallelIterator for &'a IndexMap<K, V, S>
     }
 }
 
+/// A parallel iterator over the entries of a `IndexMap`.
+///
+/// This `struct` is created by the [`par_iter`] method on [`IndexMap`]
+/// (provided by rayon's `IntoParallelRefIterator` trait). See its documentation for more.
+///
+/// [`par_iter`]: ../struct.IndexMap.html#method.par_iter
+/// [`IndexMap`]: ../struct.IndexMap.html
 pub struct ParIter<'a, K: 'a, V: 'a> {
     entries: &'a [Bucket<K, V>],
 }
@@ -90,6 +104,13 @@ impl<'a, K, V, S> IntoParallelIterator for &'a mut IndexMap<K, V, S>
     }
 }
 
+/// A parallel mutable iterator over the entries of a `IndexMap`.
+///
+/// This `struct` is created by the [`par_iter_mut`] method on [`IndexMap`]
+/// (provided by rayon's `IntoParallelRefMutIterator` trait). See its documentation for more.
+///
+/// [`par_iter_mut`]: ../struct.IndexMap.html#method.par_iter_mut
+/// [`IndexMap`]: ../struct.IndexMap.html
 pub struct ParIterMut<'a, K: 'a, V: 'a> {
     entries: &'a mut [Bucket<K, V>],
 }
@@ -134,6 +155,13 @@ impl<K, V, S> IndexMap<K, V, S>
     }
 }
 
+/// A parallel iterator over the keys of a `IndexMap`.
+///
+/// This `struct` is created by the [`par_keys`] method on [`IndexMap`]. See its
+/// documentation for more.
+///
+/// [`par_keys`]: ../struct.IndexMap.html#method.par_keys
+/// [`IndexMap`]: ../struct.IndexMap.html
 pub struct ParKeys<'a, K: 'a, V: 'a> {
     entries: &'a [Bucket<K, V>],
 }
@@ -148,6 +176,13 @@ impl<'a, K: Sync, V: Sync> IndexedParallelIterator for ParKeys<'a, K, V> {
     indexed_parallel_iterator_methods!(Bucket::key_ref);
 }
 
+/// A parallel iterator over the values of a `IndexMap`.
+///
+/// This `struct` is created by the [`par_values`] method on [`IndexMap`]. See its
+/// documentation for more.
+///
+/// [`par_values`]: ../struct.IndexMap.html#method.par_values
+/// [`IndexMap`]: ../struct.IndexMap.html
 pub struct ParValues<'a, K: 'a, V: 'a> {
     entries: &'a [Bucket<K, V>],
 }
@@ -199,6 +234,13 @@ impl<K, V, S> IndexMap<K, V, S>
     }
 }
 
+/// A parallel mutable iterator over the values of a `IndexMap`.
+///
+/// This `struct` is created by the [`par_values_mut`] method on [`IndexMap`]. See its
+/// documentation for more.
+///
+/// [`par_values_mut`]: ../struct.IndexMap.html#method.par_values_mut
+/// [`IndexMap`]: ../struct.IndexMap.html
 pub struct ParValuesMut<'a, K: 'a, V: 'a> {
     entries: &'a mut [Bucket<K, V>],
 }

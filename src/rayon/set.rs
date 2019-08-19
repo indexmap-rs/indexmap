@@ -30,6 +30,13 @@ impl<T, S> IntoParallelIterator for IndexSet<T, S>
     }
 }
 
+/// A parallel owning iterator over the items of a `IndexSet`.
+///
+/// This `struct` is created by the [`into_par_iter`] method on [`IndexSet`]
+/// (provided by rayon's `IntoParallelIterator` trait). See its documentation for more.
+///
+/// [`IndexSet`]: ../struct.IndexSet.html
+/// [`into_par_iter`]: ../struct.IndexSet.html#method.into_par_iter
 pub struct IntoParIter<T> {
     entries: Vec<Bucket<T>>,
 }
@@ -59,6 +66,13 @@ impl<'a, T, S> IntoParallelIterator for &'a IndexSet<T, S>
     }
 }
 
+/// A parallel iterator over the items of a `IndexSet`.
+///
+/// This `struct` is created by the [`par_iter`] method on [`IndexSet`]
+/// (provided by rayon's `IntoParallelRefIterator` trait). See its documentation for more.
+///
+/// [`IndexSet`]: ../struct.IndexSet.html
+/// [`par_iter`]: ../struct.IndexSet.html#method.par_iter
 pub struct ParIter<'a, T: 'a> {
     entries: &'a [Bucket<T>],
 }
@@ -147,6 +161,13 @@ impl<T, S> IndexSet<T, S>
     }
 }
 
+/// A parallel iterator producing elements in the difference of `IndexSet`s.
+///
+/// This `struct` is created by the [`par_difference`] method on [`IndexSet`].
+/// See its documentation for more.
+///
+/// [`IndexSet`]: ../struct.IndexSet.html
+/// [`par_difference`]: ../struct.IndexSet.html#method.par_difference
 pub struct ParDifference<'a, T: 'a, S1: 'a, S2: 'a> {
     set1: &'a IndexSet<T, S1>,
     set2: &'a IndexSet<T, S2>,
@@ -170,6 +191,13 @@ impl<'a, T, S1, S2> ParallelIterator for ParDifference<'a, T, S1, S2>
     }
 }
 
+/// A parallel iterator producing elements in the intersection of `IndexSet`s.
+///
+/// This `struct` is created by the [`par_intersection`] method on [`IndexSet`].
+/// See its documentation for more.
+///
+/// [`IndexSet`]: ../struct.IndexSet.html
+/// [`par_intersection`]: ../struct.IndexSet.html#method.par_intersection
 pub struct ParIntersection<'a, T: 'a, S1: 'a, S2: 'a> {
     set1: &'a IndexSet<T, S1>,
     set2: &'a IndexSet<T, S2>,
@@ -193,6 +221,13 @@ impl<'a, T, S1, S2> ParallelIterator for ParIntersection<'a, T, S1, S2>
     }
 }
 
+/// A parallel iterator producing elements in the symmetric difference of `IndexSet`s.
+///
+/// This `struct` is created by the [`par_symmetric_difference`] method on
+/// [`IndexSet`]. See its documentation for more.
+///
+/// [`IndexSet`]: ../struct.IndexSet.html
+/// [`par_symmetric_difference`]: ../struct.IndexSet.html#method.par_symmetric_difference
 pub struct ParSymmetricDifference<'a, T: 'a, S1: 'a, S2: 'a> {
     set1: &'a IndexSet<T, S1>,
     set2: &'a IndexSet<T, S2>,
@@ -216,6 +251,13 @@ impl<'a, T, S1, S2> ParallelIterator for ParSymmetricDifference<'a, T, S1, S2>
     }
 }
 
+/// A parallel iterator producing elements in the union of `IndexSet`s.
+///
+/// This `struct` is created by the [`par_union`] method on [`IndexSet`].
+/// See its documentation for more.
+///
+/// [`IndexSet`]: ../struct.IndexSet.html
+/// [`par_union`]: ../struct.IndexSet.html#method.par_union
 pub struct ParUnion<'a, T: 'a, S1: 'a, S2: 'a> {
     set1: &'a IndexSet<T, S1>,
     set2: &'a IndexSet<T, S2>,
