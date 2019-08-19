@@ -1,3 +1,7 @@
+//! Parallel iterator types for `IndexMap` with [rayon](https://docs.rs/rayon/1.0/rayon).
+//!
+//! You will rarely need to interact with this module directly unless you need to name one of the
+//! iterator types.
 
 use super::collect;
 use super::rayon::prelude::*;

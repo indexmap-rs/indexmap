@@ -4,8 +4,7 @@
 pub use mutable_keys::MutableKeys;
 
 #[cfg(feature = "rayon")]
-pub use rayon::map::{IntoParIter, ParIter, ParIterMut,
-                     ParKeys, ParValues, ParValuesMut};
+pub use ::rayon::map as rayon;
 
 use std::hash::Hash;
 use std::hash::BuildHasher;
