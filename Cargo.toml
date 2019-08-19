@@ -54,4 +54,4 @@ debug = true
 no-dev-version = true
 
 [package.metadata.docs.rs]
-features = ["serde-1"]
+features = ["serde-1", "rayon"]
