@@ -131,18 +131,28 @@ impl<K, V, S> IndexMap<K, V, S>
           V: Sync,
           S: BuildHasher,
 {
+    /// Return a parallel iterator over the keys of the map.
+    ///
+    /// While parallel iterators can process items in any order, their relative order
+    /// in the map is still preserved for operations like `reduce` and `collect`.
     pub fn par_keys(&self) -> ParKeys<K, V> {
         ParKeys {
             entries: self.as_entries(),
         }
     }
 
+    /// Return a parallel iterator over the values of the map.
+    ///
+    /// While parallel iterators can process items in any order, their relative order
+    /// in the map is still preserved for operations like `reduce` and `collect`.
     pub fn par_values(&self) -> ParValues<K, V> {
         ParValues {
             entries: self.as_entries(),
         }
     }
 
+    /// Returns `true` if `self` contains all of the same key-value pairs as `other`,
+    /// regardless of each map's indexed order, determined in parallel.
     pub fn par_eq<V2, S2>(&self, other: &IndexMap<K, V2, S2>) -> bool
         where V: PartialEq<V2>,
               V2: Sync,
@@ -203,12 +213,17 @@ impl<K, V, S> IndexMap<K, V, S>
           V: Send,
           S: BuildHasher,
 {
+    /// Return a parallel iterator over mutable references to the the values of the map
+    ///
+    /// While parallel iterators can process items in any order, their relative order
+    /// in the map is still preserved for operations like `reduce` and `collect`.
     pub fn par_values_mut(&mut self) -> ParValuesMut<K, V> {
         ParValuesMut {
             entries: self.as_entries_mut(),
         }
     }
 
+    /// Sort the map’s key-value pairs in parallel, by the default ordering of the keys.
     pub fn par_sort_keys(&mut self)
         where K: Ord,
     {
@@ -217,6 +232,11 @@ impl<K, V, S> IndexMap<K, V, S>
         });
     }
 
+    /// Sort the map’s key-value pairs in place and in parallel, using the comparison
+    /// function `compare`.
+    ///
+    /// The comparison function receives two key and value pairs to compare (you
+    /// can sort by keys or values or their combination as needed).
     pub fn par_sort_by<F>(&mut self, cmp: F)
         where F: Fn(&K, &V, &K, &V) -> Ordering + Sync,
     {
@@ -225,6 +245,8 @@ impl<K, V, S> IndexMap<K, V, S>
         });
     }
 
+    /// Sort the key-value pairs of the map in parallel and return a by value parallel
+    /// iterator of the key-value pairs with the result.
     pub fn par_sorted_by<F>(self, cmp: F) -> IntoParIter<K, V>
         where F: Fn(&K, &V, &K, &V) -> Ordering + Sync
     {

@@ -92,6 +92,10 @@ impl<T, S> IndexSet<T, S>
     where T: Hash + Eq + Sync,
           S: BuildHasher + Sync,
 {
+    /// Return a parallel iterator over the values that are in `self` but not `other`.
+    ///
+    /// While parallel iterators can process items in any order, their relative order
+    /// in the `self` set is still preserved for operations like `reduce` and `collect`.
     pub fn par_difference<'a, S2>(&'a self, other: &'a IndexSet<T, S2>)
         -> ParDifference<'a, T, S, S2>
         where S2: BuildHasher + Sync
@@ -102,6 +106,13 @@ impl<T, S> IndexSet<T, S>
         }
     }
 
+    /// Return a parallel iterator over the values that are in `self` or `other`,
+    /// but not in both.
+    ///
+    /// While parallel iterators can process items in any order, their relative order
+    /// in the sets is still preserved for operations like `reduce` and `collect`.
+    /// Values from `self` are produced in their original order, followed by
+    /// values from `other` in their original order.
     pub fn par_symmetric_difference<'a, S2>(&'a self, other: &'a IndexSet<T, S2>)
         -> ParSymmetricDifference<'a, T, S, S2>
         where S2: BuildHasher + Sync
@@ -112,6 +123,10 @@ impl<T, S> IndexSet<T, S>
         }
     }
 
+    /// Return a parallel iterator over the values that are in both `self` and `other`.
+    ///
+    /// While parallel iterators can process items in any order, their relative order
+    /// in the `self` set is still preserved for operations like `reduce` and `collect`.
     pub fn par_intersection<'a, S2>(&'a self, other: &'a IndexSet<T, S2>)
         -> ParIntersection<'a, T, S, S2>
         where S2: BuildHasher + Sync
@@ -122,6 +137,12 @@ impl<T, S> IndexSet<T, S>
         }
     }
 
+    /// Return a parallel iterator over all values that are in `self` or `other`.
+    ///
+    /// While parallel iterators can process items in any order, their relative order
+    /// in the sets is still preserved for operations like `reduce` and `collect`.
+    /// Values from `self` are produced in their original order, followed by
+    /// values that are unique to `other` in their original order.
     pub fn par_union<'a, S2>(&'a self, other: &'a IndexSet<T, S2>)
         -> ParUnion<'a, T, S, S2>
         where S2: BuildHasher + Sync
@@ -132,12 +153,16 @@ impl<T, S> IndexSet<T, S>
         }
     }
 
+    /// Returns `true` if `self` contains all of the same values as `other`,
+    /// regardless of each set's indexed order, determined in parallel.
     pub fn par_eq<S2>(&self, other: &IndexSet<T, S2>) -> bool
         where S2: BuildHasher + Sync
     {
         self.len() == other.len() && self.par_is_subset(other)
     }
 
+    /// Returns `true` if `self` has no elements in common with `other`,
+    /// determined in parallel.
     pub fn par_is_disjoint<S2>(&self, other: &IndexSet<T, S2>) -> bool
         where S2: BuildHasher + Sync
     {
@@ -148,12 +173,16 @@ impl<T, S> IndexSet<T, S>
         }
     }
 
+    /// Returns `true` if all elements of `other` are contained in `self`,
+    /// determined in parallel.
     pub fn par_is_superset<S2>(&self, other: &IndexSet<T, S2>) -> bool
         where S2: BuildHasher + Sync
     {
         other.par_is_subset(self)
     }
 
+    /// Returns `true` if all elements of `self` are contained in `other`,
+    /// determined in parallel.
     pub fn par_is_subset<S2>(&self, other: &IndexSet<T, S2>) -> bool
         where S2: BuildHasher + Sync
     {
@@ -286,6 +315,7 @@ impl<T, S> IndexSet<T, S>
     where T: Hash + Eq + Send,
           S: BuildHasher + Send,
 {
+    /// Sort the set’s values in parallel by their default ordering.
     pub fn par_sort(&mut self)
         where T: Ord,
     {
@@ -294,6 +324,7 @@ impl<T, S> IndexSet<T, S>
         });
     }
 
+    /// Sort the set’s values in place and in parallel, using the comparison function `compare`.
     pub fn par_sort_by<F>(&mut self, cmp: F)
         where F: Fn(&T, &T) -> Ordering + Sync,
     {
@@ -302,6 +333,8 @@ impl<T, S> IndexSet<T, S>
         });
     }
 
+    /// Sort the values of the set in parallel and return a by value parallel iterator of
+    /// the values with the result.
     pub fn par_sorted_by<F>(self, cmp: F) -> IntoParIter<T>
         where F: Fn(&T, &T) -> Ordering + Sync
     {
