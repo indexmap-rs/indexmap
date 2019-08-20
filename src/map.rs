@@ -3,6 +3,9 @@
 
 pub use mutable_keys::MutableKeys;
 
+#[cfg(feature = "rayon")]
+pub use ::rayon::map as rayon;
+
 use std::hash::Hash;
 use std::hash::BuildHasher;
 use std::hash::Hasher;
@@ -19,6 +22,7 @@ use util::{third, ptrdistance, enumerate};
 use equivalent::Equivalent;
 use {
     Bucket,
+    Entries,
     HashValue,
 };
 
@@ -278,6 +282,30 @@ struct OrderMapCore<K, V> {
 #[inline(always)]
 fn desired_pos(mask: usize, hash: HashValue) -> usize {
     hash.0 & mask
+}
+
+impl<K, V, S> Entries for IndexMap<K, V, S> {
+    type Entry = Bucket<K, V>;
+
+    fn into_entries(self) -> Vec<Self::Entry> {
+        self.core.entries
+    }
+
+    fn as_entries(&self) -> &[Self::Entry] {
+        &self.core.entries
+    }
+
+    fn as_entries_mut(&mut self) -> &mut [Self::Entry] {
+        &mut self.core.entries
+    }
+
+    fn with_entries<F>(&mut self, f: F)
+        where F: FnOnce(&mut [Self::Entry])
+    {
+        let side_index = self.core.save_hash_index();
+        f(&mut self.core.entries);
+        self.core.restore_hash_index(side_index);
+    }
 }
 
 /// The number of steps that `current` is forward of the desired position for hash
@@ -1437,15 +1465,21 @@ impl<K, V> OrderMapCore<K, V> {
     fn sort_by<F>(&mut self, mut compare: F)
         where F: FnMut(&K, &V, &K, &V) -> Ordering,
     {
+        let side_index = self.save_hash_index();
+        self.entries.sort_by(move |ei, ej| compare(&ei.key, &ei.value, &ej.key, &ej.value));
+        self.restore_hash_index(side_index);
+    }
+
+    fn save_hash_index(&mut self) -> Vec<usize> {
         // Temporarily use the hash field in a bucket to store the old index.
         // Save the old hash values in `side_index`.  Then we can sort
         // `self.entries` in place.
-        let mut side_index = Vec::from_iter(enumerate(&mut self.entries).map(|(i, elt)| {
+        Vec::from_iter(enumerate(&mut self.entries).map(|(i, elt)| {
             replace(&mut elt.hash, HashValue(i)).get()
-        }));
+        }))
+    }
 
-        self.entries.sort_by(move |ei, ej| compare(&ei.key, &ei.value, &ej.key, &ej.value));
-
+    fn restore_hash_index(&mut self, mut side_index: Vec<usize>) {
         // Write back the hash values from side_index and fill `side_index` with
         // a mapping from the old to the new index instead.
         for (i, ent) in enumerate(&mut self.entries) {

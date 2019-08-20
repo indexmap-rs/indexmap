@@ -1,5 +1,8 @@
 //! A hash set implemented using `IndexMap`
 
+#[cfg(feature = "rayon")]
+pub use ::rayon::set as rayon;
+
 use std::cmp::Ordering;
 use std::collections::hash_map::RandomState;
 use std::fmt;
@@ -10,7 +13,7 @@ use std::ops::{BitAnd, BitOr, BitXor, Sub};
 use std::slice;
 use std::vec;
 
-use super::{IndexMap, Equivalent};
+use super::{IndexMap, Equivalent, Entries};
 
 type Bucket<T> = super::Bucket<T, ()>;
 
@@ -58,6 +61,28 @@ type Bucket<T> = super::Bucket<T, ()>;
 #[derive(Clone)]
 pub struct IndexSet<T, S = RandomState> {
     map: IndexMap<T, (), S>,
+}
+
+impl<T, S> Entries for IndexSet<T, S> {
+    type Entry = Bucket<T>;
+
+    fn into_entries(self) -> Vec<Self::Entry> {
+        self.map.into_entries()
+    }
+
+    fn as_entries(&self) -> &[Self::Entry] {
+        self.map.as_entries()
+    }
+
+    fn as_entries_mut(&mut self) -> &mut [Self::Entry] {
+        self.map.as_entries_mut()
+    }
+
+    fn with_entries<F>(&mut self, f: F)
+        where F: FnOnce(&mut [Self::Entry])
+    {
+        self.map.with_entries(f);
+    }
 }
 
 impl<T, S> fmt::Debug for IndexSet<T, S>
