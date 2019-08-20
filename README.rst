@@ -38,7 +38,8 @@ was indexmap, a hash table that has following properties:
 - Fast to iterate.
 - Indexed in compact space.
 - Preserves insertion order **as long** as you don't call ``.remove()``.
-- Uses robin hood hashing just like Rust's libstd ``HashMap``.
+- Uses robin hood hashing just like Rust's libstd ``HashMap`` used to do
+  (before std switched to hashbrown).
 
   - It's the usual backwards shift deletion, but only on the index vector, so
     it's cheaper because it's moving less memory around.
@@ -109,6 +110,10 @@ Recent Changes
 ==============
 
 - 1.1.0
+
+  - Added optional feature `"rayon"` that adds parallel iterator support
+    to `IndexMap` and `IndexSet` using Rayon. This includes all the regular
+    iterators in parallel versions, and parallel sort.
 
   - Implemented ``Clone`` for ``map::{Iter, Keys, Values}`` and
     ``set::{Difference, Intersection, Iter, SymmetricDifference, Union}``
