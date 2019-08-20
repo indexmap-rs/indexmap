@@ -118,6 +118,8 @@ Recent Changes
 
   - Serde trait ``IntoDeserializer`` are implemented for ``IndexMap`` and ``IndexSet``.
 
+  - Minimum Rust version requirement increased to Rust 1.30 for development builds.
+
 - 1.0.2
 
   - The new methods ``IndexMap::insert_full`` and ``IndexSet::insert_full`` are
