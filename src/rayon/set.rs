@@ -2,6 +2,8 @@
 //!
 //! You will rarely need to interact with this module directly unless you need to name one of the
 //! iterator types.
+//!
+//! Requires crate feature `"rayon"`.
 
 use super::collect;
 use super::rayon::prelude::*;
@@ -17,6 +19,7 @@ use IndexSet;
 
 type Bucket<T> = ::Bucket<T, ()>;
 
+/// Requires crate feature `"rayon"`.
 impl<T, S> IntoParallelIterator for IndexSet<T, S>
     where T: Hash + Eq + Send,
           S: BuildHasher,
@@ -60,6 +63,7 @@ impl<T: Send> IndexedParallelIterator for IntoParIter<T> {
 }
 
 
+/// Requires crate feature `"rayon"`.
 impl<'a, T, S> IntoParallelIterator for &'a IndexSet<T, S>
     where T: Hash + Eq + Sync,
           S: BuildHasher,
@@ -109,6 +113,7 @@ impl<'a, T: Sync> IndexedParallelIterator for ParIter<'a, T> {
 }
 
 
+/// Requires crate feature `"rayon"`.
 impl<T, S> IndexSet<T, S>
     where T: Hash + Eq + Sync,
           S: BuildHasher + Sync,
@@ -396,6 +401,7 @@ impl<'a, T, S1, S2> ParallelIterator for ParUnion<'a, T, S1, S2>
 }
 
 
+/// Requires crate feature `"rayon"`.
 impl<T, S> IndexSet<T, S>
     where T: Hash + Eq + Send,
           S: BuildHasher + Send,
@@ -430,6 +436,7 @@ impl<T, S> IndexSet<T, S>
 }
 
 
+/// Requires crate feature `"rayon"`.
 impl<T, S> FromParallelIterator<T> for IndexSet<T, S>
     where T: Eq + Hash + Send,
           S: BuildHasher + Default + Send,
@@ -447,6 +454,7 @@ impl<T, S> FromParallelIterator<T> for IndexSet<T, S>
     }
 }
 
+/// Requires crate feature `"rayon"`.
 impl<T, S> ParallelExtend<(T)> for IndexSet<T, S>
     where T: Eq + Hash + Send,
           S: BuildHasher + Send,
@@ -460,6 +468,7 @@ impl<T, S> ParallelExtend<(T)> for IndexSet<T, S>
     }
 }
 
+/// Requires crate feature `"rayon"`.
 impl<'a, T: 'a, S> ParallelExtend<&'a T> for IndexSet<T, S>
     where T: Copy + Eq + Hash + Send + Sync,
           S: BuildHasher + Send,

@@ -2,6 +2,8 @@
 //!
 //! You will rarely need to interact with this module directly unless you need to name one of the
 //! iterator types.
+//!
+//! Requires crate feature `"rayon"`
 
 use super::collect;
 use super::rayon::prelude::*;
@@ -16,6 +18,7 @@ use Bucket;
 use Entries;
 use IndexMap;
 
+/// Requires crate feature `"rayon"`.
 impl<K, V, S> IntoParallelIterator for IndexMap<K, V, S>
     where K: Hash + Eq + Send,
           V: Send,
@@ -60,6 +63,7 @@ impl<K: Send, V: Send> IndexedParallelIterator for IntoParIter<K, V> {
 }
 
 
+/// Requires crate feature `"rayon"`.
 impl<'a, K, V, S> IntoParallelIterator for &'a IndexMap<K, V, S>
     where K: Hash + Eq + Sync,
           V: Sync,
@@ -110,6 +114,7 @@ impl<'a, K: Sync, V: Sync> IndexedParallelIterator for ParIter<'a, K, V> {
 }
 
 
+/// Requires crate feature `"rayon"`.
 impl<'a, K, V, S> IntoParallelIterator for &'a mut IndexMap<K, V, S>
     where K: Hash + Eq + Sync + Send,
           V: Send,
@@ -147,6 +152,7 @@ impl<'a, K: Sync + Send, V: Send> IndexedParallelIterator for ParIterMut<'a, K, 
 }
 
 
+/// Requires crate feature `"rayon"`.
 impl<K, V, S> IndexMap<K, V, S>
     where K: Hash + Eq + Sync,
           V: Sync,
@@ -255,6 +261,7 @@ impl<'a, K: Sync, V: Sync> IndexedParallelIterator for ParValues<'a, K, V> {
 }
 
 
+/// Requires crate feature `"rayon"`.
 impl<K, V, S> IndexMap<K, V, S>
     where K: Hash + Eq + Send,
           V: Send,
@@ -325,6 +332,7 @@ impl<'a, K: Send, V: Send> IndexedParallelIterator for ParValuesMut<'a, K, V> {
 }
 
 
+/// Requires crate feature `"rayon"`.
 impl<K, V, S> FromParallelIterator<(K, V)> for IndexMap<K, V, S>
     where K: Eq + Hash + Send,
           V: Send,
@@ -343,6 +351,7 @@ impl<K, V, S> FromParallelIterator<(K, V)> for IndexMap<K, V, S>
     }
 }
 
+/// Requires crate feature `"rayon"`.
 impl<K, V, S> ParallelExtend<(K, V)> for IndexMap<K, V, S>
     where K: Eq + Hash + Send,
           V: Send,
@@ -357,6 +366,7 @@ impl<K, V, S> ParallelExtend<(K, V)> for IndexMap<K, V, S>
     }
 }
 
+/// Requires crate feature `"rayon"`.
 impl<'a, K: 'a, V: 'a, S> ParallelExtend<(&'a K, &'a V)> for IndexMap<K, V, S>
     where K: Copy + Eq + Hash + Send + Sync,
           V: Copy + Send + Sync,
