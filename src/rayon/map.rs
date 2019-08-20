@@ -8,6 +8,7 @@ use super::rayon::prelude::*;
 use super::rayon::iter::plumbing::{Consumer, UnindexedConsumer, ProducerCallback};
 
 use std::cmp::Ordering;
+use std::fmt;
 use std::hash::Hash;
 use std::hash::BuildHasher;
 
@@ -39,6 +40,13 @@ impl<K, V, S> IntoParallelIterator for IndexMap<K, V, S>
 /// [`IndexMap`]: ../struct.IndexMap.html
 pub struct IntoParIter<K, V> {
     entries: Vec<Bucket<K, V>>,
+}
+
+impl<K: fmt::Debug, V: fmt::Debug> fmt::Debug for IntoParIter<K, V> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let iter = self.entries.iter().map(Bucket::refs);
+        f.debug_list().entries(iter).finish()
+    }
 }
 
 impl<K: Send, V: Send> ParallelIterator for IntoParIter<K, V> {
@@ -76,6 +84,19 @@ impl<'a, K, V, S> IntoParallelIterator for &'a IndexMap<K, V, S>
 /// [`IndexMap`]: ../struct.IndexMap.html
 pub struct ParIter<'a, K: 'a, V: 'a> {
     entries: &'a [Bucket<K, V>],
+}
+
+impl<'a, K, V> Clone for ParIter<'a, K, V> {
+    fn clone(&self) -> ParIter<'a, K, V> {
+        ParIter { ..*self }
+    }
+}
+
+impl<'a, K: fmt::Debug, V: fmt::Debug> fmt::Debug for ParIter<'a, K, V> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let iter = self.entries.iter().map(Bucket::refs);
+        f.debug_list().entries(iter).finish()
+    }
 }
 
 impl<'a, K: Sync, V: Sync> ParallelIterator for ParIter<'a, K, V> {
@@ -176,6 +197,19 @@ pub struct ParKeys<'a, K: 'a, V: 'a> {
     entries: &'a [Bucket<K, V>],
 }
 
+impl<'a, K, V> Clone for ParKeys<'a, K, V> {
+    fn clone(&self) -> ParKeys<'a, K, V> {
+        ParKeys { ..*self }
+    }
+}
+
+impl<'a, K: fmt::Debug, V> fmt::Debug for ParKeys<'a, K, V> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let iter = self.entries.iter().map(Bucket::key_ref);
+        f.debug_list().entries(iter).finish()
+    }
+}
+
 impl<'a, K: Sync, V: Sync> ParallelIterator for ParKeys<'a, K, V> {
     type Item = &'a K;
 
@@ -195,6 +229,19 @@ impl<'a, K: Sync, V: Sync> IndexedParallelIterator for ParKeys<'a, K, V> {
 /// [`IndexMap`]: ../struct.IndexMap.html
 pub struct ParValues<'a, K: 'a, V: 'a> {
     entries: &'a [Bucket<K, V>],
+}
+
+impl<'a, K, V> Clone for ParValues<'a, K, V> {
+    fn clone(&self) -> ParValues<'a, K, V> {
+        ParValues { ..*self }
+    }
+}
+
+impl<'a, K, V: fmt::Debug> fmt::Debug for ParValues<'a, K, V> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let iter = self.entries.iter().map(Bucket::value_ref);
+        f.debug_list().entries(iter).finish()
+    }
 }
 
 impl<'a, K: Sync, V: Sync> ParallelIterator for ParValues<'a, K, V> {

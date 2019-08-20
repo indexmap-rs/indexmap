@@ -8,6 +8,7 @@ use super::rayon::prelude::*;
 use super::rayon::iter::plumbing::{Consumer, UnindexedConsumer, ProducerCallback};
 
 use std::cmp::Ordering;
+use std::fmt;
 use std::hash::Hash;
 use std::hash::BuildHasher;
 
@@ -39,6 +40,13 @@ impl<T, S> IntoParallelIterator for IndexSet<T, S>
 /// [`into_par_iter`]: ../struct.IndexSet.html#method.into_par_iter
 pub struct IntoParIter<T> {
     entries: Vec<Bucket<T>>,
+}
+
+impl<T: fmt::Debug> fmt::Debug for IntoParIter<T> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let iter = self.entries.iter().map(Bucket::key_ref);
+        f.debug_list().entries(iter).finish()
+    }
 }
 
 impl<T: Send> ParallelIterator for IntoParIter<T> {
@@ -75,6 +83,19 @@ impl<'a, T, S> IntoParallelIterator for &'a IndexSet<T, S>
 /// [`par_iter`]: ../struct.IndexSet.html#method.par_iter
 pub struct ParIter<'a, T: 'a> {
     entries: &'a [Bucket<T>],
+}
+
+impl<'a, T> Clone for ParIter<'a, T> {
+    fn clone(&self) -> Self {
+        ParIter { ..*self }
+    }
+}
+
+impl<'a, T: fmt::Debug> fmt::Debug for ParIter<'a, T> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let iter = self.entries.iter().map(Bucket::key_ref);
+        f.debug_list().entries(iter).finish()
+    }
 }
 
 impl<'a, T: Sync> ParallelIterator for ParIter<'a, T> {
@@ -202,6 +223,22 @@ pub struct ParDifference<'a, T: 'a, S1: 'a, S2: 'a> {
     set2: &'a IndexSet<T, S2>,
 }
 
+impl<'a, T, S1, S2> Clone for ParDifference<'a, T, S1, S2> {
+    fn clone(&self) -> Self {
+        ParDifference { ..*self }
+    }
+}
+
+impl<'a, T, S1, S2> fmt::Debug for ParDifference<'a, T, S1, S2>
+    where T: fmt::Debug + Eq + Hash,
+          S1: BuildHasher,
+          S2: BuildHasher,
+{
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_list().entries(self.set1.difference(&self.set2)).finish()
+    }
+}
+
 impl<'a, T, S1, S2> ParallelIterator for ParDifference<'a, T, S1, S2>
     where T: Hash + Eq + Sync,
           S1: BuildHasher + Sync,
@@ -230,6 +267,22 @@ impl<'a, T, S1, S2> ParallelIterator for ParDifference<'a, T, S1, S2>
 pub struct ParIntersection<'a, T: 'a, S1: 'a, S2: 'a> {
     set1: &'a IndexSet<T, S1>,
     set2: &'a IndexSet<T, S2>,
+}
+
+impl<'a, T, S1, S2> Clone for ParIntersection<'a, T, S1, S2> {
+    fn clone(&self) -> Self {
+        ParIntersection { ..*self }
+    }
+}
+
+impl<'a, T, S1, S2> fmt::Debug for ParIntersection<'a, T, S1, S2>
+    where T: fmt::Debug + Eq + Hash,
+          S1: BuildHasher,
+          S2: BuildHasher,
+{
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_list().entries(self.set1.intersection(&self.set2)).finish()
+    }
 }
 
 impl<'a, T, S1, S2> ParallelIterator for ParIntersection<'a, T, S1, S2>
@@ -262,6 +315,22 @@ pub struct ParSymmetricDifference<'a, T: 'a, S1: 'a, S2: 'a> {
     set2: &'a IndexSet<T, S2>,
 }
 
+impl<'a, T, S1, S2> Clone for ParSymmetricDifference<'a, T, S1, S2> {
+    fn clone(&self) -> Self {
+        ParSymmetricDifference { ..*self }
+    }
+}
+
+impl<'a, T, S1, S2> fmt::Debug for ParSymmetricDifference<'a, T, S1, S2>
+    where T: fmt::Debug + Eq + Hash,
+          S1: BuildHasher,
+          S2: BuildHasher,
+{
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_list().entries(self.set1.symmetric_difference(&self.set2)).finish()
+    }
+}
+
 impl<'a, T, S1, S2> ParallelIterator for ParSymmetricDifference<'a, T, S1, S2>
     where T: Hash + Eq + Sync,
           S1: BuildHasher + Sync,
@@ -290,6 +359,22 @@ impl<'a, T, S1, S2> ParallelIterator for ParSymmetricDifference<'a, T, S1, S2>
 pub struct ParUnion<'a, T: 'a, S1: 'a, S2: 'a> {
     set1: &'a IndexSet<T, S1>,
     set2: &'a IndexSet<T, S2>,
+}
+
+impl<'a, T, S1, S2> Clone for ParUnion<'a, T, S1, S2> {
+    fn clone(&self) -> Self {
+        ParUnion { ..*self }
+    }
+}
+
+impl<'a, T, S1, S2> fmt::Debug for ParUnion<'a, T, S1, S2>
+    where T: fmt::Debug + Eq + Hash,
+          S1: BuildHasher,
+          S2: BuildHasher,
+{
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_list().entries(self.set1.union(&self.set2)).finish()
+    }
 }
 
 impl<'a, T, S1, S2> ParallelIterator for ParUnion<'a, T, S1, S2>
