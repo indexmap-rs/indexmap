@@ -15,6 +15,8 @@ matrix:
        - FEATURES='rayon'
     - rust: beta
     - rust: nightly
+      env:
+       - TEST_BENCH=1
     - rust: nightly
       env:
        - FEATURES='test_low_transition_point'
@@ -27,5 +29,8 @@ script:
       if [ -z "$SKIP_TEST" ]; then
         cargo test --verbose --features "$FEATURES" &&
         cargo test --release --verbose --features "$FEATURES"
+      fi &&
+      if [ -n "$TEST_BENCH" ]; then
+        cargo test -v --benches --no-run --features "$FEATURES"
       fi &&
       cargo doc --verbose --features "$FEATURES"
