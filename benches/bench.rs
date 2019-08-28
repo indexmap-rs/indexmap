@@ -634,7 +634,7 @@ fn pop_ordermap_100_000(b: &mut Bencher) {
 
     b.iter(|| {
         let mut map = map.clone();
-        while map.len() > 0 {
+        while !map.is_empty() {
             map.pop();
         }
         assert_eq!(map.len(), 0);

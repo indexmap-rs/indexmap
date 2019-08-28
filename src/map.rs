@@ -993,7 +993,7 @@ impl<K, V, S> IndexMap<K, V, S>
     pub(crate) fn find<Q: ?Sized>(&self, key: &Q) -> Option<(usize, usize)>
         where Q: Hash + Equivalent<K>,
     {
-        if self.len() == 0 { return None; }
+        if self.is_empty() { return None; }
         let h = hash_elem_using(&self.hash_builder, key);
         self.core.find_using(h, move |entry| { Q::equivalent(key, &entry.key) })
     }
