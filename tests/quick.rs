@@ -120,6 +120,29 @@ quickcheck! {
         }
         map.is_empty()
     }
+
+    fn shift_remove(insert: Vec<u8>, remove: Vec<u8>) -> bool {
+        let mut map = IndexMap::new();
+        for &key in &insert {
+            map.insert(key, ());
+        }
+        for &key in &remove {
+            map.shift_remove(&key);
+        }
+        let elements = &set(&insert) - &set(&remove);
+
+        // Check that order is preserved after removals
+        let mut iter = map.keys();
+        for &key in insert.iter().unique() {
+            if elements.contains(&key) {
+                assert_eq!(Some(key), iter.next().cloned());
+            }
+        }
+
+        map.len() == elements.len() && map.iter().count() == elements.len() &&
+            elements.iter().all(|k| map.get(k).is_some())
+    }
+
 }
 
 use Op::*;
