@@ -2411,7 +2411,7 @@ mod tests {
         let vec = vec![(1, 1), (2, 2), (3, 3)];
         let mut map: IndexMap<_, _> = vec.into_iter().collect();
         for value in map.values_mut() {
-            *value = (*value) * 2
+            *value *= 2
         }
         let values: Vec<_> = map.values().cloned().collect();
         assert_eq!(values.len(), 3);
