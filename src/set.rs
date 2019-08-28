@@ -309,6 +309,7 @@ impl<T, S> IndexSet<T, S>
     /// FIXME Same as .swap_remove
     ///
     /// Computes in **O(1)** time (average).
+    #[deprecated(note = "use `swap_remove` or `shift_remove`")]
     pub fn remove<Q: ?Sized>(&mut self, value: &Q) -> bool
         where Q: Hash + Equivalent<T>,
     {
@@ -330,9 +331,25 @@ impl<T, S> IndexSet<T, S>
         self.map.swap_remove(value).is_some()
     }
 
+    /// Remove the value from the set, and return `true` if it was present.
+    ///
+    /// Like `Vec::remove`, the value is removed by shifting all of the
+    /// elements that follow it, preserving their relative order.
+    /// **This perturbs the index of all of those elements!**
+    ///
+    /// Return `false` if `value` was not in the set.
+    ///
+    /// Computes in **O(n)** time (average).
+    pub fn shift_remove<Q: ?Sized>(&mut self, value: &Q) -> bool
+        where Q: Hash + Equivalent<T>,
+    {
+        self.map.shift_remove(value).is_some()
+    }
+
     /// FIXME Same as .swap_take
     ///
     /// Computes in **O(1)** time (average).
+    #[deprecated(note = "use `swap_take` or `shift_take`")]
     pub fn take<Q: ?Sized>(&mut self, value: &Q) -> Option<T>
         where Q: Hash + Equivalent<T>,
     {
@@ -355,6 +372,22 @@ impl<T, S> IndexSet<T, S>
         self.map.swap_remove_full(value).map(|(_, x, ())| x)
     }
 
+    /// Removes and returns the value in the set, if any, that is equal to the
+    /// given one.
+    ///
+    /// Like `Vec::remove`, the value is removed by shifting all of the
+    /// elements that follow it, preserving their relative order.
+    /// **This perturbs the index of all of those elements!**
+    ///
+    /// Return `None` if `value` was not in the set.
+    ///
+    /// Computes in **O(n)** time (average).
+    pub fn shift_take<Q: ?Sized>(&mut self, value: &Q) -> Option<T>
+        where Q: Hash + Equivalent<T>,
+    {
+        self.map.shift_remove_full(value).map(|(_, x, ())| x)
+    }
+
     /// Remove the value from the set return it and the index it had.
     ///
     /// Like `Vec::swap_remove`, the value is removed by swapping it with the
@@ -366,6 +399,19 @@ impl<T, S> IndexSet<T, S>
         where Q: Hash + Equivalent<T>,
     {
         self.map.swap_remove_full(value).map(|(i, x, ())| (i, x))
+    }
+
+    /// Remove the value from the set return it and the index it had.
+    ///
+    /// Like `Vec::remove`, the value is removed by shifting all of the
+    /// elements that follow it, preserving their relative order.
+    /// **This perturbs the index of all of those elements!**
+    ///
+    /// Return `None` if `value` was not in the set.
+    pub fn shift_remove_full<Q: ?Sized>(&mut self, value: &Q) -> Option<(usize, T)>
+        where Q: Hash + Equivalent<T>,
+    {
+        self.map.shift_remove_full(value).map(|(i, x, ())| (i, x))
     }
 
     /// Remove the last value
@@ -441,9 +487,26 @@ impl<T, S> IndexSet<T, S> {
     ///
     /// Valid indices are *0 <= index < self.len()*
     ///
+    /// Like `Vec::swap_remove`, the value is removed by swapping it with the
+    /// last element of the set and popping it off. **This perturbs
+    /// the postion of what used to be the last element!**
+    ///
     /// Computes in **O(1)** time (average).
     pub fn swap_remove_index(&mut self, index: usize) -> Option<T> {
         self.map.swap_remove_index(index).map(|(x, ())| x)
+    }
+
+    /// Remove the key-value pair by index
+    ///
+    /// Valid indices are *0 <= index < self.len()*
+    ///
+    /// Like `Vec::remove`, the value is removed by shifting all of the
+    /// elements that follow it, preserving their relative order.
+    /// **This perturbs the index of all of those elements!**
+    ///
+    /// Computes in **O(n)** time (average).
+    pub fn shift_remove_index(&mut self, index: usize) -> Option<T> {
+        self.map.shift_remove_index(index).map(|(x, ())| x)
     }
 }
 
@@ -1193,7 +1256,7 @@ mod tests {
         set_a.insert(2);
         let mut set_b = set_a.clone();
         assert_eq!(set_a, set_b);
-        set_b.remove(&1);
+        set_b.swap_remove(&1);
         assert_ne!(set_a, set_b);
 
         let set_c: IndexSet<_> = set_b.into_iter().collect();

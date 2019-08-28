@@ -664,13 +664,59 @@ impl<'a, K, V> OccupiedEntry<'a, K, V> {
         replace(self.get_mut(), value)
     }
 
+    #[deprecated(note = "use `swap_remove` or `shift_remove`")]
     pub fn remove(self) -> V {
-        self.remove_entry().1
+        self.swap_remove()
+    }
+
+    /// Remove the key, value pair stored in the map for this entry, and return the value.
+    ///
+    /// Like `Vec::swap_remove`, the pair is removed by swapping it with the
+    /// last element of the map and popping it off. **This perturbs
+    /// the postion of what used to be the last element!**
+    ///
+    /// Computes in **O(1)** time (average).
+    pub fn swap_remove(self) -> V {
+        self.swap_remove_entry().1
+    }
+
+    /// Remove the key, value pair stored in the map for this entry, and return the value.
+    ///
+    /// Like `Vec::remove`, the pair is removed by shifting all of the
+    /// elements that follow it, preserving their relative order.
+    /// **This perturbs the index of all of those elements!**
+    ///
+    /// Computes in **O(n)** time (average).
+    pub fn shift_remove(self) -> V {
+        self.shift_remove_entry().1
     }
 
     /// Remove and return the key, value pair stored in the map for this entry
+    #[deprecated(note = "use `swap_remove_entry` or `shift_remove_entry`")]
     pub fn remove_entry(self) -> (K, V) {
-        self.map.remove_found(self.probe, self.index)
+        self.swap_remove_entry()
+    }
+
+    /// Remove and return the key, value pair stored in the map for this entry
+    ///
+    /// Like `Vec::swap_remove`, the pair is removed by swapping it with the
+    /// last element of the map and popping it off. **This perturbs
+    /// the postion of what used to be the last element!**
+    ///
+    /// Computes in **O(1)** time (average).
+    pub fn swap_remove_entry(self) -> (K, V) {
+        self.map.swap_remove_found(self.probe, self.index)
+    }
+
+    /// Remove and return the key, value pair stored in the map for this entry
+    ///
+    /// Like `Vec::remove`, the pair is removed by shifting all of the
+    /// elements that follow it, preserving their relative order.
+    /// **This perturbs the index of all of those elements!**
+    ///
+    /// Computes in **O(n)** time (average).
+    pub fn shift_remove_entry(self) -> (K, V) {
+        self.map.shift_remove_found(self.probe, self.index)
     }
 }
 
@@ -955,6 +1001,7 @@ impl<K, V, S> IndexMap<K, V, S>
     /// NOTE: Same as .swap_remove
     ///
     /// Computes in **O(1)** time (average).
+    #[deprecated(note = "use `swap_remove`")]
     pub fn remove<Q: ?Sized>(&mut self, key: &Q) -> Option<V>
         where Q: Hash + Equivalent<K>,
     {
@@ -985,6 +1032,8 @@ impl<K, V, S> IndexMap<K, V, S>
     /// the postion of what used to be the last element!**
     ///
     /// Return `None` if `key` is not in map.
+    ///
+    /// Computes in **O(1)** time (average).
     pub fn swap_remove_full<Q: ?Sized>(&mut self, key: &Q) -> Option<(usize, K, V)>
         where Q: Hash + Equivalent<K>,
     {
@@ -992,7 +1041,44 @@ impl<K, V, S> IndexMap<K, V, S>
             None => return None,
             Some(t) => t,
         };
-        let (k, v) = self.core.remove_found(probe, found);
+        let (k, v) = self.core.swap_remove_found(probe, found);
+        Some((found, k, v))
+    }
+
+    /// Remove the key-value pair equivalent to `key` and return
+    /// its value.
+    ///
+    /// Like `Vec::remove`, the pair is removed by shifting all of the
+    /// elements that follow it, preserving their relative order.
+    /// **This perturbs the index of all of those elements!**
+    ///
+    /// Return `None` if `key` is not in map.
+    ///
+    /// Computes in **O(n)** time (average).
+    pub fn shift_remove<Q: ?Sized>(&mut self, key: &Q) -> Option<V>
+        where Q: Hash + Equivalent<K>,
+    {
+        self.shift_remove_full(key).map(third)
+    }
+
+    /// Remove the key-value pair equivalent to `key` and return it and
+    /// the index it had.
+    ///
+    /// Like `Vec::remove`, the pair is removed by shifting all of the
+    /// elements that follow it, preserving their relative order.
+    /// **This perturbs the index of all of those elements!**
+    ///
+    /// Return `None` if `key` is not in map.
+    ///
+    /// Computes in **O(n)** time (average).
+    pub fn shift_remove_full<Q: ?Sized>(&mut self, key: &Q) -> Option<(usize, K, V)>
+        where Q: Hash + Equivalent<K>,
+    {
+        let (probe, found) = match self.find(key) {
+            None => return None,
+            Some(t) => t,
+        };
+        let (k, v) = self.core.shift_remove_found(probe, found);
         Some((found, k, v))
     }
 
@@ -1103,6 +1189,10 @@ impl<K, V, S> IndexMap<K, V, S> {
     ///
     /// Valid indices are *0 <= index < self.len()*
     ///
+    /// Like `Vec::swap_remove`, the pair is removed by swapping it with the
+    /// last element of the map and popping it off. **This perturbs
+    /// the postion of what used to be the last element!**
+    ///
     /// Computes in **O(1)** time (average).
     pub fn swap_remove_index(&mut self, index: usize) -> Option<(K, V)> {
         let (probe, found) = match self.core.entries.get(index)
@@ -1111,7 +1201,26 @@ impl<K, V, S> IndexMap<K, V, S> {
             None => return None,
             Some(t) => t,
         };
-        Some(self.core.remove_found(probe, found))
+        Some(self.core.swap_remove_found(probe, found))
+    }
+
+    /// Remove the key-value pair by index
+    ///
+    /// Valid indices are *0 <= index < self.len()*
+    ///
+    /// Like `Vec::remove`, the pair is removed by shifting all of the
+    /// elements that follow it, preserving their relative order.
+    /// **This perturbs the index of all of those elements!**
+    ///
+    /// Computes in **O(n)** time (average).
+    pub fn shift_remove_index(&mut self, index: usize) -> Option<(K, V)> {
+        let (probe, found) = match self.core.entries.get(index)
+            .map(|e| self.core.find_existing_entry(e))
+        {
+            None => return None,
+            Some(t) => t,
+        };
+        Some(self.core.shift_remove_found(probe, found))
     }
 }
 
@@ -1225,7 +1334,7 @@ impl<K, V> OrderMapCore<K, V> {
             Some(t) => t,
         };
         debug_assert_eq!(found, self.entries.len() - 1);
-        Some(self.remove_found(probe, found))
+        Some(self.swap_remove_found(probe, found))
     }
 
     // FIXME: reduce duplication (compare with insert)
@@ -1375,11 +1484,61 @@ impl<K, V> OrderMapCore<K, V> {
         (probe, actual_pos)
     }
 
-    fn remove_found(&mut self, probe: usize, found: usize) -> (K, V) {
-        dispatch_32_vs_64!(self.remove_found_impl(probe, found))
+    /// Remove an entry by shifting all entries that follow it
+    fn shift_remove_found(&mut self, probe: usize, found: usize) -> (K, V) {
+        dispatch_32_vs_64!(self.shift_remove_found_impl(probe, found))
     }
 
-    fn remove_found_impl<Sz>(&mut self, probe: usize, found: usize) -> (K, V)
+    fn shift_remove_found_impl<Sz>(&mut self, probe: usize, found: usize) -> (K, V)
+        where Sz: Size
+    {
+        // index `probe` and entry `found` is to be removed
+        // use Vec::remove, but then we need to update the indices that point
+        // to all of the other entries that have to move
+        self.indices[probe] = Pos::none();
+        let entry = self.entries.remove(found);
+
+        // correct indices that point to the entries that followed the removed entry.
+        // use a heuristic between a full sweep vs. a `probe_loop!` for every shifted item.
+        if self.indices.len() < (self.entries.len() - found) * 2 {
+            // shift all indices greater than `found`
+            for pos in self.indices.iter_mut() {
+                if let Some((i, _)) = pos.resolve::<Sz>() {
+                    if i > found {
+                        // shift the index
+                        pos.set_pos::<Sz>(i - 1);
+                    }
+                }
+            }
+        } else {
+            // find each following entry to shift its index
+            for (offset, entry) in enumerate(&self.entries[found..]) {
+                let index = found + offset;
+                let mut probe = desired_pos(self.mask, entry.hash);
+                probe_loop!(probe < self.indices.len(), {
+                    let pos = &mut self.indices[probe];
+                    if let Some((i, _)) = pos.resolve::<Sz>() {
+                        if i == index + 1 {
+                            // found it, shift it
+                            pos.set_pos::<Sz>(index);
+                            break;
+                        }
+                    }
+                });
+            }
+        }
+
+        self.backward_shift_after_removal::<Sz>(probe);
+
+        (entry.key, entry.value)
+    }
+
+    /// Remove an entry by swapping it with the last
+    fn swap_remove_found(&mut self, probe: usize, found: usize) -> (K, V) {
+        dispatch_32_vs_64!(self.swap_remove_found_impl(probe, found))
+    }
+
+    fn swap_remove_found_impl<Sz>(&mut self, probe: usize, found: usize) -> (K, V)
         where Sz: Size
     {
         // index `probe` and entry `found` is to be removed
@@ -1394,10 +1553,11 @@ impl<K, V> OrderMapCore<K, V> {
             // examine new element in `found` and find it in indices
             let mut probe = desired_pos(self.mask, entry.hash);
             probe_loop!(probe < self.indices.len(), {
-                if let Some((i, _)) = self.indices[probe].resolve::<Sz>() {
+                let pos = &mut self.indices[probe];
+                if let Some((i, _)) = pos.resolve::<Sz>() {
                     if i >= self.entries.len() {
                         // found it
-                        self.indices[probe] = Pos::with_hash::<Sz>(found, entry.hash);
+                        pos.set_pos::<Sz>(found);
                         break;
                     }
                 }
@@ -2151,7 +2311,7 @@ mod tests {
         map_a.insert(2, "2");
         let mut map_b = map_a.clone();
         assert_eq!(map_a, map_b);
-        map_b.remove(&1);
+        map_b.swap_remove(&1);
         assert_ne!(map_a, map_b);
 
         let map_c: IndexMap<_, String> = map_b.into_iter().map(|(k, v)| (k, v.to_owned())).collect();

@@ -51,5 +51,5 @@ fn test_string_str() {
 
     assert!(map.contains_key("a"));
     assert!(!map.contains_key("z"));
-    assert_eq!(map.remove("b"), Some(2));
+    assert_eq!(map.swap_remove("b"), Some(2));
 }

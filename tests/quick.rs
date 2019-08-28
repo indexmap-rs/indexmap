@@ -116,7 +116,7 @@ quickcheck! {
         let mut clone = map.clone();
         let drained = clone.drain(..);
         for (key, _) in drained {
-            map.remove(&key);
+            map.swap_remove(&key);
         }
         map.is_empty()
     }
@@ -166,7 +166,7 @@ fn do_ops<K, V, S>(ops: &[Op<K, V>], a: &mut IndexMap<K, V, S>, b: &mut HashMap<
             }
             RemoveEntry(ref k) => {
                 match a.entry(k.clone()) {
-                    OEntry::Occupied(ent) => { ent.remove_entry(); },
+                    OEntry::Occupied(ent) => { ent.swap_remove_entry(); },
                     _ => { }
                 }
                 match b.entry(k.clone()) {
