@@ -1315,9 +1315,7 @@ impl<K, V> OrderMapCore<K, V> {
             // find first empty bucket and insert there
             let mut probe = desired_pos(self.mask, entry_hash);
             probe_loop!(probe < self.indices.len(), {
-                if let Some(_) = self.indices[probe].resolve::<SzNew>() {
-                    /* nothing */
-                } else {
+                if self.indices[probe].is_none() {
                     // empty bucket, insert here
                     self.indices[probe] = Pos::with_hash::<SzNew>(i, entry_hash);
                     return;
