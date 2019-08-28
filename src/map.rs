@@ -333,7 +333,7 @@ impl<K, V, S> fmt::Debug for IndexMap<K, V, S>
         if cfg!(not(feature = "test_debug")) {
             return Ok(());
         }
-        writeln!(f, "")?;
+        writeln!(f)?;
         for (i, index) in enumerate(&*self.core.indices) {
             write!(f, "{}: {:?}", i, index)?;
             if let Some(pos) = index.pos() {
@@ -345,7 +345,7 @@ impl<K, V, S> fmt::Debug for IndexMap<K, V, S>
                        probe_distance(self.core.mask, hash, i),
                        key)?;
             }
-            writeln!(f, "")?;
+            writeln!(f)?;
         }
         writeln!(f, "cap={}, raw_cap={}, entries.cap={}",
                  self.capacity(),
