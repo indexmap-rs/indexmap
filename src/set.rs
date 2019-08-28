@@ -1362,10 +1362,13 @@ mod tests {
         let set_c: IndexSet<_> = (0..6).collect();
         let set_d: IndexSet<_> = (3..9).rev().collect();
 
-        assert_eq!(&set_a & &set_a, set_a);
-        assert_eq!(&set_a | &set_a, set_a);
-        assert_eq!(&set_a ^ &set_a, empty);
-        assert_eq!(&set_a - &set_a, empty);
+        #[allow(clippy::eq_op)]
+        {
+            assert_eq!(&set_a & &set_a, set_a);
+            assert_eq!(&set_a | &set_a, set_a);
+            assert_eq!(&set_a ^ &set_a, empty);
+            assert_eq!(&set_a - &set_a, empty);
+        }
 
         assert_eq!(&set_a & &set_b, empty);
         assert_eq!(&set_b & &set_a, empty);
