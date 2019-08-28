@@ -657,11 +657,11 @@ impl<T, S> Extend<T> for IndexSet<T, S>
 }
 
 impl<'a, T, S> Extend<&'a T> for IndexSet<T, S>
-    where T: Hash + Eq + Copy,
+    where T: Hash + Eq + Copy + 'a,
           S: BuildHasher,
 {
     fn extend<I: IntoIterator<Item=&'a T>>(&mut self, iterable: I) {
-        let iter = iterable.into_iter().map(|&x| x);
+        let iter = iterable.into_iter().cloned(); // FIXME: use `copied` in Rust 1.36
         self.extend(iter);
     }
 }
