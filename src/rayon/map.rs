@@ -412,7 +412,7 @@ mod tests {
         map_a.insert(2, "2");
         let mut map_b = map_a.clone();
         assert!(map_a.par_eq(&map_b));
-        map_b.remove(&1);
+        map_b.swap_remove(&1);
         assert!(!map_a.par_eq(&map_b));
         map_b.insert(3, "3");
         assert!(!map_a.par_eq(&map_b));
