@@ -352,7 +352,7 @@ impl Deref for Alpha {
     fn deref(&self) -> &String { &self.0 }
 }
 
-const ALPHABET: &'static [u8] = b"abcdefghijklmnopqrstuvwxyz";
+const ALPHABET: &[u8] = b"abcdefghijklmnopqrstuvwxyz";
 
 impl Arbitrary for Alpha {
     fn arbitrary<G: Gen>(g: &mut G) -> Self {
