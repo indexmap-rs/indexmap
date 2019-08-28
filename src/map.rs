@@ -2171,7 +2171,7 @@ mod tests {
             let old_map = map.clone();
             map.insert(i, ());
             for key in old_map.keys() {
-                if !map.get(key).is_some() {
+                if map.get(key).is_none() {
                     println!("old_map: {:?}", old_map);
                     println!("map: {:?}", map);
                     panic!("did not find {} in map", key);

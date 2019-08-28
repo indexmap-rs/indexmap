@@ -1106,7 +1106,7 @@ mod tests {
             let old_set = set.clone();
             set.insert(i);
             for value in old_set.iter() {
-                if !set.get(value).is_some() {
+                if set.get(value).is_none() {
                     println!("old_set: {:?}", old_set);
                     println!("set: {:?}", set);
                     panic!("did not find {} in set", value);
