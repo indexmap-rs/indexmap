@@ -19,7 +19,6 @@ use std::hash::{Hash, Hasher};
 
 use std::borrow::Borrow;
 use std::ops::Deref;
-use std::mem;
 
 #[derive(PartialEq, Eq, Copy, Clone)]
 pub struct OneShot<T: ?Sized>(pub T);
@@ -37,7 +36,7 @@ impl<'a, S> From<&'a S> for &'a OneShot<str>
     fn from(s: &'a S) -> Self {
         let s: &str = s.as_ref();
         unsafe {
-            mem::transmute(s)
+            &*(s as *const str as *const OneShot<str>)
         }
     }
 }

@@ -412,7 +412,7 @@ mod tests {
         map_a.insert(2, "2");
         let mut map_b = map_a.clone();
         assert!(map_a.par_eq(&map_b));
-        map_b.remove(&1);
+        map_b.swap_remove(&1);
         assert!(!map_a.par_eq(&map_b));
         map_b.insert(3, "3");
         assert!(!map_a.par_eq(&map_b));
@@ -458,7 +458,7 @@ mod tests {
         let vec = vec![(1, 1), (2, 2), (3, 3)];
         let mut map: IndexMap<_, _> = vec.into_par_iter().collect();
         map.par_values_mut().for_each(|value| {
-            *value = (*value) * 2
+            *value *= 2
         });
         let values: Vec<_> = map.par_values().cloned().collect();
         assert_eq!(values.len(), 3);

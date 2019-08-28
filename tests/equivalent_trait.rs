@@ -13,9 +13,7 @@ impl<A, B, C, D> PartialEq<(A, B)> for Pair<C, D>
           D: PartialEq<B>,
 {
     fn eq(&self, rhs: &(A, B)) -> bool {
-        self.0 == rhs.0 &&
-        self.1 == rhs.1 &&
-        true
+        self.0 == rhs.0 && self.1 == rhs.1
     }
 }
 

@@ -224,7 +224,7 @@ impl<T, S> IndexSet<T, S>
     {
         Difference {
             iter: self.iter(),
-            other: other,
+            other,
         }
     }
 
@@ -250,7 +250,7 @@ impl<T, S> IndexSet<T, S>
     {
         Intersection {
             iter: self.iter(),
-            other: other,
+            other,
         }
     }
 
@@ -657,11 +657,11 @@ impl<T, S> Extend<T> for IndexSet<T, S>
 }
 
 impl<'a, T, S> Extend<&'a T> for IndexSet<T, S>
-    where T: Hash + Eq + Copy,
+    where T: Hash + Eq + Copy + 'a,
           S: BuildHasher,
 {
     fn extend<I: IntoIterator<Item=&'a T>>(&mut self, iterable: I) {
-        let iter = iterable.into_iter().map(|&x| x);
+        let iter = iterable.into_iter().cloned(); // FIXME: use `copied` in Rust 1.36
         self.extend(iter);
     }
 }
@@ -1106,7 +1106,7 @@ mod tests {
             let old_set = set.clone();
             set.insert(i);
             for value in old_set.iter() {
-                if !set.get(value).is_some() {
+                if set.get(value).is_none() {
                     println!("old_set: {:?}", old_set);
                     println!("set: {:?}", set);
                     panic!("did not find {} in set", value);
@@ -1362,10 +1362,14 @@ mod tests {
         let set_c: IndexSet<_> = (0..6).collect();
         let set_d: IndexSet<_> = (3..9).rev().collect();
 
-        assert_eq!(&set_a & &set_a, set_a);
-        assert_eq!(&set_a | &set_a, set_a);
-        assert_eq!(&set_a ^ &set_a, empty);
-        assert_eq!(&set_a - &set_a, empty);
+        // FIXME: #[allow(clippy::eq_op)] in Rust 1.31
+        #[cfg_attr(feature = "cargo-clippy", allow(renamed_and_removed_lints, eq_op))]
+        {
+            assert_eq!(&set_a & &set_a, set_a);
+            assert_eq!(&set_a | &set_a, set_a);
+            assert_eq!(&set_a ^ &set_a, empty);
+            assert_eq!(&set_a - &set_a, empty);
+        }
 
         assert_eq!(&set_a & &set_b, empty);
         assert_eq!(&set_b & &set_a, empty);

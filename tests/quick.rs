@@ -180,21 +180,19 @@ fn do_ops<K, V, S>(ops: &[Op<K, V>], a: &mut IndexMap<K, V, S>, b: &mut HashMap<
                 b.insert(k.clone(), v.clone());
             }
             AddEntry(ref k, ref v) => {
-                a.entry(k.clone()).or_insert(v.clone());
-                b.entry(k.clone()).or_insert(v.clone());
+                a.entry(k.clone()).or_insert_with(|| v.clone());
+                b.entry(k.clone()).or_insert_with(|| v.clone());
             }
             Remove(ref k) => {
                 a.swap_remove(k);
                 b.remove(k);
             }
             RemoveEntry(ref k) => {
-                match a.entry(k.clone()) {
-                    OEntry::Occupied(ent) => { ent.swap_remove_entry(); },
-                    _ => { }
+                if let OEntry::Occupied(ent) = a.entry(k.clone()) {
+                    ent.swap_remove_entry();
                 }
-                match b.entry(k.clone()) {
-                    HEntry::Occupied(ent) => { ent.remove_entry(); },
-                    _ => { }
+                if let HEntry::Occupied(ent) = b.entry(k.clone()) {
+                    ent.remove_entry();
                 }
             }
         }
@@ -352,7 +350,7 @@ impl Deref for Alpha {
     fn deref(&self) -> &String { &self.0 }
 }
 
-const ALPHABET: &'static [u8] = b"abcdefghijklmnopqrstuvwxyz";
+const ALPHABET: &[u8] = b"abcdefghijklmnopqrstuvwxyz";
 
 impl Arbitrary for Alpha {
     fn arbitrary<G: Gen>(g: &mut G) -> Self {
@@ -363,7 +361,7 @@ impl Arbitrary for Alpha {
         }).collect())
     }
 
-    fn shrink(&self) -> Box<Iterator<Item=Self>> {
+    fn shrink(&self) -> Box<dyn Iterator<Item=Self>> {
         Box::new((**self).shrink().map(Alpha))
     }
 }
@@ -385,7 +383,7 @@ impl<T> Arbitrary for Large<Vec<T>>
         Large((0..len).map(|_| T::arbitrary(g)).collect())
     }
 
-    fn shrink(&self) -> Box<Iterator<Item=Self>> {
+    fn shrink(&self) -> Box<dyn Iterator<Item=Self>> {
         Box::new((**self).shrink().map(Large))
     }
 }

@@ -329,28 +329,28 @@ impl<K, V, S> fmt::Debug for IndexMap<K, V, S>
           S: BuildHasher,
 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        try!(f.debug_map().entries(self.iter()).finish());
+        f.debug_map().entries(self.iter()).finish()?;
         if cfg!(not(feature = "test_debug")) {
             return Ok(());
         }
-        try!(writeln!(f, ""));
+        writeln!(f)?;
         for (i, index) in enumerate(&*self.core.indices) {
-            try!(write!(f, "{}: {:?}", i, index));
+            write!(f, "{}: {:?}", i, index)?;
             if let Some(pos) = index.pos() {
                 let hash = self.core.entries[pos].hash;
                 let key = &self.core.entries[pos].key;
                 let desire = desired_pos(self.core.mask, hash);
-                try!(write!(f, ", desired={}, probe_distance={}, key={:?}",
-                              desire,
-                              probe_distance(self.core.mask, hash, i),
-                              key));
+                write!(f, ", desired={}, probe_distance={}, key={:?}",
+                       desire,
+                       probe_distance(self.core.mask, hash, i),
+                       key)?;
             }
-            try!(writeln!(f, ""));
+            writeln!(f)?;
         }
-        try!(writeln!(f, "cap={}, raw_cap={}, entries.cap={}",
-                      self.capacity(),
-                      self.raw_capacity(),
-                      self.core.entries.capacity()));
+        writeln!(f, "cap={}, raw_cap={}, entries.cap={}",
+                 self.capacity(),
+                 self.raw_capacity(),
+                 self.core.entries.capacity())?;
         Ok(())
     }
 }
@@ -410,7 +410,7 @@ impl<K, V, S> IndexMap<K, V, S>
                     indices: Box::new([]),
                     entries: Vec::new(),
                 },
-                hash_builder: hash_builder,
+                hash_builder,
             }
         } else {
             let raw = to_raw_capacity(n);
@@ -421,7 +421,7 @@ impl<K, V, S> IndexMap<K, V, S>
                     indices: vec![Pos::none(); raw_cap].into_boxed_slice(),
                     entries: Vec::with_capacity(usable_capacity(raw_cap)),
                 },
-                hash_builder: hash_builder,
+                hash_builder,
             }
         }
     }
@@ -757,7 +757,7 @@ impl<'a, K, V> VacantEntry<'a, K, V> {
         where Sz: Size
     {
         let index = self.map.entries.len();
-        self.map.entries.push(Bucket { hash: self.hash, key: self.key, value: value });
+        self.map.entries.push(Bucket { hash: self.hash, key: self.key, value });
         let old_pos = Pos::with_hash::<Sz>(index, self.hash);
         self.map.insert_phase_2::<Sz>(self.probe, old_pos);
         &mut {self.map}.entries[index].value
@@ -993,7 +993,7 @@ impl<K, V, S> IndexMap<K, V, S>
     pub(crate) fn find<Q: ?Sized>(&self, key: &Q) -> Option<(usize, usize)>
         where Q: Hash + Equivalent<K>,
     {
-        if self.len() == 0 { return None; }
+        if self.is_empty() { return None; }
         let h = hash_elem_using(&self.hash_builder, key);
         self.core.find_using(h, move |entry| { Q::equivalent(key, &entry.key) })
     }
@@ -1315,9 +1315,7 @@ impl<K, V> OrderMapCore<K, V> {
             // find first empty bucket and insert there
             let mut probe = desired_pos(self.mask, entry_hash);
             probe_loop!(probe < self.indices.len(), {
-                if let Some(_) = self.indices[probe].resolve::<SzNew>() {
-                    /* nothing */
-                } else {
+                if self.indices[probe].is_none() {
                     // empty bucket, insert here
                     self.indices[probe] = Pos::with_hash::<SzNew>(i, entry_hash);
                     return;
@@ -1420,7 +1418,7 @@ impl<K, V> OrderMapCore<K, V> {
             }
             dist += 1;
         });
-        self.entries.push(Bucket { hash: hash, key: key, value: value });
+        self.entries.push(Bucket { hash, key, value });
         insert_kind
     }
 
@@ -2171,7 +2169,7 @@ mod tests {
             let old_map = map.clone();
             map.insert(i, ());
             for key in old_map.keys() {
-                if !map.get(key).is_some() {
+                if map.get(key).is_none() {
                     println!("old_map: {:?}", old_map);
                     println!("map: {:?}", map);
                     panic!("did not find {} in map", key);
@@ -2411,7 +2409,7 @@ mod tests {
         let vec = vec![(1, 1), (2, 2), (3, 3)];
         let mut map: IndexMap<_, _> = vec.into_iter().collect();
         for value in map.values_mut() {
-            *value = (*value) * 2
+            *value *= 2
         }
         let values: Vec<_> = map.values().cloned().collect();
         assert_eq!(values.len(), 3);

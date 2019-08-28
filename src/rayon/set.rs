@@ -513,7 +513,7 @@ mod tests {
         set_a.insert(2);
         let mut set_b = set_a.clone();
         assert!(set_a.par_eq(&set_b));
-        set_b.remove(&1);
+        set_b.swap_remove(&1);
         assert!(!set_a.par_eq(&set_b));
         set_b.insert(3);
         assert!(!set_a.par_eq(&set_b));
