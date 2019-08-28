@@ -1362,7 +1362,8 @@ mod tests {
         let set_c: IndexSet<_> = (0..6).collect();
         let set_d: IndexSet<_> = (3..9).rev().collect();
 
-        #[allow(clippy::eq_op)]
+        // FIXME: #[allow(clippy::eq_op)] in Rust 1.31
+        #[cfg_attr(feature = "cargo-clippy", allow(renamed_and_removed_lints, eq_op))]
         {
             assert_eq!(&set_a & &set_a, set_a);
             assert_eq!(&set_a | &set_a, set_a);
