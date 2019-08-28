@@ -180,21 +180,19 @@ fn do_ops<K, V, S>(ops: &[Op<K, V>], a: &mut IndexMap<K, V, S>, b: &mut HashMap<
                 b.insert(k.clone(), v.clone());
             }
             AddEntry(ref k, ref v) => {
-                a.entry(k.clone()).or_insert(v.clone());
-                b.entry(k.clone()).or_insert(v.clone());
+                a.entry(k.clone()).or_insert_with(|| v.clone());
+                b.entry(k.clone()).or_insert_with(|| v.clone());
             }
             Remove(ref k) => {
                 a.swap_remove(k);
                 b.remove(k);
             }
             RemoveEntry(ref k) => {
-                match a.entry(k.clone()) {
-                    OEntry::Occupied(ent) => { ent.swap_remove_entry(); },
-                    _ => { }
+                if let OEntry::Occupied(ent) = a.entry(k.clone()) {
+                    ent.swap_remove_entry();
                 }
-                match b.entry(k.clone()) {
-                    HEntry::Occupied(ent) => { ent.remove_entry(); },
-                    _ => { }
+                if let HEntry::Occupied(ent) = b.entry(k.clone()) {
+                    ent.remove_entry();
                 }
             }
         }
