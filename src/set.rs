@@ -224,7 +224,7 @@ impl<T, S> IndexSet<T, S>
     {
         Difference {
             iter: self.iter(),
-            other: other,
+            other,
         }
     }
 
@@ -250,7 +250,7 @@ impl<T, S> IndexSet<T, S>
     {
         Intersection {
             iter: self.iter(),
-            other: other,
+            other,
         }
     }
 

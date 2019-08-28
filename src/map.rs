@@ -410,7 +410,7 @@ impl<K, V, S> IndexMap<K, V, S>
                     indices: Box::new([]),
                     entries: Vec::new(),
                 },
-                hash_builder: hash_builder,
+                hash_builder,
             }
         } else {
             let raw = to_raw_capacity(n);
@@ -421,7 +421,7 @@ impl<K, V, S> IndexMap<K, V, S>
                     indices: vec![Pos::none(); raw_cap].into_boxed_slice(),
                     entries: Vec::with_capacity(usable_capacity(raw_cap)),
                 },
-                hash_builder: hash_builder,
+                hash_builder,
             }
         }
     }
@@ -757,7 +757,7 @@ impl<'a, K, V> VacantEntry<'a, K, V> {
         where Sz: Size
     {
         let index = self.map.entries.len();
-        self.map.entries.push(Bucket { hash: self.hash, key: self.key, value: value });
+        self.map.entries.push(Bucket { hash: self.hash, key: self.key, value });
         let old_pos = Pos::with_hash::<Sz>(index, self.hash);
         self.map.insert_phase_2::<Sz>(self.probe, old_pos);
         &mut {self.map}.entries[index].value
@@ -1420,7 +1420,7 @@ impl<K, V> OrderMapCore<K, V> {
             }
             dist += 1;
         });
-        self.entries.push(Bucket { hash: hash, key: key, value: value });
+        self.entries.push(Bucket { hash, key, value });
         insert_kind
     }
 
