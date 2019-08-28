@@ -329,28 +329,28 @@ impl<K, V, S> fmt::Debug for IndexMap<K, V, S>
           S: BuildHasher,
 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        try!(f.debug_map().entries(self.iter()).finish());
+        f.debug_map().entries(self.iter()).finish()?;
         if cfg!(not(feature = "test_debug")) {
             return Ok(());
         }
-        try!(writeln!(f, ""));
+        writeln!(f, "")?;
         for (i, index) in enumerate(&*self.core.indices) {
-            try!(write!(f, "{}: {:?}", i, index));
+            write!(f, "{}: {:?}", i, index)?;
             if let Some(pos) = index.pos() {
                 let hash = self.core.entries[pos].hash;
                 let key = &self.core.entries[pos].key;
                 let desire = desired_pos(self.core.mask, hash);
-                try!(write!(f, ", desired={}, probe_distance={}, key={:?}",
-                              desire,
-                              probe_distance(self.core.mask, hash, i),
-                              key));
+                write!(f, ", desired={}, probe_distance={}, key={:?}",
+                       desire,
+                       probe_distance(self.core.mask, hash, i),
+                       key)?;
             }
-            try!(writeln!(f, ""));
+            writeln!(f, "")?;
         }
-        try!(writeln!(f, "cap={}, raw_cap={}, entries.cap={}",
-                      self.capacity(),
-                      self.raw_capacity(),
-                      self.core.entries.capacity()));
+        writeln!(f, "cap={}, raw_cap={}, entries.cap={}",
+                 self.capacity(),
+                 self.raw_capacity(),
+                 self.core.entries.capacity())?;
         Ok(())
     }
 }
