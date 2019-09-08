@@ -109,6 +109,23 @@ Ideas that we already did
 Recent Changes
 ==============
 
+- 1.2.0
+
+  - Plain ``.remove()`` now has a deprecation message, it informs the user
+    about picking one of the removal functions ``swap_remove`` and ``shift_remove``
+    which have different performance and order semantics.
+    Plain ``.remove()`` will not be removed, the warning message and method
+    will remain until further.
+
+  - Add new method ``shift_remove`` for order preserving removal on the map,
+    and ``shift_take`` for the corresponding operation on the set.
+
+  - Add methods ``swap_remove``, ``swap_remove_entry`` to ``Entry``.
+
+  - Fix indexset/indexmap to support full paths, like ``indexmap::indexmap!()``
+
+  - Internal improvements: fix warnings, deprecations and style lints
+
 - 1.1.0
 
   - Added optional feature `"rayon"` that adds parallel iterator support
