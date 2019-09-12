@@ -2037,7 +2037,7 @@ impl<K, V, S> Extend<(K, V)> for IndexMap<K, V, S>
     /// them in order, which means that for keys that already existed
     /// in the map, their value is updated but it keeps the existing order.
     ///
-    /// New keys are inserted inserted in the order in the sequence. If
+    /// New keys are inserted in the order they appear in the sequence. If
     /// equivalents of a key occur more than once, the last corresponding value
     /// prevails.
     fn extend<I: IntoIterator<Item=(K, V)>>(&mut self, iterable: I) {
