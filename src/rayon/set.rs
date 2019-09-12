@@ -113,7 +113,11 @@ impl<'a, T: Sync> IndexedParallelIterator for ParIter<'a, T> {
 }
 
 
-/// Requires crate feature `"rayon"`.
+/// Parallel iterator methods and other parallel methods.
+///
+/// The following methods **require crate feature `"rayon"`**.
+///
+/// See also the `IntoParallelIterator` implementations.
 impl<T, S> IndexSet<T, S>
     where T: Hash + Eq + Sync,
           S: BuildHasher + Sync,
@@ -401,7 +405,9 @@ impl<'a, T, S1, S2> ParallelIterator for ParUnion<'a, T, S1, S2>
 }
 
 
-/// Requires crate feature `"rayon"`.
+/// Parallel sorting methods.
+///
+/// The following methods **require crate feature `"rayon"`**.
 impl<T, S> IndexSet<T, S>
     where T: Hash + Eq + Send,
           S: BuildHasher + Send,

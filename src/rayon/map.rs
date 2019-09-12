@@ -152,7 +152,11 @@ impl<'a, K: Sync + Send, V: Send> IndexedParallelIterator for ParIterMut<'a, K, 
 }
 
 
-/// Requires crate feature `"rayon"`.
+/// Parallel iterator methods and other parallel methods.
+///
+/// The following methods **require crate feature `"rayon"`**.
+///
+/// See also the `IntoParallelIterator` implementations.
 impl<K, V, S> IndexMap<K, V, S>
     where K: Hash + Eq + Sync,
           V: Sync,
