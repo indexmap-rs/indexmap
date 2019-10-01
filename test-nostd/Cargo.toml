@@ -1,0 +1,12 @@
+[package]
+name = "test-nostd"
+version = "0.1.0"
+authors = ["bluss"]
+publish = false
+
+[dependencies]
+indexmap = { path = ".." }
+# no-std compatible hasher
+ahash = "0.2"
+
+[dev-dependencies]

@@ -3,8 +3,13 @@
 #[cfg(feature = "rayon")]
 pub use ::rayon::set as rayon;
 
-use std::cmp::Ordering;
+#[cfg(not(has_std))]
+use std::vec::Vec;
+
+#[cfg(has_std)]
 use std::collections::hash_map::RandomState;
+
+use std::cmp::Ordering;
 use std::fmt;
 use std::iter::{FromIterator, Chain};
 use std::hash::{Hash, BuildHasher};
@@ -59,7 +64,13 @@ type Bucket<T> = super::Bucket<T, ()>;
 /// assert!(!letters.contains(&'y'));
 /// ```
 #[derive(Clone)]
+#[cfg(has_std)]
 pub struct IndexSet<T, S = RandomState> {
+    map: IndexMap<T, (), S>,
+}
+#[cfg(not(has_std))]
+#[derive(Clone)]
+pub struct IndexSet<T, S> {
     map: IndexMap<T, (), S>,
 }
 
@@ -99,6 +110,7 @@ impl<T, S> fmt::Debug for IndexSet<T, S>
     }
 }
 
+#[cfg(has_std)]
 impl<T> IndexSet<T> {
     /// Create a new set. (Does not allocate.)
     pub fn new() -> Self {

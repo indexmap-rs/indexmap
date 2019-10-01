@@ -24,9 +24,13 @@ indexmap.
 keywords = ["hashmap"]
 categories = ["data-structures"]
 
+build = "build.rs"
+
 [lib]
 bench = false
 
+[build-dependencies]
+autocfg = "0.1.6"
 [dependencies]
 serde = { version = "1.0", optional = true }
 rayon = { version = "1.0", optional = true }
@@ -56,3 +60,6 @@ tag-name = "{{version}}"
 
 [package.metadata.docs.rs]
 features = ["serde-1", "rayon"]
+
+[workspace]
+members = ["test-nostd"]
