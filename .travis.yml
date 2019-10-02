@@ -20,8 +20,15 @@ matrix:
     - rust: nightly
       env:
        - FEATURES='test_low_transition_point'
-    - name: "no_std"
-      rust: stable
+    - rust: 1.36.0
+      env: TARGET=thumbv6m-none-eabi
+      before_script:
+        - rustup target add $TARGET
+        - set -ex
+      script:
+        - cargo build -vv --target=$TARGET
+        - cargo build -v -p test-nostd --target=$TARGET
+    - rust: stable
       env: TARGET=thumbv6m-none-eabi
       before_script:
         - rustup target add $TARGET
