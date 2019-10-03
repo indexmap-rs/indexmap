@@ -306,10 +306,12 @@ impl<T, S> IndexSet<T, S>
         }
     }
 
-    /// FIXME Same as .swap_remove
+    /// Remove the value from the set, and return `true` if it was present.
+    ///
+    /// **NOTE:** This is equivalent to `.swap_remove(value)`, if you want
+    /// to preserve the order of the values in the set, use `.shift_remove(value)`.
     ///
     /// Computes in **O(1)** time (average).
-    #[deprecated(note = "use `swap_remove` or `shift_remove`")]
     pub fn remove<Q: ?Sized>(&mut self, value: &Q) -> bool
         where Q: Hash + Equivalent<T>,
     {
@@ -346,10 +348,14 @@ impl<T, S> IndexSet<T, S>
         self.map.shift_remove(value).is_some()
     }
 
-    /// FIXME Same as .swap_take
+    /// Removes and returns the value in the set, if any, that is equal to the
+    /// given one.
+    ///
+    /// **NOTE:** This is equivalent to `.swap_take(value)`, if you need to
+    /// preserve the order of the values in the set, use `.shift_take(value)`
+    /// instead.
     ///
     /// Computes in **O(1)** time (average).
-    #[deprecated(note = "use `swap_take` or `shift_take`")]
     pub fn take<Q: ?Sized>(&mut self, value: &Q) -> Option<T>
         where Q: Hash + Equivalent<T>,
     {
