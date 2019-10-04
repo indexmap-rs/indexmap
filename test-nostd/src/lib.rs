@@ -1,12 +1,11 @@
 #![no_std]
 
-extern crate indexmap;
-extern crate ahash;
-
 use indexmap::IndexMap;
 use indexmap::IndexSet;
-type Map<K, V> = IndexMap<K, V, ahash::ABuildHasher>;
-type Set<T> = IndexSet<T, ahash::ABuildHasher>;
+use core::hash::BuildHasherDefault;
+use twox_hash::XxHash64;
+type Map<K, V> = IndexMap<K, V, BuildHasherDefault<XxHash64>>;
+type Set<T> = IndexSet<T, BuildHasherDefault<XxHash64>>;
 
 use core::iter::FromIterator;
 
