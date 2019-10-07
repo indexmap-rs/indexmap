@@ -612,12 +612,12 @@ impl<'a, K: 'a + fmt::Debug, V: 'a + fmt::Debug> fmt::Debug for Entry<'a, K, V> 
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
             Entry::Vacant(ref v) => {
-                f.debug_tuple("Entry")
+                f.debug_tuple(stringify!(Entry))
                     .field(v)
                     .finish()
             }
             Entry::Occupied(ref o) => {
-                f.debug_tuple("Entry")
+                f.debug_tuple(stringify!(Entry))
                     .field(o)
                     .finish()
             }
@@ -722,7 +722,7 @@ impl<'a, K, V> OccupiedEntry<'a, K, V> {
 
 impl<'a, K: 'a + fmt::Debug, V: 'a + fmt::Debug> fmt::Debug for OccupiedEntry<'a, K, V> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_struct("OccupiedEntry")
+        f.debug_struct(stringify!(OccupiedEntry))
             .field("key", self.key())
             .field("value", self.get())
             .finish()
@@ -766,7 +766,7 @@ impl<'a, K, V> VacantEntry<'a, K, V> {
 
 impl<'a, K: 'a + fmt::Debug, V: 'a> fmt::Debug for VacantEntry<'a, K, V> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_tuple("VacantEntry")
+        f.debug_tuple(stringify!(VacantEntry))
             .field(self.key())
             .finish()
     }
