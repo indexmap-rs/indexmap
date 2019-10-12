@@ -1,4 +1,5 @@
 
+#[cfg(has_std)]
 #[macro_export(local_inner_macros)]
 /// Create an `IndexMap` from a list of key-value pairs
 ///
@@ -37,6 +38,7 @@ macro_rules! indexmap {
     };
 }
 
+#[cfg(has_std)]
 #[macro_export(local_inner_macros)]
 /// Create an `IndexSet` from a list of values
 ///
