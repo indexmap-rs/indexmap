@@ -21,12 +21,16 @@ This crate was initially published under the name ordermap, but it was renamed t
 indexmap.
 """
 
-keywords = ["hashmap"]
-categories = ["data-structures"]
+keywords = ["hashmap", "no_std"]
+categories = ["data-structures", "no-std"]
+
+build = "build.rs"
 
 [lib]
 bench = false
 
+[build-dependencies]
+autocfg = "0.1.6"
 [dependencies]
 serde = { version = "1.0", optional = true }
 rayon = { version = "1.0", optional = true }
@@ -56,3 +60,6 @@ tag-name = "{{version}}"
 
 [package.metadata.docs.rs]
 features = ["serde-1", "rayon"]
+
+[workspace]
+members = ["test-nostd"]

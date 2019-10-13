@@ -1,0 +1,13 @@
+[package]
+name = "test-nostd"
+version = "0.1.0"
+authors = ["bluss"]
+publish = false
+edition = "2018"
+
+[dependencies]
+indexmap = { path = ".." }
+# no-std compatible hasher
+twox-hash = { version = "1.5", default-features = false }
+
+[dev-dependencies]

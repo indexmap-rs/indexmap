@@ -1,6 +1,11 @@
 //! `IndexMap` is a hash table where the iteration order of the key-value
 //! pairs is independent of the hash values of the keys.
 
+#[cfg(not(has_std))]
+use alloc::boxed::Box;
+#[cfg(not(has_std))]
+use std::vec::Vec;
+
 pub use mutable_keys::MutableKeys;
 
 #[cfg(feature = "rayon")]
@@ -10,8 +15,10 @@ use std::hash::Hash;
 use std::hash::BuildHasher;
 use std::hash::Hasher;
 use std::iter::FromIterator;
-use std::collections::hash_map::RandomState;
 use std::ops::RangeFull;
+
+#[cfg(has_std)]
+use std::collections::hash_map::RandomState;
 
 use std::cmp::{max, Ordering};
 use std::fmt;
@@ -264,7 +271,14 @@ impl<Sz> ShortHashProxy<Sz>
 /// assert_eq!(letters.get(&'y'), None);
 /// ```
 #[derive(Clone)]
+#[cfg(has_std)]
 pub struct IndexMap<K, V, S = RandomState> {
+    core: OrderMapCore<K, V>,
+    hash_builder: S,
+}
+#[derive(Clone)]
+#[cfg(not(has_std))]
+pub struct IndexMap<K, V, S> {
     core: OrderMapCore<K, V>,
     hash_builder: S,
 }
@@ -379,6 +393,7 @@ macro_rules! probe_loop {
     }
 }
 
+#[cfg(has_std)]
 impl<K, V> IndexMap<K, V> {
     /// Create a new map. (Does not allocate.)
     pub fn new() -> Self {
