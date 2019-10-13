@@ -12,14 +12,34 @@
 //! [`IndexSet`]: set/struct.IndexSet.html
 //!
 //!
+//!
 //! ## Rust Version
 //!
 //! This version of indexmap requires Rust 1.18 or later, or 1.30+ for
-//! development builds.
+//! development builds, and Rust 1.36+ for using with `alloc` (without `std`),
+//! see below.
 //!
 //! The indexmap 1.x release series will use a carefully considered version
 //! upgrade policy, where in a later 1.x version, we will raise the minimum
 //! required Rust version.
+//!
+//! ## No Standard Library Targets
+//!
+//! From Rust 1.36, this crate supports being built without `std`, requiring
+//! `alloc` instead. This is enabled automatically when it is detected that
+//! `std` is not available. There is no crate feature to enable/disable to
+//! trigger this. It can be tested by building for a std-less target.
+//!
+//! - Creating maps and sets using [`new`][IndexMap::new] and
+//! [`with_capacity`][IndexMap::with_capacity] is unavailable without `std`.  
+//!   Use methods [`IndexMap::default`][def],
+//!   [`with_hasher`][IndexMap::with_hasher],
+//!   [`with_capacity_and_hasher`][IndexMap::with_capacity_and_hasher] instead.
+//!   A no-std compatible hasher will be needed as well, for example
+//!   from the crate `twox-hash`.
+//! - Macros [`indexmap!`] and [`indexset!`] are unavailable without `std`.
+//!
+//! [def]: map/struct.IndexMap.html#impl-Default
 
 #[cfg(not(has_std))]
 #[macro_use(vec)]
