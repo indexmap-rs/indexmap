@@ -21,8 +21,8 @@ This crate was initially published under the name ordermap, but it was renamed t
 indexmap.
 """
 
-keywords = ["hashmap"]
-categories = ["data-structures"]
+keywords = ["hashmap", "no_std"]
+categories = ["data-structures", "no-std"]
 
 build = "build.rs"
 
