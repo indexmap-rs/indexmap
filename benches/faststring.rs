@@ -21,6 +21,7 @@ use std::borrow::Borrow;
 use std::ops::Deref;
 
 #[derive(PartialEq, Eq, Copy, Clone)]
+#[repr(transparent)]
 pub struct OneShot<T: ?Sized>(pub T);
 
 impl Hash for OneShot<str>
