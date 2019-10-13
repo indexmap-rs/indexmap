@@ -664,7 +664,9 @@ impl<'a, K, V> OccupiedEntry<'a, K, V> {
         replace(self.get_mut(), value)
     }
 
-    #[deprecated(note = "use `swap_remove` or `shift_remove`")]
+    /// Remove the key, value pair stored in the map for this entry, and return the value.
+    ///
+    /// **NOTE:** This is equivalent to `.swap_remove()`.
     pub fn remove(self) -> V {
         self.swap_remove()
     }
@@ -692,7 +694,8 @@ impl<'a, K, V> OccupiedEntry<'a, K, V> {
     }
 
     /// Remove and return the key, value pair stored in the map for this entry
-    #[deprecated(note = "use `swap_remove_entry` or `shift_remove_entry`")]
+    ///
+    /// **NOTE:** This is equivalent to `.swap_remove_entry()`.
     pub fn remove_entry(self) -> (K, V) {
         self.swap_remove_entry()
     }
@@ -998,10 +1001,14 @@ impl<K, V, S> IndexMap<K, V, S>
         self.core.find_using(h, move |entry| { Q::equivalent(key, &entry.key) })
     }
 
-    /// NOTE: Same as .swap_remove
+    /// Remove the key-value pair equivalent to `key` and return
+    /// its value.
+    ///
+    /// **NOTE:** This is equivalent to `.swap_remove(key)`, if you need to
+    /// preserve the order of the keys in the map, use `.shift_remove(key)`
+    /// instead.
     ///
     /// Computes in **O(1)** time (average).
-    #[deprecated(note = "use `swap_remove`")]
     pub fn remove<Q: ?Sized>(&mut self, key: &Q) -> Option<V>
         where Q: Hash + Equivalent<K>,
     {
