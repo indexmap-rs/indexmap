@@ -15,7 +15,8 @@ indexmap
 .. |rustc| image:: https://img.shields.io/badge/rust-1.18%2B-orange.svg
 .. _rustc: https://img.shields.io/badge/rust-1.18%2B-orange.svg
 
-A safe, pure-Rust hash table which preserves insertion order.
+A safe, pure-Rust hash table which preserves (in a limited sense) insertion
+order.
 
 This crate implements compact map and set data-structures,
 where the iteration order of the keys is independent from their hash or
@@ -72,30 +73,6 @@ which is roughly:
 
 .. _PR45282: https://github.com/rust-lang/rust/pull/45282
 
-Interesting Features
---------------------
-
-- Insertion order is preserved (``.swap_remove()`` perturbs the order, like the method name says).
-- Implements ``.pop() -> Option<(K, V)>`` in O(1) time.
-- ``IndexMap::new()`` is empty and uses no allocation until you insert something.
-- Lookup key-value pairs by index and vice versa.
-- No ``unsafe``.
-- Supports ``IndexMut``.
-
-
-Where to go from here?
-----------------------
-
-- Ideas and PRs for how to implement insertion-order preserving remove (for example tombstones)
-  are welcome. The plan is to split the crate into two hash table implementations
-  a) the current compact index space version and b) the full insertion order version.
-
-
-Ideas that we already did
--------------------------
-
-- It can be an *indexable* ordered map in the current fashion
-  (This was implemented in 0.2.0, for potential use as a graph datastructure).
 
 - Idea for more cache efficient lookup (This was implemented in 0.1.2).
 
@@ -108,6 +85,16 @@ Ideas that we already did
 
 Recent Changes
 ==============
+
+- 1.3.0
+
+  - The deprecation messages in the previous version have been removed.
+    (The methods have not otherwise changed.) Docs for removal methods have been
+    improved.
+  - From Rust 1.36, this crate supports being built **without std**, requiring
+    ``alloc`` instead. This is enabled automatically when it is detected that
+    ``std`` is not available. There is no crate feature to enable/disable to
+    trigger this. The new build-dep ``autocfg`` enables this.
 
 - 1.2.0
 
