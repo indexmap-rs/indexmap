@@ -12,8 +12,19 @@
 //! [`IndexSet`]: set/struct.IndexSet.html
 //!
 //!
+//! ### Feature Highlights
 //!
-//! ## Rust Version
+//! [`IndexMap`] and [`IndexSet`] are drop-in compatible with the std `HashMap`
+//! and `HashSet`, but they also have some features of note:
+//!
+//! - The ordering semantics (see their documentation for details)
+//! - Sorting methods and the [`.pop()`][IndexMap::pop] methods.
+//! - The [`Equivalent`] trait, which offers more flexible equality definitions
+//!   between borrowed and owned versions of keys.
+//! - The [`MutableKeys`][map::MutableKeys] trait, which gives opt-in mutable
+//!   access to hash map keys.
+//!
+//! ### Rust Version
 //!
 //! This version of indexmap requires Rust 1.18 or later, or 1.30+ for
 //! development builds, and Rust 1.36+ for using with `alloc` (without `std`),
