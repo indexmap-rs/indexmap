@@ -30,7 +30,7 @@ build = "build.rs"
 bench = false
 
 [build-dependencies]
-autocfg = "0.1.6"
+autocfg = "1"
 [dependencies]
 serde = { version = "1.0", optional = true }
 rayon = { version = "1.0", optional = true }
