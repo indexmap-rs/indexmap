@@ -1,5 +1,5 @@
-
-#[macro_use] extern crate indexmap;
+#[macro_use]
+extern crate indexmap;
 
 use indexmap::Equivalent;
 
@@ -9,8 +9,9 @@ use std::hash::Hash;
 pub struct Pair<A, B>(pub A, pub B);
 
 impl<A, B, C, D> PartialEq<(A, B)> for Pair<C, D>
-    where C: PartialEq<A>,
-          D: PartialEq<B>,
+where
+    C: PartialEq<A>,
+    D: PartialEq<B>,
 {
     fn eq(&self, rhs: &(A, B)) -> bool {
         self.0 == rhs.0 && self.1 == rhs.1
@@ -18,9 +19,10 @@ impl<A, B, C, D> PartialEq<(A, B)> for Pair<C, D>
 }
 
 impl<A, B, X> Equivalent<X> for Pair<A, B>
-    where Pair<A, B>: PartialEq<X>,
-          A: Hash + Eq,
-          B: Hash + Eq,
+where
+    Pair<A, B>: PartialEq<X>,
+    A: Hash + Eq,
+    B: Hash + Eq,
 {
     fn equivalent(&self, other: &X) -> bool {
         *self == *other
