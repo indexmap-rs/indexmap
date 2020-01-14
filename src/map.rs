@@ -124,12 +124,12 @@ impl Pos {
     fn none() -> Self { Pos { index: !0 } }
 
     #[inline]
-    fn is_none(&self) -> bool { self.index == !0 }
+    fn is_none(self) -> bool { self.index == !0 }
 
     /// Return the index part of the Pos value inside `Some(_)` if the position
     /// is not none, otherwise return `None`.
     #[inline]
-    fn pos(&self) -> Option<usize> {
+    fn pos(self) -> Option<usize> {
         if self.index == !0 { None } else { Some(lo32(self.index as u64)) }
     }
 
@@ -165,7 +165,7 @@ impl Pos {
     /// a proxy value to the hash (whether it contains the hash or not
     /// depends on the size class of the hash map).
     #[inline]
-    fn resolve<Sz>(&self) -> Option<(usize, ShortHashProxy<Sz>)>
+    fn resolve<Sz>(self) -> Option<(usize, ShortHashProxy<Sz>)>
         where Sz: Size
     {
         if Sz::is_64_bit() {
@@ -174,19 +174,17 @@ impl Pos {
             } else {
                 None
             }
+        } else if !self.is_none() {
+            let (i, hash) = split_lo_hi(self.index);
+            Some((i as usize, ShortHashProxy::new(hash as usize)))
         } else {
-            if !self.is_none() {
-                let (i, hash) = split_lo_hi(self.index);
-                Some((i as usize, ShortHashProxy::new(hash as usize)))
-            } else {
-                None
-            }
+            None
         }
     }
 
     /// Like resolve, but the Pos **must** be non-none. Return its index.
     #[inline]
-    fn resolve_existing_index<Sz>(&self) -> usize 
+    fn resolve_existing_index<Sz>(self) -> usize
         where Sz: Size
     {
         debug_assert!(!self.is_none(), "datastructure inconsistent: none where valid Pos expected");
