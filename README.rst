@@ -86,6 +86,10 @@ which is roughly:
 Recent Changes
 ==============
 
+- 1.3.1
+
+  - Maintenance update for formatting and ``autocfg`` 1.0.
+
 - 1.3.0
 
   - The deprecation messages in the previous version have been removed.
