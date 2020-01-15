@@ -1,4 +1,3 @@
-
 #[cfg(has_std)]
 #[macro_export(local_inner_macros)]
 /// Create an `IndexMap` from a list of key-value pairs

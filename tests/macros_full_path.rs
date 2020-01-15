@@ -1,4 +1,3 @@
-
 #[test]
 fn test_create_map() {
     let _m = indexmap::indexmap! {
@@ -8,7 +7,6 @@ fn test_create_map() {
         3 => 3,
     };
 }
-
 
 #[test]
 fn test_create_set() {
