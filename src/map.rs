@@ -1032,7 +1032,7 @@ where
     }
 
     /// Return item index
-    pub fn get_index<Q: ?Sized>(&self, key: &Q) -> Option<usize>
+    pub fn entry_index<Q: ?Sized>(&self, key: &Q) -> Option<usize>
     where
         Q: Hash + Equivalent<K>,
     {
