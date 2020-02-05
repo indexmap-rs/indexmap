@@ -86,6 +86,10 @@ which is roughly:
 Recent Changes
 ==============
 
+- 1.3.2
+
+  - Maintenance update to regenerate the published `Cargo.toml`.
+
 - 1.3.1
 
   - Maintenance update for formatting and ``autocfg`` 1.0.
