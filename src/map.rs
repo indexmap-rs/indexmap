@@ -1037,7 +1037,6 @@ where
         Q: Hash + Equivalent<K>,
     {
         if let Some((_, found)) = self.find(key) {
-            let entry = &self.core.entries[found];
             Some(found)
         } else {
             None
