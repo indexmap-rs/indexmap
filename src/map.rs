@@ -1031,6 +1031,18 @@ where
         }
     }
 
+    /// Return item index
+    pub fn entry_index<Q: ?Sized>(&self, key: &Q) -> Option<usize>
+    where
+        Q: Hash + Equivalent<K>,
+    {
+        if let Some((_, found)) = self.find(key) {
+            Some(found)
+        } else {
+            None
+        }
+    }
+
     pub fn get_mut<Q: ?Sized>(&mut self, key: &Q) -> Option<&mut V>
     where
         Q: Hash + Equivalent<K>,
