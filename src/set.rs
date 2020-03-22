@@ -328,7 +328,7 @@ where
     }
 
     /// Return item index
-    pub fn entry_index<Q: ?Sized>(&self, value: &Q) -> Option<(usize)>
+    pub fn entry_index<Q: ?Sized>(&self, value: &Q) -> Option<usize>
     where
         Q: Hash + Equivalent<T>,
     {

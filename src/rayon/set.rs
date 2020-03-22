@@ -497,7 +497,7 @@ where
 }
 
 /// Requires crate feature `"rayon"`.
-impl<T, S> ParallelExtend<(T)> for IndexSet<T, S>
+impl<T, S> ParallelExtend<T> for IndexSet<T, S>
 where
     T: Eq + Hash + Send,
     S: BuildHasher + Send,
