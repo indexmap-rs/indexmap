@@ -711,6 +711,10 @@ impl<'a, K, V> OccupiedEntry<'a, K, V> {
     pub fn into_mut(self) -> &'a mut V {
         &mut self.map.entries[self.index].value
     }
+    pub fn into_entry_mut(self) -> (&'a K, &'a mut V) {
+        let bucket = &mut self.map.entries[self.index];
+        (&bucket.key, &mut bucket.value)
+    }
 
     /// Sets the value of the entry to `value`, and returns the entry's old value.
     pub fn insert(&mut self, value: V) -> V {
