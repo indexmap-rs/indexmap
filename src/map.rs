@@ -1023,7 +1023,7 @@ where
     where
         Q: Hash + Equivalent<K>,
     {
-        if let Some((_, found)) = self.find(key) {
+        if let Some(found) = self.get_index_of(key) {
             let entry = &self.core.entries[found];
             Some((found, &entry.key, &entry.value))
         } else {
@@ -1031,8 +1031,8 @@ where
         }
     }
 
-    /// Return item index
-    pub fn entry_index<Q: ?Sized>(&self, key: &Q) -> Option<usize>
+    /// Return item index, if it exists in the map
+    pub fn get_index_of<Q: ?Sized>(&self, key: &Q) -> Option<usize>
     where
         Q: Hash + Equivalent<K>,
     {

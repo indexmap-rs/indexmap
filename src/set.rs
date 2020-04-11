@@ -327,12 +327,12 @@ where
         self.map.get_full(value).map(|(i, x, &())| (i, x))
     }
 
-    /// Return item index
-    pub fn entry_index<Q: ?Sized>(&self, value: &Q) -> Option<usize>
+    /// Return item index, if it exists in the set
+    pub fn get_index_of<Q: ?Sized>(&self, value: &Q) -> Option<usize>
     where
         Q: Hash + Equivalent<T>,
     {
-        self.map.entry_index(value)
+        self.map.get_index_of(value)
     }
 
     /// Adds a value to the set, replacing the existing value, if any, that is
