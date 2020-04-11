@@ -22,7 +22,7 @@ use std::iter::FromIterator;
 
 use rand::rngs::SmallRng;
 use rand::seq::SliceRandom;
-use rand::FromEntropy;
+use rand::SeedableRng;
 
 #[bench]
 fn new_hashmap(b: &mut Bencher) {
