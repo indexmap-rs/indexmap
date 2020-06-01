@@ -86,6 +86,21 @@ which is roughly:
 Recent Changes
 ==============
 
+- 1.4.0
+
+  - Add new method ``get_index_of`` by @Thermatrix in PR 115_ and 120_
+
+  - Fix build script rebuild-if-changed configuration to use "build.rs";
+    fixes issue 123_. Fix by @cuviper.
+
+  - Dev-dependencies (rand and quickcheck) have been updated. The crate's tests
+    now run using Rust 1.32 or later (MSRV for building the crate has not changed).
+    by @kjeremy and @bluss
+
+.. _123: https://github.com/bluss/indexmap/issues/123
+.. _115: https://github.com/bluss/indexmap/pull/115
+.. _120: https://github.com/bluss/indexmap/pull/120
+
 - 1.3.2
 
   - Maintenance update to regenerate the published `Cargo.toml`.
