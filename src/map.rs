@@ -24,7 +24,7 @@ use std::cmp::Ordering;
 use std::fmt;
 
 use equivalent::Equivalent;
-use map_core::{IndexMapCore, MakeEntry, ProbeAction, Size};
+use map_core::IndexMapCore;
 use util::third;
 use {Bucket, Entries, HashValue};
 
@@ -203,11 +203,6 @@ impl<K, V, S> IndexMap<K, V, S> {
     pub fn capacity(&self) -> usize {
         self.core.capacity()
     }
-
-    #[inline]
-    fn size_class_is_64bit(&self) -> bool {
-        self.core.size_class_is_64bit()
-    }
 }
 
 impl<K, V, S> IndexMap<K, V, S>
@@ -215,15 +210,6 @@ where
     K: Hash + Eq,
     S: BuildHasher,
 {
-    fn insert_phase_1<'a, Sz, A>(&'a mut self, key: K, action: A) -> A::Output
-    where
-        Sz: Size,
-        A: ProbeAction<'a, Sz, K, V>,
-    {
-        let hash = hash_elem_using(&self.hash_builder, &key);
-        self.core.insert_phase_1::<Sz, A>(hash, key, action)
-    }
-
     /// Remove all key-value pairs in the map, while preserving its capacity.
     ///
     /// Computes in **O(n)** time.
@@ -280,8 +266,8 @@ where
     ///
     /// Computes in **O(1)** time (amortized average).
     pub fn entry(&mut self, key: K) -> Entry<K, V> {
-        self.core.reserve_one();
-        dispatch_32_vs_64!(self.insert_phase_1::<_>(key, MakeEntry))
+        let hash = hash_elem_using(&self.hash_builder, &key);
+        self.core.entry(hash, key)
     }
 
     /// Return an iterator over the key-value pairs of the map, in their order

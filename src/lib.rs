@@ -79,7 +79,6 @@ mod mutable_keys;
 mod serde;
 mod util;
 
-#[macro_use]
 mod map_core;
 
 pub mod map;

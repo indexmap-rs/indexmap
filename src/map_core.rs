@@ -23,7 +23,7 @@ use {Bucket, HashValue};
 
 /// Trait for the "size class". Either u32 or u64 depending on the index
 /// size needed to address an entry's index in self.core.entries.
-pub(crate) trait Size {
+trait Size {
     fn is_64_bit() -> bool;
     fn is_same_size<T: Size>() -> bool {
         Self::is_64_bit() == T::is_64_bit()
@@ -392,14 +392,14 @@ impl<K, V> IndexMapCore<K, V> {
 
     // Return whether we need 32 or 64 bits to specify a bucket or entry index
     #[cfg(not(feature = "test_low_transition_point"))]
-    pub(crate) fn size_class_is_64bit(&self) -> bool {
+    fn size_class_is_64bit(&self) -> bool {
         usize::max_value() > u32::max_value() as usize
             && self.raw_capacity() >= u32::max_value() as usize
     }
 
     // for testing
     #[cfg(feature = "test_low_transition_point")]
-    pub(crate) fn size_class_is_64bit(&self) -> bool {
+    fn size_class_is_64bit(&self) -> bool {
         self.raw_capacity() >= 64
     }
 
@@ -444,7 +444,7 @@ impl<K, V> IndexMapCore<K, V> {
 
     #[inline(never)]
     // `Sz` is *current* Size class, before grow
-    pub(crate) fn double_capacity<Sz>(&mut self)
+    fn double_capacity<Sz>(&mut self)
     where
         Sz: Size,
     {
@@ -523,7 +523,7 @@ impl<K, V> IndexMapCore<K, V> {
         Some(self.swap_remove_found(probe, found))
     }
 
-    pub(crate) fn insert_phase_1<'a, Sz, A>(&'a mut self, hash: HashValue, key: K, action: A) -> A::Output
+    fn insert_phase_1<'a, Sz, A>(&'a mut self, hash: HashValue, key: K, action: A) -> A::Output
     where
         Sz: Size,
         K: Eq,
@@ -588,6 +588,14 @@ impl<K, V> IndexMapCore<K, V> {
     {
         self.reserve_one();
         dispatch_32_vs_64!(self.insert_phase_1::<_>(hash, key, InsertValue(value)))
+    }
+
+    pub(crate) fn entry(&mut self, hash: HashValue, key: K) -> Entry<K, V>
+    where
+        K: Eq,
+    {
+        self.reserve_one();
+        dispatch_32_vs_64!(self.insert_phase_1::<_>(hash, key, MakeEntry))
     }
 
     /// Return probe (indices) and position (entries)
@@ -875,7 +883,7 @@ impl<K, V> IndexMapCore<K, V> {
     }
 }
 
-pub(crate) trait ProbeAction<'a, Sz: Size, K, V>: Sized {
+trait ProbeAction<'a, Sz: Size, K, V>: Sized {
     type Output;
     // handle an occupied spot in the map
     fn hit(self, entry: OccupiedEntry<'a, K, V>) -> Self::Output;
@@ -914,7 +922,7 @@ impl<'a, Sz: Size, K, V> ProbeAction<'a, Sz, K, V> for InsertValue<V> {
     }
 }
 
-pub(crate) struct MakeEntry;
+struct MakeEntry;
 
 impl<'a, Sz: Size, K: 'a, V: 'a> ProbeAction<'a, Sz, K, V> for MakeEntry {
     type Output = Entry<'a, K, V>;
