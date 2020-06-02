@@ -94,24 +94,22 @@ impl<K, V, S> Entries for IndexMap<K, V, S> {
     type Entry = Bucket<K, V>;
 
     fn into_entries(self) -> Vec<Self::Entry> {
-        self.core.entries
+        self.core.into_entries()
     }
 
     fn as_entries(&self) -> &[Self::Entry] {
-        &self.core.entries
+        self.core.as_entries()
     }
 
     fn as_entries_mut(&mut self) -> &mut [Self::Entry] {
-        &mut self.core.entries
+        self.core.as_entries_mut()
     }
 
     fn with_entries<F>(&mut self, f: F)
     where
         F: FnOnce(&mut [Self::Entry]),
     {
-        let side_index = self.core.save_hash_index();
-        f(&mut self.core.entries);
-        self.core.restore_hash_index(side_index);
+        self.core.with_entries(f);
     }
 }
 
@@ -273,28 +271,28 @@ where
     /// Return an iterator over the key-value pairs of the map, in their order
     pub fn iter(&self) -> Iter<K, V> {
         Iter {
-            iter: self.core.entries.iter(),
+            iter: self.as_entries().iter(),
         }
     }
 
     /// Return an iterator over the key-value pairs of the map, in their order
     pub fn iter_mut(&mut self) -> IterMut<K, V> {
         IterMut {
-            iter: self.core.entries.iter_mut(),
+            iter: self.as_entries_mut().iter_mut(),
         }
     }
 
     /// Return an iterator over the keys of the map, in their order
     pub fn keys(&self) -> Keys<K, V> {
         Keys {
-            iter: self.core.entries.iter(),
+            iter: self.as_entries().iter(),
         }
     }
 
     /// Return an iterator over the values of the map, in their order
     pub fn values(&self) -> Values<K, V> {
         Values {
-            iter: self.core.entries.iter(),
+            iter: self.as_entries().iter(),
         }
     }
 
@@ -302,7 +300,7 @@ where
     /// in their order
     pub fn values_mut(&mut self) -> ValuesMut<K, V> {
         ValuesMut {
-            iter: self.core.entries.iter_mut(),
+            iter: self.as_entries_mut().iter_mut(),
         }
     }
 
@@ -333,7 +331,7 @@ where
         Q: Hash + Equivalent<K>,
     {
         if let Some(found) = self.get_index_of(key) {
-            let entry = &self.core.entries[found];
+            let entry = &self.as_entries()[found];
             Some((found, &entry.key, &entry.value))
         } else {
             None
@@ -374,7 +372,7 @@ where
         Q: Hash + Equivalent<K>,
     {
         if let Some((_, found)) = self.find(key) {
-            let entry = &mut self.core.entries[found];
+            let entry = &mut self.as_entries_mut()[found];
             Some((found, &mut entry.key, &mut entry.value))
         } else {
             None
@@ -548,8 +546,7 @@ where
     where
         F: FnMut(&K, &V, &K, &V) -> Ordering,
     {
-        self.core
-            .entries
+        self.as_entries_mut()
             .sort_by(move |a, b| cmp(&a.key, &a.value, &b.key, &b.value));
         self.into_iter()
     }
@@ -564,10 +561,8 @@ where
     /// Clears the `IndexMap`, returning all key-value pairs as a drain iterator.
     /// Keeps the allocated memory for reuse.
     pub fn drain(&mut self, range: RangeFull) -> Drain<K, V> {
-        self.core.clear_indices();
-
         Drain {
-            iter: self.core.entries.drain(range),
+            iter: self.core.drain(range),
         }
     }
 }
@@ -586,7 +581,7 @@ impl<K, V, S> IndexMap<K, V, S> {
     ///
     /// Computes in **O(1)** time.
     pub fn get_index(&self, index: usize) -> Option<(&K, &V)> {
-        self.core.entries.get(index).map(Bucket::refs)
+        self.as_entries().get(index).map(Bucket::refs)
     }
 
     /// Get a key-value pair by index
@@ -595,7 +590,7 @@ impl<K, V, S> IndexMap<K, V, S> {
     ///
     /// Computes in **O(1)** time.
     pub fn get_index_mut(&mut self, index: usize) -> Option<(&mut K, &mut V)> {
-        self.core.entries.get_mut(index).map(Bucket::muts)
+        self.as_entries_mut().get_mut(index).map(Bucket::muts)
     }
 
     /// Remove the key-value pair by index
@@ -609,8 +604,7 @@ impl<K, V, S> IndexMap<K, V, S> {
     /// Computes in **O(1)** time (average).
     pub fn swap_remove_index(&mut self, index: usize) -> Option<(K, V)> {
         let (probe, found) = match self
-            .core
-            .entries
+            .as_entries()
             .get(index)
             .map(|e| self.core.find_existing_entry(e))
         {
@@ -631,8 +625,7 @@ impl<K, V, S> IndexMap<K, V, S> {
     /// Computes in **O(n)** time (average).
     pub fn shift_remove_index(&mut self, index: usize) -> Option<(K, V)> {
         let (probe, found) = match self
-            .core
-            .entries
+            .as_entries()
             .get(index)
             .map(|e| self.core.find_existing_entry(e))
         {
@@ -931,7 +924,7 @@ where
     type IntoIter = IntoIter<K, V>;
     fn into_iter(self) -> Self::IntoIter {
         IntoIter {
-            iter: self.core.entries.into_iter(),
+            iter: self.into_entries().into_iter(),
         }
     }
 }

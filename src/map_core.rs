@@ -17,9 +17,11 @@ use std::fmt;
 use std::iter::FromIterator;
 use std::marker::PhantomData;
 use std::mem::replace;
+use std::ops::RangeFull;
+use std::vec::Drain;
 
 use util::{enumerate, ptrdistance};
-use {Bucket, HashValue};
+use {Bucket, Entries, HashValue};
 
 /// Trait for the "size class". Either u32 or u64 depending on the index
 /// size needed to address an entry's index in self.core.entries.
@@ -146,7 +148,7 @@ impl<Sz> From<ShortHash<Sz>> for HashValue {
 /// appropriate. Only the growth code needs some extra logic to handle the
 /// transition from one class to another
 #[derive(Copy)]
-pub(crate) struct Pos {
+struct Pos {
     index: u64,
 }
 
@@ -362,11 +364,36 @@ where
 /// Core of the map that does not depend on S
 #[derive(Clone)]
 pub(crate) struct IndexMapCore<K, V> {
-    pub(crate) mask: usize,
+    mask: usize,
     /// indices are the buckets. indices.len() == raw capacity
-    pub(crate) indices: Box<[Pos]>,
+    indices: Box<[Pos]>,
     /// entries is a dense vec of entries in their order. entries.len() == len
-    pub(crate) entries: Vec<Bucket<K, V>>,
+    entries: Vec<Bucket<K, V>>,
+}
+
+impl<K, V> Entries for IndexMapCore<K, V> {
+    type Entry = Bucket<K, V>;
+
+    fn into_entries(self) -> Vec<Self::Entry> {
+        self.entries
+    }
+
+    fn as_entries(&self) -> &[Self::Entry] {
+        &self.entries
+    }
+
+    fn as_entries_mut(&mut self) -> &mut [Self::Entry] {
+        &mut self.entries
+    }
+
+    fn with_entries<F>(&mut self, f: F)
+    where
+        F: FnOnce(&mut [Self::Entry]),
+    {
+        let side_index = self.save_hash_index();
+        f(&mut self.entries);
+        self.restore_hash_index(side_index);
+    }
 }
 
 impl<K, V> IndexMapCore<K, V> {
@@ -421,8 +448,13 @@ impl<K, V> IndexMapCore<K, V> {
         self.clear_indices();
     }
 
+    pub(crate) fn drain(&mut self, range: RangeFull) -> Drain<Bucket<K, V>> {
+        self.clear_indices();
+        self.entries.drain(range)
+    }
+
     // clear self.indices to the same state as "no elements"
-    pub(crate) fn clear_indices(&mut self) {
+    fn clear_indices(&mut self) {
         for pos in self.indices.iter_mut() {
             *pos = Pos::none();
         }
@@ -820,7 +852,7 @@ impl<K, V> IndexMapCore<K, V> {
         }
     }
 
-    pub(crate) fn save_hash_index(&mut self) -> Vec<usize> {
+    fn save_hash_index(&mut self) -> Vec<usize> {
         // Temporarily use the hash field in a bucket to store the old index.
         // Save the old hash values in `side_index`.  Then we can sort
         // `self.entries` in place.
@@ -829,7 +861,7 @@ impl<K, V> IndexMapCore<K, V> {
         )
     }
 
-    pub(crate) fn restore_hash_index(&mut self, mut side_index: Vec<usize>) {
+    fn restore_hash_index(&mut self, mut side_index: Vec<usize>) {
         // Write back the hash values from side_index and fill `side_index` with
         // a mapping from the old to the new index instead.
         for (i, ent) in enumerate(&mut self.entries) {
