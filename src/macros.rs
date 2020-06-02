@@ -103,13 +103,14 @@ macro_rules! iterator_methods {
         }
 
         fn collect<C>(self) -> C
-            where C: FromIterator<Self::Item>
+        where
+            C: FromIterator<Self::Item>,
         {
             // NB: forwarding this directly to standard iterators will
             // allow it to leverage unstable traits like `TrustedLen`.
             self.iter.map($map_elt).collect()
         }
-    }
+    };
 }
 
 macro_rules! double_ended_iterator_methods {
@@ -119,5 +120,5 @@ macro_rules! double_ended_iterator_methods {
         fn next_back(&mut self) -> Option<Self::Item> {
             self.iter.next_back().map($map_elt)
         }
-    }
+    };
 }
