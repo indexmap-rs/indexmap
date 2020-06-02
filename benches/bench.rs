@@ -357,7 +357,7 @@ const SORT_MAP_SIZE: usize = 10_000;
 
 // use lazy_static so that comparison benchmarks use the exact same inputs
 lazy_static! {
-    static ref KEYS: Vec<u32> = { shuffled_keys(0..LOOKUP_MAP_SIZE) };
+    static ref KEYS: Vec<u32> = shuffled_keys(0..LOOKUP_MAP_SIZE);
 }
 
 lazy_static! {
