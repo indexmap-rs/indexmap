@@ -97,26 +97,13 @@ pub use set::IndexSet;
 
 /// Hash value newtype. Not larger than usize, since anything larger
 /// isn't used for selecting position anyway.
-#[derive(Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 struct HashValue(usize);
 
 impl HashValue {
     #[inline(always)]
     fn get(self) -> usize {
         self.0
-    }
-}
-
-impl Clone for HashValue {
-    #[inline]
-    fn clone(&self) -> Self {
-        *self
-    }
-}
-impl PartialEq for HashValue {
-    #[inline]
-    fn eq(&self, rhs: &Self) -> bool {
-        self.0 == rhs.0
     }
 }
 
