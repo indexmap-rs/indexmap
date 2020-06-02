@@ -745,7 +745,14 @@ impl<K, V> IndexMapCore<K, V> {
         });
     }
 
-    pub(crate) fn retain_in_order_impl<Sz, F>(&mut self, mut keep: F)
+    pub(crate) fn retain_in_order<F>(&mut self, keep: F)
+    where
+        F: FnMut(&mut K, &mut V) -> bool,
+    {
+        dispatch_32_vs_64!(self.retain_in_order_impl::<_>(keep));
+    }
+
+    fn retain_in_order_impl<Sz, F>(&mut self, mut keep: F)
     where
         F: FnMut(&mut K, &mut V) -> bool,
         Sz: Size,

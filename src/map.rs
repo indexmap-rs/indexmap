@@ -526,15 +526,7 @@ where
     where
         F: FnMut(&mut K, &mut V) -> bool,
     {
-        dispatch_32_vs_64!(self.retain_mut_sz::<_>(keep));
-    }
-
-    fn retain_mut_sz<Sz, F>(&mut self, keep: F)
-    where
-        F: FnMut(&mut K, &mut V) -> bool,
-        Sz: Size,
-    {
-        self.core.retain_in_order_impl::<Sz, F>(keep);
+        self.core.retain_in_order(keep);
     }
 
     /// Sort the map’s key-value pairs by the default ordering of the keys.
