@@ -77,17 +77,34 @@ fn hash_elem_using<B: BuildHasher, K: ?Sized + Hash>(build: &B, k: &K) -> HashVa
 /// assert_eq!(letters[&'u'], 1);
 /// assert_eq!(letters.get(&'y'), None);
 /// ```
-#[derive(Clone)]
 #[cfg(has_std)]
 pub struct IndexMap<K, V, S = RandomState> {
     core: IndexMapCore<K, V>,
     hash_builder: S,
 }
-#[derive(Clone)]
 #[cfg(not(has_std))]
 pub struct IndexMap<K, V, S> {
     core: IndexMapCore<K, V>,
     hash_builder: S,
+}
+
+impl<K, V, S> Clone for IndexMap<K, V, S>
+where
+    K: Clone,
+    V: Clone,
+    S: Clone,
+{
+    fn clone(&self) -> Self {
+        IndexMap {
+            core: self.core.clone(),
+            hash_builder: self.hash_builder.clone(),
+        }
+    }
+
+    fn clone_from(&mut self, other: &Self) {
+        self.core.clone_from(&other.core);
+        self.hash_builder.clone_from(&other.hash_builder);
+    }
 }
 
 impl<K, V, S> Entries for IndexMap<K, V, S> {

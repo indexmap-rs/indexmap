@@ -362,13 +362,32 @@ where
 }
 
 /// Core of the map that does not depend on S
-#[derive(Clone)]
 pub(crate) struct IndexMapCore<K, V> {
     mask: usize,
     /// indices are the buckets. indices.len() == raw capacity
     indices: Box<[Pos]>,
     /// entries is a dense vec of entries in their order. entries.len() == len
     entries: Vec<Bucket<K, V>>,
+}
+
+impl<K, V> Clone for IndexMapCore<K, V>
+where
+    K: Clone,
+    V: Clone,
+{
+    fn clone(&self) -> Self {
+        IndexMapCore {
+            mask: self.mask,
+            indices: self.indices.clone(),
+            entries: self.entries.clone(),
+        }
+    }
+
+    fn clone_from(&mut self, other: &Self) {
+        self.mask = other.mask;
+        self.indices.clone_from(&other.indices);
+        self.entries.clone_from(&other.entries);
+    }
 }
 
 impl<K, V> Entries for IndexMapCore<K, V> {

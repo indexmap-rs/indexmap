@@ -63,15 +63,29 @@ type Bucket<T> = super::Bucket<T, ()>;
 /// assert!(letters.contains(&'u'));
 /// assert!(!letters.contains(&'y'));
 /// ```
-#[derive(Clone)]
 #[cfg(has_std)]
 pub struct IndexSet<T, S = RandomState> {
     map: IndexMap<T, (), S>,
 }
 #[cfg(not(has_std))]
-#[derive(Clone)]
 pub struct IndexSet<T, S> {
     map: IndexMap<T, (), S>,
+}
+
+impl<T, S> Clone for IndexSet<T, S>
+where
+    T: Clone,
+    S: Clone,
+{
+    fn clone(&self) -> Self {
+        IndexSet {
+            map: self.map.clone(),
+        }
+    }
+
+    fn clone_from(&mut self, other: &Self) {
+        self.map.clone_from(&other.map);
+    }
 }
 
 impl<T, S> Entries for IndexSet<T, S> {
