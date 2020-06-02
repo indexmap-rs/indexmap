@@ -566,9 +566,9 @@ impl<K, V> IndexMapCore<K, V> {
     }
 
     pub(crate) fn pop_impl(&mut self) -> Option<(K, V)> {
-        let (probe, found) = match self.entries.last().map(|e| self.find_existing_entry(e)) {
+        let (probe, found) = match self.as_entries().last() {
+            Some(e) => self.find_existing_entry(e),
             None => return None,
-            Some(t) => t,
         };
         debug_assert_eq!(found, self.entries.len() - 1);
         Some(self.swap_remove_found(probe, found))

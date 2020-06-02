@@ -620,13 +620,9 @@ impl<K, V, S> IndexMap<K, V, S> {
     ///
     /// Computes in **O(1)** time (average).
     pub fn swap_remove_index(&mut self, index: usize) -> Option<(K, V)> {
-        let (probe, found) = match self
-            .as_entries()
-            .get(index)
-            .map(|e| self.core.find_existing_entry(e))
-        {
+        let (probe, found) = match self.as_entries().get(index) {
+            Some(e) => self.core.find_existing_entry(e),
             None => return None,
-            Some(t) => t,
         };
         Some(self.core.swap_remove_found(probe, found))
     }
@@ -641,13 +637,9 @@ impl<K, V, S> IndexMap<K, V, S> {
     ///
     /// Computes in **O(n)** time (average).
     pub fn shift_remove_index(&mut self, index: usize) -> Option<(K, V)> {
-        let (probe, found) = match self
-            .as_entries()
-            .get(index)
-            .map(|e| self.core.find_existing_entry(e))
-        {
+        let (probe, found) = match self.as_entries().get(index) {
+            Some(e) => self.core.find_existing_entry(e),
             None => return None,
-            Some(t) => t,
         };
         Some(self.core.shift_remove_found(probe, found))
     }
