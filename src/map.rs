@@ -559,13 +559,15 @@ where
     /// the key-value pairs with the result.
     ///
     /// The sort is stable.
-    pub fn sorted_by<F>(mut self, mut cmp: F) -> IntoIter<K, V>
+    pub fn sorted_by<F>(self, mut cmp: F) -> IntoIter<K, V>
     where
         F: FnMut(&K, &V, &K, &V) -> Ordering,
     {
-        self.as_entries_mut()
-            .sort_by(move |a, b| cmp(&a.key, &a.value, &b.key, &b.value));
-        self.into_iter()
+        let mut entries = self.into_entries();
+        entries.sort_by(move |a, b| cmp(&a.key, &a.value, &b.key, &b.value));
+        IntoIter {
+            iter: entries.into_iter(),
+        }
     }
 
     /// Reverses the order of the map’s key-value pairs in place.
