@@ -94,7 +94,7 @@ fn insert_hashmap_string_oneshot_10_000(b: &mut Bencher) {
 }
 
 #[bench]
-fn insert_orderedmap_string_10_000(b: &mut Bencher) {
+fn insert_indexmap_string_10_000(b: &mut Bencher) {
     let c = 10_000;
     b.iter(|| {
         let mut map = IndexMap::with_capacity(c);
@@ -144,7 +144,7 @@ fn lookup_hashmap_10_000_exist_string_oneshot(b: &mut Bencher) {
 }
 
 #[bench]
-fn lookup_ordermap_10_000_exist_string(b: &mut Bencher) {
+fn lookup_indexmap_10_000_exist_string(b: &mut Bencher) {
     let c = 10_000;
     let mut map = IndexMap::with_capacity(c);
     let keys = shuffled_keys(0..c);
@@ -162,7 +162,7 @@ fn lookup_ordermap_10_000_exist_string(b: &mut Bencher) {
 }
 
 #[bench]
-fn lookup_ordermap_10_000_exist_string_oneshot(b: &mut Bencher) {
+fn lookup_indexmap_10_000_exist_string_oneshot(b: &mut Bencher) {
     let c = 10_000;
     let mut map = IndexMap::with_capacity(c);
     let keys = shuffled_keys(0..c);

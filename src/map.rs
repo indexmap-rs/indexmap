@@ -295,19 +295,19 @@ where
 #[derive(Clone)]
 #[cfg(has_std)]
 pub struct IndexMap<K, V, S = RandomState> {
-    core: OrderMapCore<K, V>,
+    core: IndexMapCore<K, V>,
     hash_builder: S,
 }
 #[derive(Clone)]
 #[cfg(not(has_std))]
 pub struct IndexMap<K, V, S> {
-    core: OrderMapCore<K, V>,
+    core: IndexMapCore<K, V>,
     hash_builder: S,
 }
 
 // core of the map that does not depend on S
 #[derive(Clone)]
-struct OrderMapCore<K, V> {
+struct IndexMapCore<K, V> {
     pub(crate) mask: usize,
     /// indices are the buckets. indices.len() == raw capacity
     pub(crate) indices: Box<[Pos]>,
@@ -441,7 +441,7 @@ impl<K, V, S> IndexMap<K, V, S> {
     {
         if n == 0 {
             IndexMap {
-                core: OrderMapCore {
+                core: IndexMapCore {
                     mask: 0,
                     indices: Box::new([]),
                     entries: Vec::new(),
@@ -452,7 +452,7 @@ impl<K, V, S> IndexMap<K, V, S> {
             let raw = to_raw_capacity(n);
             let raw_cap = max(raw.next_power_of_two(), 8);
             IndexMap {
-                core: OrderMapCore {
+                core: IndexMapCore {
                     mask: raw_cap.wrapping_sub(1),
                     indices: vec![Pos::none(); raw_cap].into_boxed_slice(),
                     entries: Vec::with_capacity(usable_capacity(raw_cap)),
@@ -508,7 +508,7 @@ impl<K, V, S> IndexMap<K, V, S> {
     }
 }
 
-impl<K, V> OrderMapCore<K, V> {
+impl<K, V> IndexMapCore<K, V> {
     // Return whether we need 32 or 64 bits to specify a bucket or entry index
     #[cfg(not(feature = "test_low_transition_point"))]
     fn size_class_is_64bit(&self) -> bool {
@@ -671,7 +671,7 @@ impl<'a, K: 'a + fmt::Debug, V: 'a + fmt::Debug> fmt::Debug for Entry<'a, K, V> 
 ///
 /// [`Entry`]: enum.Entry.html
 pub struct OccupiedEntry<'a, K: 'a, V: 'a> {
-    map: &'a mut OrderMapCore<K, V>,
+    map: &'a mut IndexMapCore<K, V>,
     key: K,
     probe: usize,
     index: usize,
@@ -780,7 +780,7 @@ impl<'a, K: 'a + fmt::Debug, V: 'a + fmt::Debug> fmt::Debug for OccupiedEntry<'a
 ///
 /// [`Entry`]: enum.Entry.html
 pub struct VacantEntry<'a, K: 'a, V: 'a> {
-    map: &'a mut OrderMapCore<K, V>,
+    map: &'a mut IndexMapCore<K, V>,
     key: K,
     hash: HashValue,
     probe: usize,
@@ -1303,7 +1303,7 @@ impl<K, V, S> IndexMap<K, V, S> {
 // using Hash + Eq at all in these methods.
 //
 // However, we should probably not let this show in the public API or docs.
-impl<K, V> OrderMapCore<K, V> {
+impl<K, V> IndexMapCore<K, V> {
     fn len(&self) -> usize {
         self.entries.len()
     }
