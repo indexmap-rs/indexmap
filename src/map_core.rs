@@ -436,6 +436,12 @@ impl<K, V> IndexMapCore<K, V> {
         self.entries = Vec::with_capacity(usable_capacity(raw_cap));
     }
 
+    pub(crate) fn reserve_one(&mut self) {
+        if self.len() == self.capacity() {
+            dispatch_32_vs_64!(self.double_capacity());
+        }
+    }
+
     #[inline(never)]
     // `Sz` is *current* Size class, before grow
     pub(crate) fn double_capacity<Sz>(&mut self)
@@ -561,7 +567,7 @@ impl<K, V> IndexMapCore<K, V> {
     }
 
     /// phase 2 is post-insert where we forward-shift `Pos` in the indices.
-    pub(crate) fn insert_phase_2<Sz>(&mut self, mut probe: usize, mut old_pos: Pos)
+    fn insert_phase_2<Sz>(&mut self, mut probe: usize, mut old_pos: Pos)
     where
         Sz: Size,
     {
@@ -574,6 +580,14 @@ impl<K, V> IndexMapCore<K, V> {
                 old_pos = replace(pos, old_pos);
             }
         });
+    }
+
+    pub(crate) fn insert_full(&mut self, hash: HashValue, key: K, value: V) -> (usize, Option<V>)
+    where
+        K: Eq,
+    {
+        self.reserve_one();
+        dispatch_32_vs_64!(self.insert_phase_1::<_>(hash, key, InsertValue(value)))
     }
 
     /// Return probe (indices) and position (entries)
@@ -864,7 +878,7 @@ pub(crate) trait ProbeAction<'a, Sz: Size, K, V>: Sized {
     fn steal(self, entry: VacantEntry<'a, K, V>) -> Self::Output;
 }
 
-pub(crate) struct InsertValue<V>(pub(crate) V);
+struct InsertValue<V>(V);
 
 impl<'a, Sz: Size, K, V> ProbeAction<'a, Sz, K, V> for InsertValue<V> {
     type Output = (usize, Option<V>);

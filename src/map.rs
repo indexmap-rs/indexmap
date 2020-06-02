@@ -24,7 +24,7 @@ use std::cmp::Ordering;
 use std::fmt;
 
 use equivalent::Equivalent;
-use map_core::{IndexMapCore, InsertValue, MakeEntry, ProbeAction, Size};
+use map_core::{IndexMapCore, MakeEntry, ProbeAction, Size};
 use util::third;
 use {Bucket, Entries, HashValue};
 
@@ -236,21 +236,8 @@ where
     /// FIXME Not implemented fully yet.
     pub fn reserve(&mut self, additional: usize) {
         if additional > 0 {
-            self.reserve_one();
+            self.core.reserve_one();
         }
-    }
-
-    fn reserve_one(&mut self) {
-        if self.len() == self.capacity() {
-            dispatch_32_vs_64!(self.double_capacity());
-        }
-    }
-
-    fn double_capacity<Sz>(&mut self)
-    where
-        Sz: Size,
-    {
-        self.core.double_capacity::<Sz>();
     }
 
     /// Insert a key-value pair in the map.
@@ -284,8 +271,8 @@ where
     /// See also [`entry`](#method.entry) if you you want to insert *or* modify
     /// or if you need to get the index of the corresponding key-value pair.
     pub fn insert_full(&mut self, key: K, value: V) -> (usize, Option<V>) {
-        self.reserve_one();
-        dispatch_32_vs_64!(self.insert_phase_1::<_>(key, InsertValue(value)))
+        let hash = hash_elem_using(&self.hash_builder, &key);
+        self.core.insert_full(hash, key, value)
     }
 
     /// Get the given key’s corresponding entry in the map for insertion and/or
@@ -293,7 +280,7 @@ where
     ///
     /// Computes in **O(1)** time (amortized average).
     pub fn entry(&mut self, key: K) -> Entry<K, V> {
-        self.reserve_one();
+        self.core.reserve_one();
         dispatch_32_vs_64!(self.insert_phase_1::<_>(key, MakeEntry))
     }
 
