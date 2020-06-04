@@ -15,8 +15,7 @@ indexmap
 .. |rustc| image:: https://img.shields.io/badge/rust-1.18%2B-orange.svg
 .. _rustc: https://img.shields.io/badge/rust-1.18%2B-orange.svg
 
-A safe, pure-Rust hash table which preserves (in a limited sense) insertion
-order.
+A pure-Rust hash table which preserves (in a limited sense) insertion order.
 
 This crate implements compact map and set data-structures,
 where the iteration order of the keys is independent from their hash or
@@ -44,11 +43,6 @@ was indexmap, a hash table that has following properties:
 
   - It's the usual backwards shift deletion, but only on the index vector, so
     it's cheaper because it's moving less memory around.
-
-Does not implement (Yet)
-------------------------
-
-- ``.reserve()`` exists but does not have a complete implementation
 
 Performance
 -----------
