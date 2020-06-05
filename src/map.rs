@@ -834,13 +834,13 @@ where
     K: Hash + Eq,
     S: BuildHasher,
 {
-    fn probe_action<'a, Sz, A>(&'a mut self, key: K, action: A) -> A::Output
+    fn insert_phase_1<'a, Sz, A>(&'a mut self, key: K, action: A) -> A::Output
     where
         Sz: Size,
         A: ProbeAction<'a, Sz, K, V>,
     {
         let hash = hash_elem_using(&self.hash_builder, &key);
-        self.core.probe_action::<Sz, A>(hash, key, action)
+        self.core.insert_phase_1::<Sz, A>(hash, key, action)
     }
 
     /// Remove all key-value pairs in the map, while preserving its capacity.
@@ -904,7 +904,7 @@ where
     /// or if you need to get the index of the corresponding key-value pair.
     pub fn insert_full(&mut self, key: K, value: V) -> (usize, Option<V>) {
         self.reserve_one();
-        dispatch_32_vs_64!(self.probe_action::<_>(key, InsertValue(value)))
+        dispatch_32_vs_64!(self.insert_phase_1::<_>(key, InsertValue(value)))
     }
 
     /// Get the given key’s corresponding entry in the map for insertion and/or
@@ -913,7 +913,7 @@ where
     /// Computes in **O(1)** time (amortized average).
     pub fn entry(&mut self, key: K) -> Entry<K, V> {
         self.reserve_one();
-        dispatch_32_vs_64!(self.probe_action::<_>(key, MakeEntry))
+        dispatch_32_vs_64!(self.insert_phase_1::<_>(key, MakeEntry))
     }
 
     /// Return an iterator over the key-value pairs of the map, in their order
@@ -1406,7 +1406,7 @@ impl<K, V> OrderMapCore<K, V> {
         Some(self.swap_remove_found(probe, found))
     }
 
-    fn probe_action<'a, Sz, A>(&'a mut self, hash: HashValue, key: K, action: A) -> A::Output
+    fn insert_phase_1<'a, Sz, A>(&'a mut self, hash: HashValue, key: K, action: A) -> A::Output
     where
         Sz: Size,
         K: Eq,
@@ -1696,21 +1696,24 @@ impl<K, V> OrderMapCore<K, V> {
 
 trait ProbeAction<'a, Sz: Size, K, V>: Sized {
     type Output;
+    // handle an occupied spot in the map
     fn hit(self, entry: OccupiedEntry<'a, K, V>) -> Self::Output;
+    // handle an empty spot in the map
     fn empty(self, entry: VacantEntry<'a, K, V>) -> Self::Output;
-    fn steal(self, entry: VacantEntry<'a, K, V>) -> Self::Output {
-        self.empty(entry)
-    }
+    // robin hood: handle a that you should steal because it's better for you
+    fn steal(self, entry: VacantEntry<'a, K, V>) -> Self::Output;
 }
 
 struct InsertValue<V>(V);
 
 impl<'a, Sz: Size, K, V> ProbeAction<'a, Sz, K, V> for InsertValue<V> {
     type Output = (usize, Option<V>);
+
     fn hit(self, entry: OccupiedEntry<'a, K, V>) -> Self::Output {
         let old = replace(&mut entry.map.entries[entry.index].value, self.0);
         (entry.index, Some(old))
     }
+
     fn empty(self, entry: VacantEntry<'a, K, V>) -> Self::Output {
         let pos = &mut entry.map.indices[entry.probe];
         let index = entry.map.entries.len();
@@ -1722,15 +1725,10 @@ impl<'a, Sz: Size, K, V> ProbeAction<'a, Sz, K, V> for InsertValue<V> {
         });
         (index, None)
     }
+
     fn steal(self, entry: VacantEntry<'a, K, V>) -> Self::Output {
         let index = entry.map.entries.len();
-        let old_pos = Pos::with_hash::<Sz>(index, entry.hash);
-        entry.map.entries.push(Bucket {
-            hash: entry.hash,
-            key: entry.key,
-            value: self.0,
-        });
-        entry.map.insert_phase_2::<Sz>(entry.probe, old_pos);
+        entry.insert_impl::<Sz>(self.0);
         (index, None)
     }
 }
@@ -1743,6 +1741,9 @@ impl<'a, Sz: Size, K: 'a, V: 'a> ProbeAction<'a, Sz, K, V> for MakeEntry {
         Entry::Occupied(entry)
     }
     fn empty(self, entry: VacantEntry<'a, K, V>) -> Self::Output {
+        Entry::Vacant(entry)
+    }
+    fn steal(self, entry: VacantEntry<'a, K, V>) -> Self::Output {
         Entry::Vacant(entry)
     }
 }
