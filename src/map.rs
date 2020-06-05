@@ -351,12 +351,6 @@ fn probe_distance(mask: usize, hash: HashValue, current: usize) -> usize {
     current.wrapping_sub(desired_pos(mask, hash)) & mask
 }
 
-enum Inserted<V> {
-    Done,
-    Swapped { prev_value: V },
-    RobinHood { probe: usize, old_pos: Pos },
-}
-
 impl<K, V, S> fmt::Debug for IndexMap<K, V, S>
 where
     K: fmt::Debug + Hash + Eq,
@@ -840,13 +834,13 @@ where
     K: Hash + Eq,
     S: BuildHasher,
 {
-    // FIXME: reduce duplication (compare with insert)
-    fn entry_phase_1<Sz>(&mut self, key: K) -> Entry<K, V>
+    fn probe_action<'a, Sz, A>(&'a mut self, key: K, action: A) -> A::Output
     where
         Sz: Size,
+        A: ProbeAction<'a, Sz, K, V>,
     {
         let hash = hash_elem_using(&self.hash_builder, &key);
-        self.core.entry_phase_1::<Sz>(hash, key)
+        self.core.probe_action::<Sz, A>(hash, key, action)
     }
 
     /// Remove all key-value pairs in the map, while preserving its capacity.
@@ -865,24 +859,12 @@ where
         }
     }
 
-    // First phase: Look for the preferred location for key.
-    //
-    // We will know if `key` is already in the map, before we need to insert it.
-    // When we insert they key, it might be that we need to continue displacing
-    // entries (robin hood hashing), in which case Inserted::RobinHood is returned
-    fn insert_phase_1<Sz>(&mut self, key: K, value: V) -> Inserted<V>
-    where
-        Sz: Size,
-    {
-        let hash = hash_elem_using(&self.hash_builder, &key);
-        self.core.insert_phase_1::<Sz>(hash, key, value)
-    }
-
     fn reserve_one(&mut self) {
         if self.len() == self.capacity() {
             dispatch_32_vs_64!(self.double_capacity());
         }
     }
+
     fn double_capacity<Sz>(&mut self)
     where
         Sz: Size,
@@ -904,26 +886,7 @@ where
     /// See also [`entry`](#method.entry) if you you want to insert *or* modify
     /// or if you need to get the index of the corresponding key-value pair.
     pub fn insert(&mut self, key: K, value: V) -> Option<V> {
-        self.reserve_one();
-        if self.size_class_is_64bit() {
-            match self.insert_phase_1::<u64>(key, value) {
-                Inserted::Swapped { prev_value } => Some(prev_value),
-                Inserted::Done => None,
-                Inserted::RobinHood { probe, old_pos } => {
-                    self.core.insert_phase_2::<u64>(probe, old_pos);
-                    None
-                }
-            }
-        } else {
-            match self.insert_phase_1::<u32>(key, value) {
-                Inserted::Swapped { prev_value } => Some(prev_value),
-                Inserted::Done => None,
-                Inserted::RobinHood { probe, old_pos } => {
-                    self.core.insert_phase_2::<u32>(probe, old_pos);
-                    None
-                }
-            }
-        }
+        self.insert_full(key, value).1
     }
 
     /// Insert a key-value pair in the map, and get their index.
@@ -940,16 +903,8 @@ where
     /// See also [`entry`](#method.entry) if you you want to insert *or* modify
     /// or if you need to get the index of the corresponding key-value pair.
     pub fn insert_full(&mut self, key: K, value: V) -> (usize, Option<V>) {
-        let entry = self.entry(key);
-        let index = entry.index();
-
-        match entry {
-            Entry::Occupied(mut entry) => (index, Some(entry.insert(value))),
-            Entry::Vacant(entry) => {
-                entry.insert(value);
-                (index, None)
-            }
-        }
+        self.reserve_one();
+        dispatch_32_vs_64!(self.probe_action::<_>(key, InsertValue(value)))
     }
 
     /// Get the given key’s corresponding entry in the map for insertion and/or
@@ -958,7 +913,7 @@ where
     /// Computes in **O(1)** time (amortized average).
     pub fn entry(&mut self, key: K) -> Entry<K, V> {
         self.reserve_one();
-        dispatch_32_vs_64!(self.entry_phase_1(key))
+        dispatch_32_vs_64!(self.probe_action::<_>(key, MakeEntry))
     }
 
     /// Return an iterator over the key-value pairs of the map, in their order
@@ -1451,11 +1406,11 @@ impl<K, V> OrderMapCore<K, V> {
         Some(self.swap_remove_found(probe, found))
     }
 
-    // FIXME: reduce duplication (compare with insert)
-    fn entry_phase_1<Sz>(&mut self, hash: HashValue, key: K) -> Entry<K, V>
+    fn probe_action<'a, Sz, A>(&'a mut self, hash: HashValue, key: K, action: A) -> A::Output
     where
         Sz: Size,
         K: Eq,
+        A: ProbeAction<'a, Sz, K, V>,
     {
         let mut probe = desired_pos(self.mask, hash);
         let mut dist = 0;
@@ -1467,14 +1422,14 @@ impl<K, V> OrderMapCore<K, V> {
                 let their_dist = probe_distance(self.mask, entry_hash.into_hash(), probe);
                 if their_dist < dist {
                     // robin hood: steal the spot if it's better for us
-                    return Entry::Vacant(VacantEntry {
+                    return action.steal(VacantEntry {
                         map: self,
                         hash: hash,
                         key: key,
                         probe: probe,
                     });
                 } else if entry_hash == hash && self.entries[i].key == key {
-                    return Entry::Occupied(OccupiedEntry {
+                    return action.hit(OccupiedEntry {
                         map: self,
                         key: key,
                         probe: probe,
@@ -1483,7 +1438,7 @@ impl<K, V> OrderMapCore<K, V> {
                 }
             } else {
                 // empty bucket, insert here
-                return Entry::Vacant(VacantEntry {
+                return action.empty(VacantEntry {
                     map: self,
                     hash: hash,
                     key: key,
@@ -1492,52 +1447,6 @@ impl<K, V> OrderMapCore<K, V> {
             }
             dist += 1;
         });
-    }
-
-    // First phase: Look for the preferred location for key.
-    //
-    // We will know if `key` is already in the map, before we need to insert it.
-    // When we insert they key, it might be that we need to continue displacing
-    // entries (robin hood hashing), in which case Inserted::RobinHood is returned
-    fn insert_phase_1<Sz>(&mut self, hash: HashValue, key: K, value: V) -> Inserted<V>
-    where
-        Sz: Size,
-        K: Eq,
-    {
-        let mut probe = desired_pos(self.mask, hash);
-        let mut dist = 0;
-        let insert_kind;
-        debug_assert!(self.len() < self.raw_capacity());
-        probe_loop!(probe < self.indices.len(), {
-            let pos = &mut self.indices[probe];
-            if let Some((i, hash_proxy)) = pos.resolve::<Sz>() {
-                let entry_hash = hash_proxy.get_short_hash(&self.entries, i);
-                // if existing element probed less than us, swap
-                let their_dist = probe_distance(self.mask, entry_hash.into_hash(), probe);
-                if their_dist < dist {
-                    // robin hood: steal the spot if it's better for us
-                    let index = self.entries.len();
-                    insert_kind = Inserted::RobinHood {
-                        probe: probe,
-                        old_pos: Pos::with_hash::<Sz>(index, hash),
-                    };
-                    break;
-                } else if entry_hash == hash && self.entries[i].key == key {
-                    return Inserted::Swapped {
-                        prev_value: replace(&mut self.entries[i].value, value),
-                    };
-                }
-            } else {
-                // empty bucket, insert here
-                let index = self.entries.len();
-                *pos = Pos::with_hash::<Sz>(index, hash);
-                insert_kind = Inserted::Done;
-                break;
-            }
-            dist += 1;
-        });
-        self.entries.push(Bucket { hash, key, value });
-        insert_kind
     }
 
     /// phase 2 is post-insert where we forward-shift `Pos` in the indices.
@@ -1782,6 +1691,59 @@ impl<K, V> OrderMapCore<K, V> {
                 }
             }
         }
+    }
+}
+
+trait ProbeAction<'a, Sz: Size, K, V>: Sized {
+    type Output;
+    fn hit(self, entry: OccupiedEntry<'a, K, V>) -> Self::Output;
+    fn empty(self, entry: VacantEntry<'a, K, V>) -> Self::Output;
+    fn steal(self, entry: VacantEntry<'a, K, V>) -> Self::Output {
+        self.empty(entry)
+    }
+}
+
+struct InsertValue<V>(V);
+
+impl<'a, Sz: Size, K, V> ProbeAction<'a, Sz, K, V> for InsertValue<V> {
+    type Output = (usize, Option<V>);
+    fn hit(self, entry: OccupiedEntry<'a, K, V>) -> Self::Output {
+        let old = replace(&mut entry.map.entries[entry.index].value, self.0);
+        (entry.index, Some(old))
+    }
+    fn empty(self, entry: VacantEntry<'a, K, V>) -> Self::Output {
+        let pos = &mut entry.map.indices[entry.probe];
+        let index = entry.map.entries.len();
+        *pos = Pos::with_hash::<Sz>(index, entry.hash);
+        entry.map.entries.push(Bucket {
+            hash: entry.hash,
+            key: entry.key,
+            value: self.0,
+        });
+        (index, None)
+    }
+    fn steal(self, entry: VacantEntry<'a, K, V>) -> Self::Output {
+        let index = entry.map.entries.len();
+        let old_pos = Pos::with_hash::<Sz>(index, entry.hash);
+        entry.map.entries.push(Bucket {
+            hash: entry.hash,
+            key: entry.key,
+            value: self.0,
+        });
+        entry.map.insert_phase_2::<Sz>(entry.probe, old_pos);
+        (index, None)
+    }
+}
+
+struct MakeEntry;
+
+impl<'a, Sz: Size, K: 'a, V: 'a> ProbeAction<'a, Sz, K, V> for MakeEntry {
+    type Output = Entry<'a, K, V>;
+    fn hit(self, entry: OccupiedEntry<'a, K, V>) -> Self::Output {
+        Entry::Occupied(entry)
+    }
+    fn empty(self, entry: VacantEntry<'a, K, V>) -> Self::Output {
+        Entry::Vacant(entry)
     }
 }
 
