@@ -1700,7 +1700,7 @@ trait ProbeAction<'a, Sz: Size, K, V>: Sized {
     fn hit(self, entry: OccupiedEntry<'a, K, V>) -> Self::Output;
     // handle an empty spot in the map
     fn empty(self, entry: VacantEntry<'a, K, V>) -> Self::Output;
-    // robin hood: handle a that you should steal because it's better for you
+    // robin hood: handle a spot that you should steal because it's better for you
     fn steal(self, entry: VacantEntry<'a, K, V>) -> Self::Output;
 }
 
