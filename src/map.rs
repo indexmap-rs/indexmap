@@ -1772,7 +1772,7 @@ impl<K, V> OrderMapCore<K, V> {
         {
             for pos in indices {
                 if let Some((i, _)) = pos.resolve::<Sz>() {
-                    pos.set_pos::<Sz>(len - i);
+                    pos.set_pos::<Sz>(len - i - 1);
                 }
             }
         }
