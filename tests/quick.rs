@@ -330,6 +330,59 @@ quickcheck! {
         map.sort_by(|_, v1, _, v2| Ord::cmp(v1, v2));
         assert_sorted_by_key(map, |t| t.1);
     }
+
+    fn reverse(keyvals: Large<Vec<(i8, i8)>>) -> () {
+        let mut map: IndexMap<_, _> = IndexMap::from_iter(keyvals.to_vec());
+
+        fn generate_answer(input: &Vec<(i8, i8)>) -> Vec<(i8, i8)> {
+            // to mimic what `IndexMap::from_iter` does:
+            // need to get (A) the unique keys in forward order, and (B) the
+            // last value of each of those keys.
+
+            // create (A): an iterable that yields the unique keys in ltr order
+            let mut seen_keys = HashSet::new();
+            let unique_keys_forward = input.iter().filter_map(move |(k, _)| {
+                if seen_keys.contains(k) { None }
+                else { seen_keys.insert(*k); Some(*k) }
+            });
+
+            // create (B): a mapping of keys to the last value seen for that key
+            // this is the same as reversing the input and taking the first
+            // value seen for that key!
+            let mut last_val_per_key = HashMap::new();
+            for &(k, v) in input.iter().rev() {
+                if !last_val_per_key.contains_key(&k) {
+                    last_val_per_key.insert(k, v);
+                }
+            }
+
+            // iterate over the keys in (A) in order, and match each one with
+            // the corresponding last value from (B)
+            let mut ans: Vec<_> = unique_keys_forward
+                .map(|k| (k, *last_val_per_key.get(&k).unwrap()))
+                .collect();
+
+            // finally, since this test is testing `.reverse()`, reverse the
+            // answer in-place
+            ans.reverse();
+
+            ans
+        }
+
+        let answer = generate_answer(&keyvals.0);
+
+        // perform the work
+        map.reverse();
+
+        // check it contains all the values it should
+        for &(key, val) in &answer {
+            assert_eq!(map[&key], val);
+        }
+
+        // check the order
+        let mapv = Vec::from_iter(map);
+        assert_eq!(answer, mapv);
+    }
 }
 
 fn assert_sorted_by_key<I, Key, X>(iterable: I, key: Key)
