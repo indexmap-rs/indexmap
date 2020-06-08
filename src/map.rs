@@ -1760,9 +1760,22 @@ impl<K, V> OrderMapCore<K, V> {
     }
 
     fn reverse(&mut self) {
-        let side_index = self.save_hash_index();
         self.entries.reverse();
-        self.restore_hash_index(side_index);
+
+        // No need to save hash indices, can easily calculate what they should
+        // be, given that this is an in-place reversal.
+        dispatch_32_vs_64!(self => apply_new_index(&mut self.indices, self.entries.len()));
+
+        fn apply_new_index<Sz>(indices: &mut [Pos], len: usize)
+        where
+            Sz: Size,
+        {
+            for pos in indices {
+                if let Some((i, _)) = pos.resolve::<Sz>() {
+                    pos.set_pos::<Sz>(len - i);
+                }
+            }
+        }
     }
 
     fn save_hash_index(&mut self) -> Vec<usize> {
