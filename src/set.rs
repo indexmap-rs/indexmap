@@ -527,6 +527,13 @@ where
         }
     }
 
+    /// Reverses the order of the set’s values in place.
+    ///
+    /// Computes in **O(n)** time and **O(1)** space.
+    pub fn reverse(&mut self) {
+        self.map.reverse()
+    }
+
     /// Clears the `IndexSet`, returning all values as a drain iterator.
     /// Keeps the allocated memory for reuse.
     pub fn drain(&mut self, range: RangeFull) -> Drain<T> {

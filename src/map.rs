@@ -1253,6 +1253,13 @@ where
         self.into_iter()
     }
 
+    /// Reverses the order of the map’s key-value pairs in place.
+    ///
+    /// Computes in **O(n)** time and **O(1)** space.
+    pub fn reverse(&mut self) {
+        self.core.reverse()
+    }
+
     /// Clears the `IndexMap`, returning all key-value pairs as a drain iterator.
     /// Keeps the allocated memory for reuse.
     pub fn drain(&mut self, range: RangeFull) -> Drain<K, V> {
@@ -1749,6 +1756,12 @@ impl<K, V> OrderMapCore<K, V> {
         let side_index = self.save_hash_index();
         self.entries
             .sort_by(move |ei, ej| compare(&ei.key, &ei.value, &ej.key, &ej.value));
+        self.restore_hash_index(side_index);
+    }
+
+    fn reverse(&mut self) {
+        let side_index = self.save_hash_index();
+        self.entries.reverse();
         self.restore_hash_index(side_index);
     }
 
