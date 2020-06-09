@@ -24,6 +24,12 @@ use rand::rngs::SmallRng;
 use rand::seq::SliceRandom;
 use rand::SeedableRng;
 
+/// Use a consistently seeded Rng for benchmark stability
+fn small_rng() -> SmallRng {
+    let seed = u64::from_le_bytes(*b"indexmap");
+    SmallRng::seed_from_u64(seed)
+}
+
 #[bench]
 fn new_hashmap(b: &mut Bencher) {
     b.iter(|| HashMap::<String, String>::new());
@@ -277,7 +283,7 @@ where
     I: IntoIterator,
 {
     let mut v = Vec::from_iter(iter);
-    let mut rng = SmallRng::from_entropy();
+    let mut rng = small_rng();
     v.shuffle(&mut rng);
     v
 }
@@ -517,7 +523,7 @@ fn hashmap_merge_shuffle(b: &mut Bencher) {
     let first_map: HashMap<u64, _> = (0..MERGE).map(|i| (i, ())).collect();
     let second_map: HashMap<u64, _> = (MERGE..MERGE * 2).map(|i| (i, ())).collect();
     let mut v = Vec::new();
-    let mut rng = SmallRng::from_entropy();
+    let mut rng = small_rng();
     b.iter(|| {
         let mut merged = first_map.clone();
         v.extend(second_map.iter().map(|(&k, &v)| (k, v)));
@@ -544,7 +550,7 @@ fn indexmap_merge_shuffle(b: &mut Bencher) {
     let first_map: IndexMap<u64, _> = (0..MERGE).map(|i| (i, ())).collect();
     let second_map: IndexMap<u64, _> = (MERGE..MERGE * 2).map(|i| (i, ())).collect();
     let mut v = Vec::new();
-    let mut rng = SmallRng::from_entropy();
+    let mut rng = small_rng();
     b.iter(|| {
         let mut merged = first_map.clone();
         v.extend(second_map.iter().map(|(&k, &v)| (k, v)));
@@ -559,7 +565,7 @@ fn indexmap_merge_shuffle(b: &mut Bencher) {
 fn swap_remove_indexmap_100_000(b: &mut Bencher) {
     let map = IMAP_100K.clone();
     let mut keys = Vec::from_iter(map.keys().cloned());
-    let mut rng = SmallRng::from_entropy();
+    let mut rng = small_rng();
     keys.shuffle(&mut rng);
 
     b.iter(|| {
@@ -576,7 +582,7 @@ fn swap_remove_indexmap_100_000(b: &mut Bencher) {
 fn shift_remove_indexmap_100_000_few(b: &mut Bencher) {
     let map = IMAP_100K.clone();
     let mut keys = Vec::from_iter(map.keys().cloned());
-    let mut rng = SmallRng::from_entropy();
+    let mut rng = small_rng();
     keys.shuffle(&mut rng);
     keys.truncate(50);
 
@@ -597,7 +603,7 @@ fn shift_remove_indexmap_2_000_full(b: &mut Bencher) {
     for &key in &keys {
         map.insert(key, key);
     }
-    let mut rng = SmallRng::from_entropy();
+    let mut rng = small_rng();
     keys.shuffle(&mut rng);
 
     b.iter(|| {

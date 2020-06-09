@@ -12,13 +12,20 @@ use indexmap::IndexMap;
 use std::collections::HashMap;
 use std::iter::FromIterator;
 
+use rand::rngs::SmallRng;
 use rand::seq::SliceRandom;
-use rand::thread_rng;
+use rand::SeedableRng;
 
 use std::hash::{Hash, Hasher};
 
 use std::borrow::Borrow;
 use std::ops::Deref;
+
+/// Use a consistently seeded Rng for benchmark stability
+fn small_rng() -> SmallRng {
+    let seed = u64::from_le_bytes(*b"indexmap");
+    SmallRng::seed_from_u64(seed)
+}
 
 #[derive(PartialEq, Eq, Copy, Clone)]
 #[repr(transparent)]
@@ -64,7 +71,7 @@ where
     I: IntoIterator,
 {
     let mut v = Vec::from_iter(iter);
-    let mut rng = thread_rng();
+    let mut rng = small_rng();
     v.shuffle(&mut rng);
     v
 }
