@@ -79,6 +79,8 @@ mod mutable_keys;
 mod serde;
 mod util;
 
+mod map_core;
+
 pub mod map;
 pub mod set;
 
@@ -95,7 +97,7 @@ pub use set::IndexSet;
 
 /// Hash value newtype. Not larger than usize, since anything larger
 /// isn't used for selecting position anyway.
-#[derive(Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 struct HashValue(usize);
 
 impl HashValue {
@@ -105,24 +107,31 @@ impl HashValue {
     }
 }
 
-impl Clone for HashValue {
-    #[inline]
-    fn clone(&self) -> Self {
-        *self
-    }
-}
-impl PartialEq for HashValue {
-    #[inline]
-    fn eq(&self, rhs: &Self) -> bool {
-        self.0 == rhs.0
-    }
-}
-
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Debug)]
 struct Bucket<K, V> {
     hash: HashValue,
     key: K,
     value: V,
+}
+
+impl<K, V> Clone for Bucket<K, V>
+where
+    K: Clone,
+    V: Clone,
+{
+    fn clone(&self) -> Self {
+        Bucket {
+            hash: self.hash,
+            key: self.key.clone(),
+            value: self.value.clone(),
+        }
+    }
+
+    fn clone_from(&mut self, other: &Self) {
+        self.hash = other.hash;
+        self.key.clone_from(&other.key);
+        self.value.clone_from(&other.value);
+    }
 }
 
 impl<K, V> Bucket<K, V> {

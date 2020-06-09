@@ -31,9 +31,9 @@ where
     }
 }
 
-struct OrderMapVisitor<K, V, S>(PhantomData<(K, V, S)>);
+struct IndexMapVisitor<K, V, S>(PhantomData<(K, V, S)>);
 
-impl<'de, K, V, S> Visitor<'de> for OrderMapVisitor<K, V, S>
+impl<'de, K, V, S> Visitor<'de> for IndexMapVisitor<K, V, S>
 where
     K: Deserialize<'de> + Eq + Hash,
     V: Deserialize<'de>,
@@ -71,7 +71,7 @@ where
     where
         D: Deserializer<'de>,
     {
-        deserializer.deserialize_map(OrderMapVisitor(PhantomData))
+        deserializer.deserialize_map(IndexMapVisitor(PhantomData))
     }
 }
 
@@ -109,9 +109,9 @@ where
     }
 }
 
-struct OrderSetVisitor<T, S>(PhantomData<(T, S)>);
+struct IndexSetVisitor<T, S>(PhantomData<(T, S)>);
 
-impl<'de, T, S> Visitor<'de> for OrderSetVisitor<T, S>
+impl<'de, T, S> Visitor<'de> for IndexSetVisitor<T, S>
 where
     T: Deserialize<'de> + Eq + Hash,
     S: Default + BuildHasher,
@@ -147,7 +147,7 @@ where
     where
         D: Deserializer<'de>,
     {
-        deserializer.deserialize_seq(OrderSetVisitor(PhantomData))
+        deserializer.deserialize_seq(IndexSetVisitor(PhantomData))
     }
 }
 

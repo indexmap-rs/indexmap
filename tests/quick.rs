@@ -17,7 +17,7 @@ use rand::Rng;
 use fnv::FnvHasher;
 use std::hash::{BuildHasher, BuildHasherDefault};
 type FnvBuilder = BuildHasherDefault<FnvHasher>;
-type OrderMapFnv<K, V> = IndexMap<K, V, FnvBuilder>;
+type IndexMapFnv<K, V> = IndexMap<K, V, FnvBuilder>;
 
 use std::cmp::min;
 use std::collections::HashMap;
@@ -275,7 +275,7 @@ quickcheck! {
                 ops2.remove(i);
             }
         }
-        let mut map2 = OrderMapFnv::default();
+        let mut map2 = IndexMapFnv::default();
         let mut reference2 = HashMap::new();
         do_ops(&ops2, &mut map2, &mut reference2);
         assert_eq!(map == map2, reference == reference2);
