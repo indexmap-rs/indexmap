@@ -53,9 +53,8 @@
 //!
 //! ### Rust Version
 //!
-//! This version of indexmap requires Rust 1.18 or later, or 1.32+ for
-//! development builds, and Rust 1.36+ for using with `alloc` (without `std`),
-//! see below.
+//! This version of indexmap requires Rust 1.32 or later, or Rust 1.36+ for
+//! using with `alloc` (without `std`), see below.
 //!
 //! The indexmap 1.x release series will use a carefully considered version
 //! upgrade policy, where in a later 1.x version, we will raise the minimum

@@ -41,7 +41,7 @@ default-features = false
 features = ["inline-more", "raw"]
 
 [dev-dependencies]
-itertools = "0.8"
+itertools = "0.9"
 rand = {version = "0.7", features = ["small_rng"] }
 quickcheck = { version = "0.9", default-features = false }
 fnv = "1.0"
