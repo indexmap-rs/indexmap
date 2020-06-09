@@ -1737,12 +1737,15 @@ struct MakeEntry;
 
 impl<'a, Sz: Size, K: 'a, V: 'a> ProbeAction<'a, Sz, K, V> for MakeEntry {
     type Output = Entry<'a, K, V>;
+
     fn hit(self, entry: OccupiedEntry<'a, K, V>) -> Self::Output {
         Entry::Occupied(entry)
     }
+
     fn empty(self, entry: VacantEntry<'a, K, V>) -> Self::Output {
         Entry::Vacant(entry)
     }
+
     fn steal(self, entry: VacantEntry<'a, K, V>) -> Self::Output {
         Entry::Vacant(entry)
     }
