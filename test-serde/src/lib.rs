@@ -1,4 +1,4 @@
-#![cfg(feature = "serde-1")]
+#![cfg(test)]
 
 #[macro_use]
 extern crate indexmap;
