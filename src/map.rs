@@ -687,6 +687,10 @@ impl<'a, K, V> OccupiedEntry<'a, K, V> {
     pub fn get_mut(&mut self) -> &mut V {
         &mut self.map.entries[self.index].value
     }
+    pub fn get_entry_mut(&mut self) -> (&K, &mut V) {
+        let bucket = &mut self.map.entries[self.index];
+        (&bucket.key, &mut bucket.value)
+    }
 
     /// Put the new key in the occupied entry's key slot
     pub(crate) fn replace_key(self) -> K {
@@ -700,6 +704,10 @@ impl<'a, K, V> OccupiedEntry<'a, K, V> {
     }
     pub fn into_mut(self) -> &'a mut V {
         &mut self.map.entries[self.index].value
+    }
+    pub fn into_entry_mut(self) -> (&'a K, &'a mut V) {
+        let bucket = &mut self.map.entries[self.index];
+        (&bucket.key, &mut bucket.value)
     }
 
     /// Sets the value of the entry to `value`, and returns the entry's old value.
@@ -805,6 +813,14 @@ impl<'a, K, V> VacantEntry<'a, K, V> {
         }
     }
 
+    pub fn insert_entry(self, value: V) -> (&'a K, &'a mut V) {
+        if self.map.size_class_is_64bit() {
+            self.insert_entry_impl::<u64>(value)
+        } else {
+            self.insert_entry_impl::<u32>(value)
+        }
+    }
+
     fn insert_impl<Sz>(self, value: V) -> &'a mut V
     where
         Sz: Size,
@@ -818,6 +834,22 @@ impl<'a, K, V> VacantEntry<'a, K, V> {
         let old_pos = Pos::with_hash::<Sz>(index, self.hash);
         self.map.insert_phase_2::<Sz>(self.probe, old_pos);
         &mut { self.map }.entries[index].value
+    }
+
+    fn insert_entry_impl<Sz>(self, value: V) -> (&'a K, &'a mut V)
+    where
+        Sz: Size,
+    {
+        let index = self.map.entries.len();
+        self.map.entries.push(Bucket {
+            hash: self.hash,
+            key: self.key,
+            value,
+        });
+        let old_pos = Pos::with_hash::<Sz>(index, self.hash);
+        self.map.insert_phase_2::<Sz>(self.probe, old_pos);
+        let entry = &mut { self.map }.entries[index];
+        (&entry.key, &mut entry.value)
     }
 }
 
