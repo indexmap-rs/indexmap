@@ -636,8 +636,8 @@ where
     where
         F: FnMut(&K, &V, &K, &V) -> Ordering,
     {
-        self.with_entries(|entries| {
-            entries.sort_by(|a, b| cmp(&a.key, &a.value, &b.key, &b.value));
+        self.with_entries(move |entries| {
+            entries.sort_by(move |a, b| cmp(&a.key, &a.value, &b.key, &b.value));
         });
     }
 
@@ -650,7 +650,7 @@ where
         F: FnMut(&K, &V, &K, &V) -> Ordering,
     {
         let mut entries = self.into_entries();
-        entries.sort_by(|a, b| cmp(&a.key, &a.value, &b.key, &b.value));
+        entries.sort_by(move |a, b| cmp(&a.key, &a.value, &b.key, &b.value));
         IntoIter {
             iter: entries.into_iter(),
         }
