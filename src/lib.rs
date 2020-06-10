@@ -1,3 +1,4 @@
+// We *mostly* avoid unsafe code, but `mod map_core` allows it to use `RawTable`.
 #![deny(unsafe_code)]
 #![doc(html_root_url = "https://docs.rs/indexmap/1/")]
 #![cfg_attr(not(has_std), no_std)]
