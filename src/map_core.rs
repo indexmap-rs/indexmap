@@ -362,8 +362,10 @@ impl<K, V> IndexMapCore<K, V> {
                 self.entries.swap(i - n_deleted, i);
             }
         }
-        self.entries.truncate(len - n_deleted);
-        self.rebuild_hash_table();
+        if n_deleted > 0 {
+            self.entries.truncate(len - n_deleted);
+            self.rebuild_hash_table();
+        }
     }
 
     pub(crate) fn reverse(&mut self) {
