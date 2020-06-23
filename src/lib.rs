@@ -55,6 +55,8 @@
 #[cfg(not(has_std))]
 #[macro_use(vec)]
 extern crate alloc;
+#[cfg(feature = "fnv")]
+extern crate fnv;
 
 #[cfg(not(has_std))]
 pub(crate) mod std {
@@ -70,6 +72,8 @@ pub(crate) mod std {
 
 #[cfg(not(has_std))]
 use std::vec::Vec;
+#[cfg(feature = "fnv")]
+use fnv::FnvBuildHasher;
 
 #[macro_use]
 mod macros;
@@ -171,3 +175,11 @@ trait Entries {
     where
         F: FnOnce(&mut [Self::Entry]);
 }
+
+/// An `IndexMap` using a default FNV hasher.
+#[cfg(feature = "fnv")]
+pub type FnvHashMap<K, V> = IndexMap<K, V, FnvBuildHasher>;
+
+/// An `IndexSet` using a default FNV hasher.
+#[cfg(feature = "fnv")]
+pub type FnvHashSet<T> = IndexSet<T, FnvBuildHasher>;

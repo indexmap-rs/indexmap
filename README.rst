@@ -86,6 +86,10 @@ which is roughly:
 Recent Changes
 ==============
 
+- 1.4.1
+
+  - Add ``FnvIndexMap`` and ``FnvIndexSet``, using a default FNV hasher
+
 - 1.4.0
 
   - Add new method ``get_index_of`` by @Thermatrix in PR 115_ and 120_
