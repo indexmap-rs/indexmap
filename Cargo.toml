@@ -38,7 +38,7 @@ rayon = { version = "1.0", optional = true }
 [dependencies.hashbrown]
 version = "0.8"
 default-features = false
-features = ["inline-more", "raw"]
+features = ["raw"]
 
 [dev-dependencies]
 itertools = "0.9"
