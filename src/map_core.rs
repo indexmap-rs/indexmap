@@ -282,18 +282,18 @@ impl<K, V> IndexMapCore<K, V> {
         if shifted_entries.len() > raw_capacity / 2 {
             // shift all indices greater than `index`
             unsafe {
-                for raw_bucket in self.indices.iter() {
-                    let i = raw_bucket.read();
+                for bucket in self.indices.iter() {
+                    let i = bucket.read();
                     if i > index {
-                        raw_bucket.write(i - 1);
+                        bucket.write(i - 1);
                     }
                 }
             }
         } else {
             // find each following entry to shift its index
             for (i, entry) in (index + 1..).zip(shifted_entries) {
-                let raw_bucket = self.find_index(entry.hash, i).unwrap();
-                unsafe { raw_bucket.write(i - 1) };
+                let shifted_bucket = self.find_index(entry.hash, i).unwrap();
+                unsafe { shifted_bucket.write(i - 1) };
             }
         }
 
@@ -336,8 +336,8 @@ impl<K, V> IndexMapCore<K, V> {
             // was not last element
             // examine new element in `index` and find it in indices
             let last = self.entries.len();
-            let raw_bucket = self.find_index(entry.hash, last).unwrap();
-            unsafe { raw_bucket.write(index) };
+            let swapped_bucket = self.find_index(entry.hash, last).unwrap();
+            unsafe { swapped_bucket.write(index) };
         }
 
         (index, entry.key, entry.value)
