@@ -24,6 +24,33 @@
 //! - The [`MutableKeys`][map::MutableKeys] trait, which gives opt-in mutable
 //!   access to hash map keys.
 //!
+//! ### Alternate Hashers
+//!
+//! [`IndexMap`] and [`IndexSet`] have a default hasher type `S = RandomState`,
+//! just like the standard `HashMap` and `HashSet`, which is resistant to
+//! HashDoS attacks but not the most performant. Type aliases can make it easier
+//! to use alternate hashers:
+//!
+//! ```
+//! # extern crate fnv;
+//! # extern crate fxhash;
+//! use fnv::FnvBuildHasher;
+//! use fxhash::FxBuildHasher;
+//! use indexmap::{IndexMap, IndexSet};
+//!
+//! type FnvIndexMap<K, V> = IndexMap<K, V, FnvBuildHasher>;
+//! type FnvIndexSet<T> = IndexSet<T, FnvBuildHasher>;
+//!
+//! type FxIndexMap<K, V> = IndexMap<K, V, FxBuildHasher>;
+//! type FxIndexSet<T> = IndexSet<T, FxBuildHasher>;
+//!
+//! let std: IndexSet<i32> = (0..100).collect();
+//! let fnv: FnvIndexSet<i32> = (0..100).collect();
+//! let fx: FxIndexSet<i32> = (0..100).collect();
+//! assert_eq!(std, fnv);
+//! assert_eq!(std, fx);
+//! ```
+//!
 //! ### Rust Version
 //!
 //! This version of indexmap requires Rust 1.18 or later, or 1.32+ for
