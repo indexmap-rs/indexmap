@@ -216,6 +216,8 @@ impl<K, V> IndexMapCore<K, V> {
         K: Eq,
     {
         match self.find_equivalent(hash, &key) {
+            // Safety: The entry is created with a live raw bucket, at the same time we have a &mut
+            // reference to the map, so it can not be modified further.
             Some(raw_bucket) => Entry::Occupied(OccupiedEntry {
                 map: self,
                 raw_bucket,
@@ -250,7 +252,7 @@ impl<K, V> IndexMapCore<K, V> {
         Q: ?Sized + Equivalent<K>,
     {
         match self.find_equivalent(hash, key) {
-            Some(raw_bucket) => Some(self.shift_remove_bucket(raw_bucket)),
+            Some(raw_bucket) => unsafe { Some(self.shift_remove_bucket(raw_bucket)) },
             None => None,
         }
     }
@@ -261,12 +263,17 @@ impl<K, V> IndexMapCore<K, V> {
             Some(entry) => self.find_index(entry.hash, index).unwrap(),
             None => return None,
         };
-        let (_, key, value) = self.shift_remove_bucket(raw_bucket);
-        Some((key, value))
+        unsafe {
+            let (_, key, value) = self.shift_remove_bucket(raw_bucket);
+            Some((key, value))
+        }
     }
 
     /// Remove an entry by shifting all entries that follow it
-    fn shift_remove_bucket(&mut self, raw_bucket: RawBucket) -> (usize, K, V) {
+    ///
+    /// Safety: The caller must pass a live `raw_bucket`.
+    #[allow(unused_unsafe)]
+    unsafe fn shift_remove_bucket(&mut self, raw_bucket: RawBucket) -> (usize, K, V) {
         // use Vec::remove, but then we need to update the indices that point
         // to all of the other entries that have to move
         let index = unsafe {
@@ -306,7 +313,7 @@ impl<K, V> IndexMapCore<K, V> {
         Q: ?Sized + Equivalent<K>,
     {
         match self.find_equivalent(hash, key) {
-            Some(raw_bucket) => Some(self.swap_remove_bucket(raw_bucket)),
+            Some(raw_bucket) => unsafe { Some(self.swap_remove_bucket(raw_bucket)) },
             None => None,
         }
     }
@@ -317,12 +324,17 @@ impl<K, V> IndexMapCore<K, V> {
             Some(entry) => self.find_index(entry.hash, index).unwrap(),
             None => return None,
         };
-        let (_, key, value) = self.swap_remove_bucket(raw_bucket);
-        Some((key, value))
+        unsafe {
+            let (_, key, value) = self.swap_remove_bucket(raw_bucket);
+            Some((key, value))
+        }
     }
 
     /// Remove an entry by swapping it with the last
-    fn swap_remove_bucket(&mut self, raw_bucket: RawBucket) -> (usize, K, V) {
+    ///
+    /// Safety: The caller must pass a live `raw_bucket`.
+    #[allow(unused_unsafe)]
+    unsafe fn swap_remove_bucket(&mut self, raw_bucket: RawBucket) -> (usize, K, V) {
         // use swap_remove, but then we need to update the index that points
         // to the other entry that has to move
         let index = unsafe {
@@ -570,8 +582,12 @@ impl<'a, K, V> OccupiedEntry<'a, K, V> {
     ///
     /// Computes in **O(1)** time (average).
     pub fn swap_remove_entry(self) -> (K, V) {
-        let (_, key, value) = self.map.swap_remove_bucket(self.raw_bucket);
-        (key, value)
+        // This is safe because it can only happen once (self is consumed)
+        // and map.indices have not been modified since entry construction
+        unsafe {
+            let (_, key, value) = self.map.swap_remove_bucket(self.raw_bucket);
+            (key, value)
+        }
     }
 
     /// Remove and return the key, value pair stored in the map for this entry
@@ -582,8 +598,12 @@ impl<'a, K, V> OccupiedEntry<'a, K, V> {
     ///
     /// Computes in **O(n)** time (average).
     pub fn shift_remove_entry(self) -> (K, V) {
-        let (_, key, value) = self.map.shift_remove_bucket(self.raw_bucket);
-        (key, value)
+        // This is safe because it can only happen once (self is consumed)
+        // and map.indices have not been modified since entry construction
+        unsafe {
+            let (_, key, value) = self.map.shift_remove_bucket(self.raw_bucket);
+            (key, value)
+        }
     }
 }
 
