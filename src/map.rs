@@ -1,6 +1,8 @@
 //! `IndexMap` is a hash table where the iteration order of the key-value
 //! pairs is independent of the hash values of the keys.
 
+mod core;
+
 #[cfg(not(has_std))]
 use std::vec::Vec;
 
@@ -21,12 +23,12 @@ use std::collections::hash_map::RandomState;
 use std::cmp::Ordering;
 use std::fmt;
 
+use self::core::IndexMapCore;
 use equivalent::Equivalent;
-use map_core::IndexMapCore;
 use util::third;
 use {Bucket, Entries, HashValue};
 
-pub use map_core::{Entry, OccupiedEntry, VacantEntry};
+pub use self::core::{Entry, OccupiedEntry, VacantEntry};
 
 /// A hash table where the iteration order of the key-value pairs is independent
 /// of the hash values of the keys.

@@ -1,4 +1,4 @@
-// We *mostly* avoid unsafe code, but `mod map_core` allows it to use `RawTable`.
+// We *mostly* avoid unsafe code, but `map::core::raw` allows it to use `RawTable` buckets.
 #![deny(unsafe_code)]
 #![doc(html_root_url = "https://docs.rs/indexmap/1/")]
 #![cfg_attr(not(has_std), no_std)]
@@ -106,8 +106,6 @@ mod mutable_keys;
 #[cfg(feature = "serde-1")]
 mod serde;
 mod util;
-
-mod map_core;
 
 pub mod map;
 pub mod set;
