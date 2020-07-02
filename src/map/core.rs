@@ -128,12 +128,12 @@ impl<K, V> IndexMapCore<K, V> {
     }
 
     pub(crate) fn clear(&mut self) {
-        self.indices.clear_no_drop();
+        self.indices.clear();
         self.entries.clear();
     }
 
     pub(crate) fn drain(&mut self, range: RangeFull) -> Drain<Bucket<K, V>> {
-        self.indices.clear_no_drop();
+        self.indices.clear();
         self.entries.drain(range)
     }
 
@@ -217,7 +217,7 @@ impl<K, V> IndexMapCore<K, V> {
     }
 
     fn rebuild_hash_table(&mut self) {
-        self.indices.clear_no_drop();
+        self.indices.clear();
         debug_assert!(self.indices.capacity() >= self.entries.len());
         for (i, entry) in enumerate(&self.entries) {
             // We should never have to reallocate, so there's no need for a real hasher.
