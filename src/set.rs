@@ -330,7 +330,7 @@ where
     where
         Q: Hash + Equivalent<T>,
     {
-        self.map.get_full(value).map(|(_, x, &())| x)
+        self.map.get_key_value(value).map(|(x, &())| x)
     }
 
     /// Return item index and value
@@ -439,7 +439,7 @@ where
     where
         Q: Hash + Equivalent<T>,
     {
-        self.map.swap_remove_full(value).map(|(_, x, ())| x)
+        self.map.swap_remove_entry(value).map(|(x, ())| x)
     }
 
     /// Removes and returns the value in the set, if any, that is equal to the
@@ -456,7 +456,7 @@ where
     where
         Q: Hash + Equivalent<T>,
     {
-        self.map.shift_remove_full(value).map(|(_, x, ())| x)
+        self.map.shift_remove_entry(value).map(|(x, ())| x)
     }
 
     /// Remove the value from the set return it and the index it had.
