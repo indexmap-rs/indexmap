@@ -46,7 +46,7 @@ impl<K, V> IndexMapCore<K, V> {
 
     pub(super) fn erase_index(&mut self, hash: HashValue, index: usize) {
         let raw_bucket = self.find_index(hash, index).unwrap();
-        unsafe { self.indices.erase_no_drop(&raw_bucket) };
+        unsafe { self.indices.erase(raw_bucket) };
     }
 
     pub(crate) fn entry(&mut self, hash: HashValue, key: K) -> Entry<K, V>
@@ -99,10 +99,7 @@ impl<K, V> IndexMapCore<K, V> {
     unsafe fn shift_remove_bucket(&mut self, raw_bucket: RawBucket) -> (usize, K, V) {
         // use Vec::remove, but then we need to update the indices that point
         // to all of the other entries that have to move
-        let index = unsafe {
-            self.indices.erase_no_drop(&raw_bucket);
-            raw_bucket.read()
-        };
+        let index = unsafe { self.indices.remove(raw_bucket) };
         let entry = self.entries.remove(index);
 
         // correct indices that point to the entries that followed the removed entry.
@@ -160,10 +157,7 @@ impl<K, V> IndexMapCore<K, V> {
     unsafe fn swap_remove_bucket(&mut self, raw_bucket: RawBucket) -> (usize, K, V) {
         // use swap_remove, but then we need to update the index that points
         // to the other entry that has to move
-        let index = unsafe {
-            self.indices.erase_no_drop(&raw_bucket);
-            raw_bucket.read()
-        };
+        let index = unsafe { self.indices.remove(raw_bucket) };
         let entry = self.entries.swap_remove(index);
 
         // correct index that points to the entry that had to swap places

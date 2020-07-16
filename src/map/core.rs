@@ -221,7 +221,7 @@ impl<K, V> IndexMapCore<K, V> {
         debug_assert!(self.indices.capacity() >= self.entries.len());
         for (i, entry) in enumerate(&self.entries) {
             // We should never have to reallocate, so there's no need for a real hasher.
-            self.indices.insert(entry.hash.get(), i, |_| unreachable!());
+            self.indices.insert_no_grow(entry.hash.get(), i);
         }
     }
 }
