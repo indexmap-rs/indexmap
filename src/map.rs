@@ -342,6 +342,22 @@ where
         self.get_full(key).map(third)
     }
 
+    /// Return references to the key-value pair stored for `key`,
+    /// if it is present, else `None`.
+    ///
+    /// Computes in **O(1)** time (average).
+    pub fn get_key_value<Q: ?Sized>(&self, key: &Q) -> Option<(&K, &V)>
+    where
+        Q: Hash + Equivalent<K>,
+    {
+        if let Some(i) = self.get_index_of(key) {
+            let entry = &self.as_entries()[i];
+            Some((&entry.key, &entry.value))
+        } else {
+            None
+        }
+    }
+
     /// Return item index, key and value
     pub fn get_full<Q: ?Sized>(&self, key: &Q) -> Option<(usize, &K, &V)>
     where
@@ -424,6 +440,20 @@ where
         self.swap_remove(key)
     }
 
+    /// Remove and return the key-value pair equivalent to `key`.
+    ///
+    /// **NOTE:** This is equivalent to `.swap_remove_entry(key)`, if you need to
+    /// preserve the order of the keys in the map, use `.shift_remove_entry(key)`
+    /// instead.
+    ///
+    /// Computes in **O(1)** time (average).
+    pub fn remove_entry<Q: ?Sized>(&mut self, key: &Q) -> Option<(K, V)>
+    where
+        Q: Hash + Equivalent<K>,
+    {
+        self.swap_remove_entry(key)
+    }
+
     /// Remove the key-value pair equivalent to `key` and return
     /// its value.
     ///
@@ -439,6 +469,25 @@ where
         Q: Hash + Equivalent<K>,
     {
         self.swap_remove_full(key).map(third)
+    }
+
+    /// Remove and return the key-value pair equivalent to `key`.
+    ///
+    /// Like `Vec::swap_remove`, the pair is removed by swapping it with the
+    /// last element of the map and popping it off. **This perturbs
+    /// the postion of what used to be the last element!**
+    ///
+    /// Return `None` if `key` is not in map.
+    ///
+    /// Computes in **O(1)** time (average).
+    pub fn swap_remove_entry<Q: ?Sized>(&mut self, key: &Q) -> Option<(K, V)>
+    where
+        Q: Hash + Equivalent<K>,
+    {
+        match self.swap_remove_full(key) {
+            Some((_, key, value)) => Some((key, value)),
+            None => None,
+        }
     }
 
     /// Remove the key-value pair equivalent to `key` and return it and
@@ -478,6 +527,25 @@ where
         Q: Hash + Equivalent<K>,
     {
         self.shift_remove_full(key).map(third)
+    }
+
+    /// Remove and return the key-value pair equivalent to `key`.
+    ///
+    /// Like `Vec::remove`, the pair is removed by shifting all of the
+    /// elements that follow it, preserving their relative order.
+    /// **This perturbs the index of all of those elements!**
+    ///
+    /// Return `None` if `key` is not in map.
+    ///
+    /// Computes in **O(n)** time (average).
+    pub fn shift_remove_entry<Q: ?Sized>(&mut self, key: &Q) -> Option<(K, V)>
+    where
+        Q: Hash + Equivalent<K>,
+    {
+        match self.shift_remove_full(key) {
+            Some((_, key, value)) => Some((key, value)),
+            None => None,
+        }
     }
 
     /// Remove the key-value pair equivalent to `key` and return it and
