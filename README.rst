@@ -80,6 +80,25 @@ which is roughly:
 Recent Changes
 ==============
 
+- 1.5.0
+
+  - **MSRV**: Rust 1.32 or later is now required.
+
+  - The inner hash table is now based on ``hashbrown`` by @cuviper in PR 131_.
+    This also completes the method ``reserve`` and adds ``shrink_to_fit``.
+
+  - Add new methods ``get_key_value``, ``remove_entry``, ``swap_remove_entry``,
+    and ``shift_remove_entry``, by @cuviper in PR 136_
+
+  - ``Clone::clone_from`` reuses allocations by @cuviper in PR 125_
+
+  - Add new method ``reverse`` by @linclelinkpart5 in PR 128_
+
+.. _125: https://github.com/bluss/indexmap/pull/125
+.. _128: https://github.com/bluss/indexmap/pull/128
+.. _131: https://github.com/bluss/indexmap/pull/131
+.. _136: https://github.com/bluss/indexmap/pull/136
+
 - 1.4.0
 
   - Add new method ``get_index_of`` by @Thermatrix in PR 115_ and 120_
