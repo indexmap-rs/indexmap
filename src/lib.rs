@@ -1,3 +1,4 @@
+// We *mostly* avoid unsafe code, but `map::core::raw` allows it to use `RawTable` buckets.
 #![deny(unsafe_code)]
 #![doc(html_root_url = "https://docs.rs/indexmap/1/")]
 #![cfg_attr(not(has_std), no_std)]
@@ -53,9 +54,8 @@
 //!
 //! ### Rust Version
 //!
-//! This version of indexmap requires Rust 1.18 or later, or 1.32+ for
-//! development builds, and Rust 1.36+ for using with `alloc` (without `std`),
-//! see below.
+//! This version of indexmap requires Rust 1.32 or later, or Rust 1.36+ for
+//! using with `alloc` (without `std`), see below.
 //!
 //! The indexmap 1.x release series will use a carefully considered version
 //! upgrade policy, where in a later 1.x version, we will raise the minimum
@@ -80,8 +80,9 @@
 //! [def]: map/struct.IndexMap.html#impl-Default
 
 #[cfg(not(has_std))]
-#[macro_use(vec)]
 extern crate alloc;
+
+extern crate hashbrown;
 
 #[cfg(not(has_std))]
 pub(crate) mod std {
@@ -106,8 +107,6 @@ mod mutable_keys;
 mod serde;
 mod util;
 
-mod map_core;
-
 pub mod map;
 pub mod set;
 
@@ -129,8 +128,8 @@ struct HashValue(usize);
 
 impl HashValue {
     #[inline(always)]
-    fn get(self) -> usize {
-        self.0
+    fn get(self) -> u64 {
+        self.0 as u64
     }
 }
 

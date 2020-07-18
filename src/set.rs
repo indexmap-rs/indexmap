@@ -91,14 +91,17 @@ where
 impl<T, S> Entries for IndexSet<T, S> {
     type Entry = Bucket<T>;
 
+    #[inline]
     fn into_entries(self) -> Vec<Self::Entry> {
         self.map.into_entries()
     }
 
+    #[inline]
     fn as_entries(&self) -> &[Self::Entry] {
         self.map.as_entries()
     }
 
+    #[inline]
     fn as_entries_mut(&mut self) -> &mut [Self::Entry] {
         self.map.as_entries_mut()
     }
@@ -210,9 +213,18 @@ where
         self.map.clear();
     }
 
-    /// FIXME Not implemented fully yet
+    /// Reserve capacity for `additional` more values.
+    ///
+    /// Computes in **O(n)** time.
     pub fn reserve(&mut self, additional: usize) {
         self.map.reserve(additional);
+    }
+
+    /// Shrink the capacity of the set as much as possible.
+    ///
+    /// Computes in **O(n)** time.
+    pub fn shrink_to_fit(&mut self) {
+        self.map.shrink_to_fit();
     }
 
     /// Insert the value into the set.
@@ -1305,6 +1317,43 @@ mod tests {
         println!("{:?}", set);
         for &elt in &not_present {
             assert!(set.get(&elt).is_none());
+        }
+    }
+
+    #[test]
+    fn reserve() {
+        let mut set = IndexSet::<usize>::new();
+        assert_eq!(set.capacity(), 0);
+        set.reserve(100);
+        let capacity = set.capacity();
+        assert!(capacity >= 100);
+        for i in 0..capacity {
+            assert_eq!(set.len(), i);
+            set.insert(i);
+            assert_eq!(set.len(), i + 1);
+            assert_eq!(set.capacity(), capacity);
+            assert_eq!(set.get(&i), Some(&i));
+        }
+        set.insert(capacity);
+        assert_eq!(set.len(), capacity + 1);
+        assert!(set.capacity() > capacity);
+        assert_eq!(set.get(&capacity), Some(&capacity));
+    }
+
+    #[test]
+    fn shrink_to_fit() {
+        let mut set = IndexSet::<usize>::new();
+        assert_eq!(set.capacity(), 0);
+        for i in 0..100 {
+            assert_eq!(set.len(), i);
+            set.insert(i);
+            assert_eq!(set.len(), i + 1);
+            assert!(set.capacity() >= i + 1);
+            assert_eq!(set.get(&i), Some(&i));
+            set.shrink_to_fit();
+            assert_eq!(set.len(), i + 1);
+            assert_eq!(set.capacity(), i + 1);
+            assert_eq!(set.get(&i), Some(&i));
         }
     }
 

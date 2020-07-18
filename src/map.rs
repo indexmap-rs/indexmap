@@ -1,8 +1,8 @@
 //! `IndexMap` is a hash table where the iteration order of the key-value
 //! pairs is independent of the hash values of the keys.
 
-#[cfg(not(has_std))]
-use alloc::boxed::Box;
+mod core;
+
 #[cfg(not(has_std))]
 use std::vec::Vec;
 
@@ -23,18 +23,12 @@ use std::collections::hash_map::RandomState;
 use std::cmp::Ordering;
 use std::fmt;
 
+use self::core::IndexMapCore;
 use equivalent::Equivalent;
-use map_core::IndexMapCore;
 use util::third;
 use {Bucket, Entries, HashValue};
 
-pub use map_core::{Entry, OccupiedEntry, VacantEntry};
-
-fn hash_elem_using<B: BuildHasher, K: ?Sized + Hash>(build: &B, k: &K) -> HashValue {
-    let mut h = build.build_hasher();
-    k.hash(&mut h);
-    HashValue(h.finish() as usize)
-}
+pub use self::core::{Entry, OccupiedEntry, VacantEntry};
 
 /// A hash table where the iteration order of the key-value pairs is independent
 /// of the hash values of the keys.
@@ -110,14 +104,17 @@ where
 impl<K, V, S> Entries for IndexMap<K, V, S> {
     type Entry = Bucket<K, V>;
 
+    #[inline]
     fn into_entries(self) -> Vec<Self::Entry> {
         self.core.into_entries()
     }
 
+    #[inline]
     fn as_entries(&self) -> &[Self::Entry] {
         self.core.as_entries()
     }
 
+    #[inline]
     fn as_entries_mut(&mut self) -> &mut [Self::Entry] {
         self.core.as_entries_mut()
     }
@@ -137,18 +134,21 @@ where
     S: BuildHasher,
 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_map().entries(self.iter()).finish()?;
-        if cfg!(feature = "test_debug") {
-            writeln!(f)?;
-            self.core.debug_entries(f)?;
+        if cfg!(not(feature = "test_debug")) {
+            f.debug_map().entries(self.iter()).finish()
+        } else {
+            // Let the inner `IndexMapCore` print all of its details
+            f.debug_struct("IndexMap")
+                .field("core", &self.core)
+                .finish()
         }
-        Ok(())
     }
 }
 
 #[cfg(has_std)]
 impl<K, V> IndexMap<K, V> {
     /// Create a new map. (Does not allocate.)
+    #[inline]
     pub fn new() -> Self {
         Self::with_capacity(0)
     }
@@ -157,6 +157,7 @@ impl<K, V> IndexMap<K, V> {
     /// allocate if `n` is zero.)
     ///
     /// Computes in **O(n)** time.
+    #[inline]
     pub fn with_capacity(n: usize) -> Self {
         Self::with_capacity_and_hasher(n, <_>::default())
     }
@@ -167,6 +168,7 @@ impl<K, V, S> IndexMap<K, V, S> {
     /// allocate if `n` is zero.)
     ///
     /// Computes in **O(n)** time.
+    #[inline]
     pub fn with_capacity_and_hasher(n: usize, hash_builder: S) -> Self
     where
         S: BuildHasher,
@@ -187,6 +189,7 @@ impl<K, V, S> IndexMap<K, V, S> {
     /// Return the number of key-value pairs in the map.
     ///
     /// Computes in **O(1)** time.
+    #[inline]
     pub fn len(&self) -> usize {
         self.core.len()
     }
@@ -194,6 +197,7 @@ impl<K, V, S> IndexMap<K, V, S> {
     /// Returns true if the map contains no elements.
     ///
     /// Computes in **O(1)** time.
+    #[inline]
     pub fn is_empty(&self) -> bool {
         self.len() == 0
     }
@@ -234,11 +238,22 @@ where
 
     /// Reserve capacity for `additional` more key-value pairs.
     ///
-    /// FIXME Not implemented fully yet.
+    /// Computes in **O(n)** time.
     pub fn reserve(&mut self, additional: usize) {
-        if additional > 0 {
-            self.core.reserve_one();
-        }
+        self.core.reserve(additional);
+    }
+
+    /// Shrink the capacity of the map as much as possible.
+    ///
+    /// Computes in **O(n)** time.
+    pub fn shrink_to_fit(&mut self) {
+        self.core.shrink_to_fit();
+    }
+
+    fn hash<Q: ?Sized + Hash>(&self, key: &Q) -> HashValue {
+        let mut h = self.hash_builder.build_hasher();
+        key.hash(&mut h);
+        HashValue(h.finish() as usize)
     }
 
     /// Insert a key-value pair in the map.
@@ -272,7 +287,7 @@ where
     /// See also [`entry`](#method.entry) if you you want to insert *or* modify
     /// or if you need to get the index of the corresponding key-value pair.
     pub fn insert_full(&mut self, key: K, value: V) -> (usize, Option<V>) {
-        let hash = hash_elem_using(&self.hash_builder, &key);
+        let hash = self.hash(&key);
         self.core.insert_full(hash, key, value)
     }
 
@@ -281,7 +296,7 @@ where
     ///
     /// Computes in **O(1)** time (amortized average).
     pub fn entry(&mut self, key: K) -> Entry<K, V> {
-        let hash = hash_elem_using(&self.hash_builder, &key);
+        let hash = self.hash(&key);
         self.core.entry(hash, key)
     }
 
@@ -328,7 +343,7 @@ where
     where
         Q: Hash + Equivalent<K>,
     {
-        self.find(key).is_some()
+        self.get_index_of(key).is_some()
     }
 
     /// Return a reference to the value stored for `key`, if it is present,
@@ -339,7 +354,12 @@ where
     where
         Q: Hash + Equivalent<K>,
     {
-        self.get_full(key).map(third)
+        if let Some(i) = self.get_index_of(key) {
+            let entry = &self.as_entries()[i];
+            Some(&entry.value)
+        } else {
+            None
+        }
     }
 
     /// Return references to the key-value pair stored for `key`,
@@ -363,9 +383,9 @@ where
     where
         Q: Hash + Equivalent<K>,
     {
-        if let Some(found) = self.get_index_of(key) {
-            let entry = &self.as_entries()[found];
-            Some((found, &entry.key, &entry.value))
+        if let Some(i) = self.get_index_of(key) {
+            let entry = &self.as_entries()[i];
+            Some((i, &entry.key, &entry.value))
         } else {
             None
         }
@@ -376,10 +396,11 @@ where
     where
         Q: Hash + Equivalent<K>,
     {
-        if let Some((_, found)) = self.find(key) {
-            Some(found)
-        } else {
+        if self.is_empty() {
             None
+        } else {
+            let hash = self.hash(key);
+            self.core.get_index_of(hash, key)
         }
     }
 
@@ -387,14 +408,24 @@ where
     where
         Q: Hash + Equivalent<K>,
     {
-        self.get_full_mut(key).map(third)
+        if let Some(i) = self.get_index_of(key) {
+            let entry = &mut self.as_entries_mut()[i];
+            Some(&mut entry.value)
+        } else {
+            None
+        }
     }
 
     pub fn get_full_mut<Q: ?Sized>(&mut self, key: &Q) -> Option<(usize, &K, &mut V)>
     where
         Q: Hash + Equivalent<K>,
     {
-        self.get_full_mut2_impl(key).map(|(i, k, v)| (i, &*k, v))
+        if let Some(i) = self.get_index_of(key) {
+            let entry = &mut self.as_entries_mut()[i];
+            Some((i, &entry.key, &mut entry.value))
+        } else {
+            None
+        }
     }
 
     pub(crate) fn get_full_mut2_impl<Q: ?Sized>(
@@ -404,25 +435,12 @@ where
     where
         Q: Hash + Equivalent<K>,
     {
-        if let Some((_, found)) = self.find(key) {
-            let entry = &mut self.as_entries_mut()[found];
-            Some((found, &mut entry.key, &mut entry.value))
+        if let Some(i) = self.get_index_of(key) {
+            let entry = &mut self.as_entries_mut()[i];
+            Some((i, &mut entry.key, &mut entry.value))
         } else {
             None
         }
-    }
-
-    /// Return probe (indices) and position (entries)
-    fn find<Q: ?Sized>(&self, key: &Q) -> Option<(usize, usize)>
-    where
-        Q: Hash + Equivalent<K>,
-    {
-        if self.is_empty() {
-            return None;
-        }
-        let h = hash_elem_using(&self.hash_builder, key);
-        self.core
-            .find_using(h, move |entry| Q::equivalent(key, &entry.key))
     }
 
     /// Remove the key-value pair equivalent to `key` and return
@@ -504,12 +522,11 @@ where
     where
         Q: Hash + Equivalent<K>,
     {
-        let (probe, found) = match self.find(key) {
-            None => return None,
-            Some(t) => t,
-        };
-        let (k, v) = self.core.swap_remove_found(probe, found);
-        Some((found, k, v))
+        if self.is_empty() {
+            return None;
+        }
+        let hash = self.hash(key);
+        self.core.swap_remove_full(hash, key)
     }
 
     /// Remove the key-value pair equivalent to `key` and return
@@ -562,19 +579,18 @@ where
     where
         Q: Hash + Equivalent<K>,
     {
-        let (probe, found) = match self.find(key) {
-            None => return None,
-            Some(t) => t,
-        };
-        let (k, v) = self.core.shift_remove_found(probe, found);
-        Some((found, k, v))
+        if self.is_empty() {
+            return None;
+        }
+        let hash = self.hash(key);
+        self.core.shift_remove_full(hash, key)
     }
 
     /// Remove the last key-value pair
     ///
     /// Computes in **O(1)** time (average).
     pub fn pop(&mut self) -> Option<(K, V)> {
-        self.core.pop_impl()
+        self.core.pop()
     }
 
     /// Scan through each key-value pair in the map and keep those where the
@@ -588,7 +604,7 @@ where
     where
         F: FnMut(&K, &mut V) -> bool,
     {
-        self.retain_mut(move |k, v| keep(k, v));
+        self.core.retain_in_order(move |k, v| keep(k, v));
     }
 
     pub(crate) fn retain_mut<F>(&mut self, keep: F)
@@ -605,7 +621,9 @@ where
     where
         K: Ord,
     {
-        self.core.sort_by(key_cmp)
+        self.with_entries(|entries| {
+            entries.sort_by(|a, b| Ord::cmp(&a.key, &b.key));
+        });
     }
 
     /// Sort the map’s key-value pairs in place using the comparison
@@ -616,11 +634,13 @@ where
     ///
     /// Computes in **O(n log n + c)** time and **O(n)** space where *n* is
     /// the length of the map and *c* the capacity. The sort is stable.
-    pub fn sort_by<F>(&mut self, compare: F)
+    pub fn sort_by<F>(&mut self, mut cmp: F)
     where
         F: FnMut(&K, &V, &K, &V) -> Ordering,
     {
-        self.core.sort_by(compare)
+        self.with_entries(move |entries| {
+            entries.sort_by(move |a, b| cmp(&a.key, &a.value, &b.key, &b.value));
+        });
     }
 
     /// Sort the key-value pairs of the map and return a by value iterator of
@@ -654,13 +674,6 @@ where
     }
 }
 
-fn key_cmp<K, V>(k1: &K, _v1: &V, k2: &K, _v2: &V) -> Ordering
-where
-    K: Ord,
-{
-    Ord::cmp(k1, k2)
-}
-
 impl<K, V, S> IndexMap<K, V, S> {
     /// Get a key-value pair by index
     ///
@@ -690,11 +703,7 @@ impl<K, V, S> IndexMap<K, V, S> {
     ///
     /// Computes in **O(1)** time (average).
     pub fn swap_remove_index(&mut self, index: usize) -> Option<(K, V)> {
-        let (probe, found) = match self.as_entries().get(index) {
-            Some(e) => self.core.find_existing_entry(e),
-            None => return None,
-        };
-        Some(self.core.swap_remove_found(probe, found))
+        self.core.swap_remove_index(index)
     }
 
     /// Remove the key-value pair by index
@@ -707,11 +716,7 @@ impl<K, V, S> IndexMap<K, V, S> {
     ///
     /// Computes in **O(n)** time (average).
     pub fn shift_remove_index(&mut self, index: usize) -> Option<(K, V)> {
-        let (probe, found) = match self.as_entries().get(index) {
-            Some(e) => self.core.find_existing_entry(e),
-            None => return None,
-        };
-        Some(self.core.shift_remove_found(probe, found))
+        self.core.shift_remove_index(index)
     }
 }
 
@@ -1020,11 +1025,7 @@ where
 
     /// ***Panics*** if `key` is not present in the map.
     fn index(&self, key: &'a Q) -> &V {
-        if let Some(v) = self.get(key) {
-            v
-        } else {
-            panic!("IndexMap: key not found")
-        }
+        self.get(key).expect("IndexMap: key not found")
     }
 }
 
@@ -1040,11 +1041,7 @@ where
 {
     /// ***Panics*** if `key` is not present in the map.
     fn index_mut(&mut self, key: &'a Q) -> &mut V {
-        if let Some(v) = self.get_mut(key) {
-            v
-        } else {
-            panic!("IndexMap: key not found")
-        }
+        self.get_mut(key).expect("IndexMap: key not found")
     }
 }
 
@@ -1082,9 +1079,21 @@ where
     /// equivalents of a key occur more than once, the last corresponding value
     /// prevails.
     fn extend<I: IntoIterator<Item = (K, V)>>(&mut self, iterable: I) {
-        for (k, v) in iterable {
+        // (Note: this is a copy of `std`/`hashbrown`'s reservation logic.)
+        // Keys may be already present or show multiple times in the iterator.
+        // Reserve the entire hint lower bound if the map is empty.
+        // Otherwise reserve half the hint (rounded up), so the map
+        // will only resize twice in the worst case.
+        let iter = iterable.into_iter();
+        let reserve = if self.is_empty() {
+            iter.size_hint().0
+        } else {
+            (iter.size_hint().0 + 1) / 2
+        };
+        self.reserve(reserve);
+        iter.for_each(move |(k, v)| {
             self.insert(k, v);
-        }
+        });
     }
 }
 
@@ -1276,6 +1285,43 @@ mod tests {
         println!("{:?}", map);
         for &elt in &not_present {
             assert!(map.get(&elt).is_none());
+        }
+    }
+
+    #[test]
+    fn reserve() {
+        let mut map = IndexMap::<usize, usize>::new();
+        assert_eq!(map.capacity(), 0);
+        map.reserve(100);
+        let capacity = map.capacity();
+        assert!(capacity >= 100);
+        for i in 0..capacity {
+            assert_eq!(map.len(), i);
+            map.insert(i, i * i);
+            assert_eq!(map.len(), i + 1);
+            assert_eq!(map.capacity(), capacity);
+            assert_eq!(map.get(&i), Some(&(i * i)));
+        }
+        map.insert(capacity, std::usize::MAX);
+        assert_eq!(map.len(), capacity + 1);
+        assert!(map.capacity() > capacity);
+        assert_eq!(map.get(&capacity), Some(&std::usize::MAX));
+    }
+
+    #[test]
+    fn shrink_to_fit() {
+        let mut map = IndexMap::<usize, usize>::new();
+        assert_eq!(map.capacity(), 0);
+        for i in 0..100 {
+            assert_eq!(map.len(), i);
+            map.insert(i, i * i);
+            assert_eq!(map.len(), i + 1);
+            assert!(map.capacity() >= i + 1);
+            assert_eq!(map.get(&i), Some(&(i * i)));
+            map.shrink_to_fit();
+            assert_eq!(map.len(), i + 1);
+            assert_eq!(map.capacity(), i + 1);
+            assert_eq!(map.get(&i), Some(&(i * i)));
         }
     }
 
