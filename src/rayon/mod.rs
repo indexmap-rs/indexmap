@@ -2,7 +2,13 @@ extern crate rayon;
 
 use self::rayon::prelude::*;
 
+#[cfg(not(has_std))]
+use alloc::collections::LinkedList;
+
+#[cfg(has_std)]
 use std::collections::LinkedList;
+
+use vec::Vec;
 
 // generate `ParallelIterator` methods by just forwarding to the underlying
 // self.entries and mapping its elements.

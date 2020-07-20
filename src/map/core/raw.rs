@@ -3,9 +3,9 @@
 //! mostly in dealing with its bucket "pointers".
 
 use super::{Entry, Equivalent, HashValue, IndexMapCore, VacantEntry};
+use core::fmt;
+use core::mem::replace;
 use hashbrown::raw::RawTable;
-use std::fmt;
-use std::mem::replace;
 
 type RawBucket = hashbrown::raw::Bucket<usize>;
 

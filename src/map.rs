@@ -3,25 +3,21 @@
 
 mod core;
 
-#[cfg(not(has_std))]
-use std::vec::Vec;
-
 pub use mutable_keys::MutableKeys;
 
 #[cfg(feature = "rayon")]
 pub use rayon::map as rayon;
 
-use std::hash::BuildHasher;
-use std::hash::Hash;
-use std::hash::Hasher;
-use std::iter::FromIterator;
-use std::ops::RangeFull;
+use core::cmp::Ordering;
+use core::fmt;
+use core::hash::{BuildHasher, Hash, Hasher};
+use core::iter::FromIterator;
+use core::ops::{Index, IndexMut, RangeFull};
+use core::slice::{Iter as SliceIter, IterMut as SliceIterMut};
+use vec::{self, Vec};
 
 #[cfg(has_std)]
 use std::collections::hash_map::RandomState;
-
-use std::cmp::Ordering;
-use std::fmt;
 
 use self::core::IndexMapCore;
 use equivalent::Equivalent;
@@ -720,10 +716,6 @@ impl<K, V, S> IndexMap<K, V, S> {
     }
 }
 
-use std::slice::Iter as SliceIter;
-use std::slice::IterMut as SliceIterMut;
-use std::vec::IntoIter as VecIntoIter;
-
 /// An iterator over the keys of a `IndexMap`.
 ///
 /// This `struct` is created by the [`keys`] method on [`IndexMap`]. See its
@@ -922,7 +914,7 @@ impl<'a, K, V> ExactSizeIterator for IterMut<'a, K, V> {
 /// [`into_iter`]: struct.IndexMap.html#method.into_iter
 /// [`IndexMap`]: struct.IndexMap.html
 pub struct IntoIter<K, V> {
-    pub(crate) iter: VecIntoIter<Bucket<K, V>>,
+    pub(crate) iter: vec::IntoIter<Bucket<K, V>>,
 }
 
 impl<K, V> Iterator for IntoIter<K, V> {
@@ -962,7 +954,7 @@ where
     K: 'a,
     V: 'a,
 {
-    pub(crate) iter: ::std::vec::Drain<'a, Bucket<K, V>>,
+    pub(crate) iter: vec::Drain<'a, Bucket<K, V>>,
 }
 
 impl<'a, K, V> Iterator for Drain<'a, K, V> {
@@ -1012,8 +1004,6 @@ where
         }
     }
 }
-
-use std::ops::{Index, IndexMut};
 
 impl<'a, K, V, Q: ?Sized, S> Index<&'a Q> for IndexMap<K, V, S>
 where
@@ -1149,6 +1139,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::string::String;
     use util::enumerate;
 
     #[test]
@@ -1405,8 +1396,7 @@ mod tests {
         map_b.swap_remove(&1);
         assert_ne!(map_a, map_b);
 
-        let map_c: IndexMap<_, String> =
-            map_b.into_iter().map(|(k, v)| (k, v.to_owned())).collect();
+        let map_c: IndexMap<_, String> = map_b.into_iter().map(|(k, v)| (k, v.into())).collect();
         assert_ne!(map_a, map_c);
         assert_ne!(map_c, map_a);
     }

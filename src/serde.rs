@@ -6,9 +6,9 @@ use self::serde::de::{
 };
 use self::serde::ser::{Serialize, SerializeMap, SerializeSeq, Serializer};
 
-use std::fmt::{self, Formatter};
-use std::hash::{BuildHasher, Hash};
-use std::marker::PhantomData;
+use core::fmt::{self, Formatter};
+use core::hash::{BuildHasher, Hash};
+use core::marker::PhantomData;
 
 use IndexMap;
 

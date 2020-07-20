@@ -3,20 +3,16 @@
 #[cfg(feature = "rayon")]
 pub use rayon::set as rayon;
 
-#[cfg(not(has_std))]
-use std::vec::Vec;
-
 #[cfg(has_std)]
 use std::collections::hash_map::RandomState;
 
-use std::cmp::Ordering;
-use std::fmt;
-use std::hash::{BuildHasher, Hash};
-use std::iter::{Chain, FromIterator};
-use std::ops::RangeFull;
-use std::ops::{BitAnd, BitOr, BitXor, Sub};
-use std::slice;
-use std::vec;
+use core::cmp::Ordering;
+use core::fmt;
+use core::hash::{BuildHasher, Hash};
+use core::iter::{Chain, FromIterator};
+use core::ops::{BitAnd, BitOr, BitXor, RangeFull, Sub};
+use core::slice;
+use vec::{self, Vec};
 
 use super::{Entries, Equivalent, IndexMap};
 
@@ -1163,6 +1159,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::string::String;
     use util::enumerate;
 
     #[test]

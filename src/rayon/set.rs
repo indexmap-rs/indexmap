@@ -9,10 +9,10 @@ use super::collect;
 use super::rayon::iter::plumbing::{Consumer, ProducerCallback, UnindexedConsumer};
 use super::rayon::prelude::*;
 
-use std::cmp::Ordering;
-use std::fmt;
-use std::hash::BuildHasher;
-use std::hash::Hash;
+use core::cmp::Ordering;
+use core::fmt;
+use core::hash::{BuildHasher, Hash};
+use vec::Vec;
 
 use Entries;
 use IndexSet;

@@ -9,16 +9,13 @@
 
 mod raw;
 
-#[cfg(not(has_std))]
-use std::vec::Vec;
-
 use hashbrown::raw::RawTable;
 
-use std::cmp;
-use std::fmt;
-use std::mem::replace;
-use std::ops::RangeFull;
-use std::vec::Drain;
+use core::cmp;
+use core::fmt;
+use core::mem::replace;
+use core::ops::RangeFull;
+use vec::{Drain, Vec};
 
 use equivalent::Equivalent;
 use util::enumerate;

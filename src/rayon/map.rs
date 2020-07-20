@@ -9,10 +9,10 @@ use super::collect;
 use super::rayon::iter::plumbing::{Consumer, ProducerCallback, UnindexedConsumer};
 use super::rayon::prelude::*;
 
-use std::cmp::Ordering;
-use std::fmt;
-use std::hash::BuildHasher;
-use std::hash::Hash;
+use core::cmp::Ordering;
+use core::fmt;
+use core::hash::{BuildHasher, Hash};
+use vec::Vec;
 
 use Bucket;
 use Entries;
@@ -398,6 +398,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::string::String;
 
     #[test]
     fn insert_order() {
@@ -433,10 +434,8 @@ mod tests {
         map_b.insert(3, "3");
         assert!(!map_a.par_eq(&map_b));
 
-        let map_c: IndexMap<_, String> = map_b
-            .into_par_iter()
-            .map(|(k, v)| (k, v.to_owned()))
-            .collect();
+        let map_c: IndexMap<_, String> =
+            map_b.into_par_iter().map(|(k, v)| (k, v.into())).collect();
         assert!(!map_a.par_eq(&map_c));
         assert!(!map_c.par_eq(&map_a));
     }
