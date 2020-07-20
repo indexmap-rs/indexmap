@@ -1,14 +1,7 @@
-extern crate indexmap;
-extern crate itertools;
-#[macro_use]
-extern crate quickcheck;
-extern crate rand;
-
-extern crate fnv;
-
 use indexmap::IndexMap;
 use itertools::Itertools;
 
+use quickcheck::quickcheck;
 use quickcheck::Arbitrary;
 use quickcheck::Gen;
 

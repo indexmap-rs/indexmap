@@ -1,6 +1,4 @@
-#[macro_use]
-extern crate indexmap;
-
+use indexmap::indexmap;
 use indexmap::Equivalent;
 
 use std::hash::Hash;

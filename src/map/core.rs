@@ -62,7 +62,7 @@ where
     K: fmt::Debug,
     V: fmt::Debug,
 {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("IndexMapCore")
             .field("indices", &raw::DebugIndices(&self.indices))
             .field("entries", &self.entries)
@@ -129,7 +129,7 @@ impl<K, V> IndexMapCore<K, V> {
         self.entries.clear();
     }
 
-    pub(crate) fn drain(&mut self, range: RangeFull) -> Drain<Bucket<K, V>> {
+    pub(crate) fn drain(&mut self, range: RangeFull) -> Drain<'_, Bucket<K, V>> {
         self.indices.clear();
         self.entries.drain(range)
     }
@@ -225,7 +225,7 @@ impl<K, V> IndexMapCore<K, V> {
 
 /// Entry for an existing key-value pair or a vacant location to
 /// insert one.
-pub enum Entry<'a, K: 'a, V: 'a> {
+pub enum Entry<'a, K, V> {
     /// Existing slot with equivalent key.
     Occupied(OccupiedEntry<'a, K, V>),
     /// Vacant slot (no equivalent key in the map).
@@ -297,7 +297,7 @@ impl<'a, K, V> Entry<'a, K, V> {
 }
 
 impl<'a, K: 'a + fmt::Debug, V: 'a + fmt::Debug> fmt::Debug for Entry<'a, K, V> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match *self {
             Entry::Vacant(ref v) => f.debug_tuple(stringify!(Entry)).field(v).finish(),
             Entry::Occupied(ref o) => f.debug_tuple(stringify!(Entry)).field(o).finish(),
@@ -352,7 +352,7 @@ impl<'a, K, V> OccupiedEntry<'a, K, V> {
 }
 
 impl<'a, K: 'a + fmt::Debug, V: 'a + fmt::Debug> fmt::Debug for OccupiedEntry<'a, K, V> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct(stringify!(OccupiedEntry))
             .field("key", self.key())
             .field("value", self.get())
@@ -364,7 +364,7 @@ impl<'a, K: 'a + fmt::Debug, V: 'a + fmt::Debug> fmt::Debug for OccupiedEntry<'a
 /// It is part of the [`Entry`] enum.
 ///
 /// [`Entry`]: enum.Entry.html
-pub struct VacantEntry<'a, K: 'a, V: 'a> {
+pub struct VacantEntry<'a, K, V> {
     map: &'a mut IndexMapCore<K, V>,
     hash: HashValue,
     key: K,
@@ -391,7 +391,7 @@ impl<'a, K, V> VacantEntry<'a, K, V> {
 }
 
 impl<'a, K: 'a + fmt::Debug, V: 'a> fmt::Debug for VacantEntry<'a, K, V> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_tuple(stringify!(VacantEntry))
             .field(self.key())
             .finish()
@@ -402,5 +402,5 @@ impl<'a, K: 'a + fmt::Debug, V: 'a> fmt::Debug for VacantEntry<'a, K, V> {
 fn assert_send_sync() {
     fn assert_send_sync<T: Send + Sync>() {}
     assert_send_sync::<IndexMapCore<i32, i32>>();
-    assert_send_sync::<Entry<i32, i32>>();
+    assert_send_sync::<Entry<'_, i32, i32>>();
 }

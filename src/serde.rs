@@ -1,10 +1,8 @@
-extern crate serde;
-
-use self::serde::de::value::{MapDeserializer, SeqDeserializer};
-use self::serde::de::{
+use serde::de::value::{MapDeserializer, SeqDeserializer};
+use serde::de::{
     Deserialize, Deserializer, Error, IntoDeserializer, MapAccess, SeqAccess, Visitor,
 };
-use self::serde::ser::{Serialize, SerializeMap, SerializeSeq, Serializer};
+use serde::ser::{Serialize, SerializeMap, SerializeSeq, Serializer};
 
 use core::fmt::{self, Formatter};
 use core::hash::{BuildHasher, Hash};
@@ -41,7 +39,7 @@ where
 {
     type Value = IndexMap<K, V, S>;
 
-    fn expecting(&self, formatter: &mut Formatter) -> fmt::Result {
+    fn expecting(&self, formatter: &mut Formatter<'_>) -> fmt::Result {
         write!(formatter, "a map")
     }
 
@@ -118,7 +116,7 @@ where
 {
     type Value = IndexSet<T, S>;
 
-    fn expecting(&self, formatter: &mut Formatter) -> fmt::Result {
+    fn expecting(&self, formatter: &mut Formatter<'_>) -> fmt::Result {
         write!(formatter, "a set")
     }
 

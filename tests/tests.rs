@@ -1,6 +1,4 @@
-#[macro_use]
-extern crate indexmap;
-extern crate itertools;
+use indexmap::{indexmap, indexset};
 
 #[test]
 fn test_sort() {

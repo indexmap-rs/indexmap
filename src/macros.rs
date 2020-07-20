@@ -5,8 +5,7 @@
 /// ## Example
 ///
 /// ```
-/// #[macro_use] extern crate indexmap;
-/// # fn main() {
+/// use indexmap::indexmap;
 ///
 /// let map = indexmap!{
 ///     "a" => 1,
@@ -18,7 +17,6 @@
 ///
 /// // "a" is the first key
 /// assert_eq!(map.keys().next(), Some(&"a"));
-/// # }
 /// ```
 macro_rules! indexmap {
     (@single $($x:tt)*) => (());
@@ -44,8 +42,7 @@ macro_rules! indexmap {
 /// ## Example
 ///
 /// ```
-/// #[macro_use] extern crate indexmap;
-/// # fn main() {
+/// use indexmap::indexset;
 ///
 /// let set = indexset!{
 ///     "a",
@@ -57,7 +54,6 @@ macro_rules! indexmap {
 ///
 /// // "a" is the first value
 /// assert_eq!(set.iter().next(), Some(&"a"));
-/// # }
 /// ```
 macro_rules! indexset {
     (@single $($x:tt)*) => (());

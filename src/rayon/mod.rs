@@ -1,6 +1,4 @@
-extern crate rayon;
-
-use self::rayon::prelude::*;
+use rayon::prelude::*;
 
 #[cfg(not(has_std))]
 use alloc::collections::LinkedList;

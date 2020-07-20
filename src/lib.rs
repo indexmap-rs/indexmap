@@ -1,5 +1,6 @@
 // We *mostly* avoid unsafe code, but `map::core::raw` allows it to use `RawTable` buckets.
 #![deny(unsafe_code)]
+#![warn(rust_2018_idioms)]
 #![doc(html_root_url = "https://docs.rs/indexmap/1/")]
 #![no_std]
 
@@ -33,8 +34,6 @@
 //! to use alternate hashers:
 //!
 //! ```
-//! # extern crate fnv;
-//! # extern crate fxhash;
 //! use fnv::FnvBuildHasher;
 //! use fxhash::FxBuildHasher;
 //! use indexmap::{IndexMap, IndexSet};
@@ -85,8 +84,6 @@ extern crate alloc;
 #[cfg(has_std)]
 #[macro_use]
 extern crate std;
-
-extern crate hashbrown;
 
 #[cfg(not(has_std))]
 use alloc::vec::{self, Vec};
