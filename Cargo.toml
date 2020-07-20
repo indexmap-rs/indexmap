@@ -1,5 +1,6 @@
 [package]
 name = "indexmap"
+edition = "2018"
 version = "1.5.0"
 authors = [
 "bluss",

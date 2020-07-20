@@ -9,12 +9,12 @@ pub use crate::mutable_keys::MutableKeys;
 pub use crate::rayon::map as rayon;
 
 use crate::vec::{self, Vec};
-use core::cmp::Ordering;
-use core::fmt;
-use core::hash::{BuildHasher, Hash, Hasher};
-use core::iter::FromIterator;
-use core::ops::{Index, IndexMut, RangeFull};
-use core::slice::{Iter as SliceIter, IterMut as SliceIterMut};
+use ::core::cmp::Ordering;
+use ::core::fmt;
+use ::core::hash::{BuildHasher, Hash, Hasher};
+use ::core::iter::FromIterator;
+use ::core::ops::{Index, IndexMut, RangeFull};
+use ::core::slice::{Iter as SliceIter, IterMut as SliceIterMut};
 
 #[cfg(has_std)]
 use std::collections::hash_map::RandomState;
