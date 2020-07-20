@@ -110,9 +110,9 @@ pub mod set;
 #[cfg(feature = "rayon")]
 mod rayon;
 
-pub use equivalent::Equivalent;
-pub use map::IndexMap;
-pub use set::IndexSet;
+pub use crate::equivalent::Equivalent;
+pub use crate::map::IndexMap;
+pub use crate::set::IndexSet;
 
 // shared private items
 

@@ -9,14 +9,14 @@ use super::collect;
 use super::rayon::iter::plumbing::{Consumer, ProducerCallback, UnindexedConsumer};
 use super::rayon::prelude::*;
 
+use crate::vec::Vec;
 use core::cmp::Ordering;
 use core::fmt;
 use core::hash::{BuildHasher, Hash};
-use vec::Vec;
 
-use Bucket;
-use Entries;
-use IndexMap;
+use crate::Bucket;
+use crate::Entries;
+use crate::IndexMap;
 
 /// Requires crate feature `"rayon"`.
 impl<K, V, S> IntoParallelIterator for IndexMap<K, V, S>

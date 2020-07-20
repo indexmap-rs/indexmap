@@ -11,15 +11,15 @@ mod raw;
 
 use hashbrown::raw::RawTable;
 
+use crate::vec::{Drain, Vec};
 use core::cmp;
 use core::fmt;
 use core::mem::replace;
 use core::ops::RangeFull;
-use vec::{Drain, Vec};
 
-use equivalent::Equivalent;
-use util::enumerate;
-use {Bucket, Entries, HashValue};
+use crate::equivalent::Equivalent;
+use crate::util::enumerate;
+use crate::{Bucket, Entries, HashValue};
 
 /// Core of the map that does not depend on S
 pub(crate) struct IndexMapCore<K, V> {

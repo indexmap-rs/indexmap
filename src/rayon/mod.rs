@@ -8,7 +8,7 @@ use alloc::collections::LinkedList;
 #[cfg(has_std)]
 use std::collections::LinkedList;
 
-use vec::Vec;
+use crate::vec::Vec;
 
 // generate `ParallelIterator` methods by just forwarding to the underlying
 // self.entries and mapping its elements.

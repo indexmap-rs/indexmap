@@ -144,7 +144,7 @@ quickcheck! {
 
 }
 
-use Op::*;
+use crate::Op::*;
 #[derive(Copy, Clone, Debug)]
 enum Op<K, V> {
     Add(K, V),

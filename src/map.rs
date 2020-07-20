@@ -3,26 +3,26 @@
 
 mod core;
 
-pub use mutable_keys::MutableKeys;
+pub use crate::mutable_keys::MutableKeys;
 
 #[cfg(feature = "rayon")]
-pub use rayon::map as rayon;
+pub use crate::rayon::map as rayon;
 
+use crate::vec::{self, Vec};
 use core::cmp::Ordering;
 use core::fmt;
 use core::hash::{BuildHasher, Hash, Hasher};
 use core::iter::FromIterator;
 use core::ops::{Index, IndexMut, RangeFull};
 use core::slice::{Iter as SliceIter, IterMut as SliceIterMut};
-use vec::{self, Vec};
 
 #[cfg(has_std)]
 use std::collections::hash_map::RandomState;
 
 use self::core::IndexMapCore;
-use equivalent::Equivalent;
-use util::third;
-use {Bucket, Entries, HashValue};
+use crate::equivalent::Equivalent;
+use crate::util::third;
+use crate::{Bucket, Entries, HashValue};
 
 pub use self::core::{Entry, OccupiedEntry, VacantEntry};
 
@@ -1139,8 +1139,8 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::util::enumerate;
     use std::string::String;
-    use util::enumerate;
 
     #[test]
     fn it_works() {

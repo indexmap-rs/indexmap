@@ -10,7 +10,7 @@ use core::fmt::{self, Formatter};
 use core::hash::{BuildHasher, Hash};
 use core::marker::PhantomData;
 
-use IndexMap;
+use crate::IndexMap;
 
 /// Requires crate feature `"serde-1"`
 impl<K, V, S> Serialize for IndexMap<K, V, S>
@@ -89,7 +89,7 @@ where
     }
 }
 
-use IndexSet;
+use crate::IndexSet;
 
 /// Requires crate feature `"serde-1"`
 impl<T, S> Serialize for IndexSet<T, S>

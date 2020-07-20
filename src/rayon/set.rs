@@ -9,15 +9,15 @@ use super::collect;
 use super::rayon::iter::plumbing::{Consumer, ProducerCallback, UnindexedConsumer};
 use super::rayon::prelude::*;
 
+use crate::vec::Vec;
 use core::cmp::Ordering;
 use core::fmt;
 use core::hash::{BuildHasher, Hash};
-use vec::Vec;
 
-use Entries;
-use IndexSet;
+use crate::Entries;
+use crate::IndexSet;
 
-type Bucket<T> = ::Bucket<T, ()>;
+type Bucket<T> = crate::Bucket<T, ()>;
 
 /// Requires crate feature `"rayon"`.
 impl<T, S> IntoParallelIterator for IndexSet<T, S>
