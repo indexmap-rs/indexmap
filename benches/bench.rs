@@ -1,6 +1,5 @@
 #![feature(test)]
-extern crate fnv;
-extern crate rand;
+
 extern crate test;
 #[macro_use]
 extern crate lazy_static;
@@ -12,8 +11,6 @@ type FnvBuilder = BuildHasherDefault<FnvHasher>;
 
 use test::black_box;
 use test::Bencher;
-
-extern crate indexmap;
 
 use indexmap::IndexMap;
 

@@ -3,30 +3,26 @@
 
 mod core;
 
-#[cfg(not(has_std))]
-use std::vec::Vec;
-
-pub use mutable_keys::MutableKeys;
+pub use crate::mutable_keys::MutableKeys;
 
 #[cfg(feature = "rayon")]
-pub use rayon::map as rayon;
+pub use crate::rayon::map as rayon;
 
-use std::hash::BuildHasher;
-use std::hash::Hash;
-use std::hash::Hasher;
-use std::iter::FromIterator;
-use std::ops::RangeFull;
+use crate::vec::{self, Vec};
+use ::core::cmp::Ordering;
+use ::core::fmt;
+use ::core::hash::{BuildHasher, Hash, Hasher};
+use ::core::iter::FromIterator;
+use ::core::ops::{Index, IndexMut, RangeFull};
+use ::core::slice::{Iter as SliceIter, IterMut as SliceIterMut};
 
 #[cfg(has_std)]
 use std::collections::hash_map::RandomState;
 
-use std::cmp::Ordering;
-use std::fmt;
-
 use self::core::IndexMapCore;
-use equivalent::Equivalent;
-use util::third;
-use {Bucket, Entries, HashValue};
+use crate::equivalent::Equivalent;
+use crate::util::third;
+use crate::{Bucket, Entries, HashValue};
 
 pub use self::core::{Entry, OccupiedEntry, VacantEntry};
 
@@ -133,7 +129,7 @@ where
     V: fmt::Debug,
     S: BuildHasher,
 {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         if cfg!(not(feature = "test_debug")) {
             f.debug_map().entries(self.iter()).finish()
         } else {
@@ -295,34 +291,34 @@ where
     /// in-place manipulation.
     ///
     /// Computes in **O(1)** time (amortized average).
-    pub fn entry(&mut self, key: K) -> Entry<K, V> {
+    pub fn entry(&mut self, key: K) -> Entry<'_, K, V> {
         let hash = self.hash(&key);
         self.core.entry(hash, key)
     }
 
     /// Return an iterator over the key-value pairs of the map, in their order
-    pub fn iter(&self) -> Iter<K, V> {
+    pub fn iter(&self) -> Iter<'_, K, V> {
         Iter {
             iter: self.as_entries().iter(),
         }
     }
 
     /// Return an iterator over the key-value pairs of the map, in their order
-    pub fn iter_mut(&mut self) -> IterMut<K, V> {
+    pub fn iter_mut(&mut self) -> IterMut<'_, K, V> {
         IterMut {
             iter: self.as_entries_mut().iter_mut(),
         }
     }
 
     /// Return an iterator over the keys of the map, in their order
-    pub fn keys(&self) -> Keys<K, V> {
+    pub fn keys(&self) -> Keys<'_, K, V> {
         Keys {
             iter: self.as_entries().iter(),
         }
     }
 
     /// Return an iterator over the values of the map, in their order
-    pub fn values(&self) -> Values<K, V> {
+    pub fn values(&self) -> Values<'_, K, V> {
         Values {
             iter: self.as_entries().iter(),
         }
@@ -330,7 +326,7 @@ where
 
     /// Return an iterator over mutable references to the the values of the map,
     /// in their order
-    pub fn values_mut(&mut self) -> ValuesMut<K, V> {
+    pub fn values_mut(&mut self) -> ValuesMut<'_, K, V> {
         ValuesMut {
             iter: self.as_entries_mut().iter_mut(),
         }
@@ -667,7 +663,7 @@ where
 
     /// Clears the `IndexMap`, returning all key-value pairs as a drain iterator.
     /// Keeps the allocated memory for reuse.
-    pub fn drain(&mut self, range: RangeFull) -> Drain<K, V> {
+    pub fn drain(&mut self, range: RangeFull) -> Drain<'_, K, V> {
         Drain {
             iter: self.core.drain(range),
         }
@@ -720,10 +716,6 @@ impl<K, V, S> IndexMap<K, V, S> {
     }
 }
 
-use std::slice::Iter as SliceIter;
-use std::slice::IterMut as SliceIterMut;
-use std::vec::IntoIter as VecIntoIter;
-
 /// An iterator over the keys of a `IndexMap`.
 ///
 /// This `struct` is created by the [`keys`] method on [`IndexMap`]. See its
@@ -731,7 +723,7 @@ use std::vec::IntoIter as VecIntoIter;
 ///
 /// [`keys`]: struct.IndexMap.html#method.keys
 /// [`IndexMap`]: struct.IndexMap.html
-pub struct Keys<'a, K: 'a, V: 'a> {
+pub struct Keys<'a, K, V> {
     pub(crate) iter: SliceIter<'a, Bucket<K, V>>,
 }
 
@@ -763,7 +755,7 @@ impl<'a, K, V> Clone for Keys<'a, K, V> {
 }
 
 impl<'a, K: fmt::Debug, V> fmt::Debug for Keys<'a, K, V> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_list().entries(self.clone()).finish()
     }
 }
@@ -775,7 +767,7 @@ impl<'a, K: fmt::Debug, V> fmt::Debug for Keys<'a, K, V> {
 ///
 /// [`values`]: struct.IndexMap.html#method.values
 /// [`IndexMap`]: struct.IndexMap.html
-pub struct Values<'a, K: 'a, V: 'a> {
+pub struct Values<'a, K, V> {
     iter: SliceIter<'a, Bucket<K, V>>,
 }
 
@@ -807,7 +799,7 @@ impl<'a, K, V> Clone for Values<'a, K, V> {
 }
 
 impl<'a, K, V: fmt::Debug> fmt::Debug for Values<'a, K, V> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_list().entries(self.clone()).finish()
     }
 }
@@ -819,7 +811,7 @@ impl<'a, K, V: fmt::Debug> fmt::Debug for Values<'a, K, V> {
 ///
 /// [`values_mut`]: struct.IndexMap.html#method.values_mut
 /// [`IndexMap`]: struct.IndexMap.html
-pub struct ValuesMut<'a, K: 'a, V: 'a> {
+pub struct ValuesMut<'a, K, V> {
     iter: SliceIterMut<'a, Bucket<K, V>>,
 }
 
@@ -848,7 +840,7 @@ impl<'a, K, V> ExactSizeIterator for ValuesMut<'a, K, V> {
 ///
 /// [`iter`]: struct.IndexMap.html#method.iter
 /// [`IndexMap`]: struct.IndexMap.html
-pub struct Iter<'a, K: 'a, V: 'a> {
+pub struct Iter<'a, K, V> {
     iter: SliceIter<'a, Bucket<K, V>>,
 }
 
@@ -880,7 +872,7 @@ impl<'a, K, V> Clone for Iter<'a, K, V> {
 }
 
 impl<'a, K: fmt::Debug, V: fmt::Debug> fmt::Debug for Iter<'a, K, V> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_list().entries(self.clone()).finish()
     }
 }
@@ -892,7 +884,7 @@ impl<'a, K: fmt::Debug, V: fmt::Debug> fmt::Debug for Iter<'a, K, V> {
 ///
 /// [`iter_mut`]: struct.IndexMap.html#method.iter_mut
 /// [`IndexMap`]: struct.IndexMap.html
-pub struct IterMut<'a, K: 'a, V: 'a> {
+pub struct IterMut<'a, K, V> {
     iter: SliceIterMut<'a, Bucket<K, V>>,
 }
 
@@ -922,7 +914,7 @@ impl<'a, K, V> ExactSizeIterator for IterMut<'a, K, V> {
 /// [`into_iter`]: struct.IndexMap.html#method.into_iter
 /// [`IndexMap`]: struct.IndexMap.html
 pub struct IntoIter<K, V> {
-    pub(crate) iter: VecIntoIter<Bucket<K, V>>,
+    pub(crate) iter: vec::IntoIter<Bucket<K, V>>,
 }
 
 impl<K, V> Iterator for IntoIter<K, V> {
@@ -944,7 +936,7 @@ impl<K, V> ExactSizeIterator for IntoIter<K, V> {
 }
 
 impl<K: fmt::Debug, V: fmt::Debug> fmt::Debug for IntoIter<K, V> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let iter = self.iter.as_slice().iter().map(Bucket::refs);
         f.debug_list().entries(iter).finish()
     }
@@ -957,12 +949,8 @@ impl<K: fmt::Debug, V: fmt::Debug> fmt::Debug for IntoIter<K, V> {
 ///
 /// [`drain`]: struct.IndexMap.html#method.drain
 /// [`IndexMap`]: struct.IndexMap.html
-pub struct Drain<'a, K, V>
-where
-    K: 'a,
-    V: 'a,
-{
-    pub(crate) iter: ::std::vec::Drain<'a, Bucket<K, V>>,
+pub struct Drain<'a, K, V> {
+    pub(crate) iter: vec::Drain<'a, Bucket<K, V>>,
 }
 
 impl<'a, K, V> Iterator for Drain<'a, K, V> {
@@ -1012,8 +1000,6 @@ where
         }
     }
 }
-
-use std::ops::{Index, IndexMut};
 
 impl<'a, K, V, Q: ?Sized, S> Index<&'a Q> for IndexMap<K, V, S>
 where
@@ -1149,7 +1135,8 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use util::enumerate;
+    use crate::util::enumerate;
+    use std::string::String;
 
     #[test]
     fn it_works() {
@@ -1405,8 +1392,7 @@ mod tests {
         map_b.swap_remove(&1);
         assert_ne!(map_a, map_b);
 
-        let map_c: IndexMap<_, String> =
-            map_b.into_iter().map(|(k, v)| (k, v.to_owned())).collect();
+        let map_c: IndexMap<_, String> = map_b.into_iter().map(|(k, v)| (k, v.into())).collect();
         assert_ne!(map_a, map_c);
         assert_ne!(map_c, map_a);
     }

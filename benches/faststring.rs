@@ -1,11 +1,8 @@
 #![feature(test)]
-extern crate lazy_static;
-extern crate rand;
+
 extern crate test;
 
 use test::Bencher;
-
-extern crate indexmap;
 
 use indexmap::IndexMap;
 

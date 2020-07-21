@@ -1,5 +1,4 @@
-use std::hash::BuildHasher;
-use std::hash::Hash;
+use core::hash::{BuildHasher, Hash};
 
 use super::{Equivalent, IndexMap};
 

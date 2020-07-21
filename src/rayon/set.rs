@@ -6,18 +6,18 @@
 //! Requires crate feature `"rayon"`.
 
 use super::collect;
-use super::rayon::iter::plumbing::{Consumer, ProducerCallback, UnindexedConsumer};
-use super::rayon::prelude::*;
+use rayon::iter::plumbing::{Consumer, ProducerCallback, UnindexedConsumer};
+use rayon::prelude::*;
 
-use std::cmp::Ordering;
-use std::fmt;
-use std::hash::BuildHasher;
-use std::hash::Hash;
+use crate::vec::Vec;
+use core::cmp::Ordering;
+use core::fmt;
+use core::hash::{BuildHasher, Hash};
 
-use Entries;
-use IndexSet;
+use crate::Entries;
+use crate::IndexSet;
 
-type Bucket<T> = ::Bucket<T, ()>;
+type Bucket<T> = crate::Bucket<T, ()>;
 
 /// Requires crate feature `"rayon"`.
 impl<T, S> IntoParallelIterator for IndexSet<T, S>
@@ -47,7 +47,7 @@ pub struct IntoParIter<T> {
 }
 
 impl<T: fmt::Debug> fmt::Debug for IntoParIter<T> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let iter = self.entries.iter().map(Bucket::key_ref);
         f.debug_list().entries(iter).finish()
     }
@@ -86,7 +86,7 @@ where
 ///
 /// [`IndexSet`]: ../struct.IndexSet.html
 /// [`par_iter`]: ../struct.IndexSet.html#method.par_iter
-pub struct ParIter<'a, T: 'a> {
+pub struct ParIter<'a, T> {
     entries: &'a [Bucket<T>],
 }
 
@@ -97,7 +97,7 @@ impl<'a, T> Clone for ParIter<'a, T> {
 }
 
 impl<'a, T: fmt::Debug> fmt::Debug for ParIter<'a, T> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let iter = self.entries.iter().map(Bucket::key_ref);
         f.debug_list().entries(iter).finish()
     }
@@ -241,7 +241,7 @@ where
 ///
 /// [`IndexSet`]: ../struct.IndexSet.html
 /// [`par_difference`]: ../struct.IndexSet.html#method.par_difference
-pub struct ParDifference<'a, T: 'a, S1: 'a, S2: 'a> {
+pub struct ParDifference<'a, T, S1, S2> {
     set1: &'a IndexSet<T, S1>,
     set2: &'a IndexSet<T, S2>,
 }
@@ -258,7 +258,7 @@ where
     S1: BuildHasher,
     S2: BuildHasher,
 {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_list()
             .entries(self.set1.difference(&self.set2))
             .finish()
@@ -292,7 +292,7 @@ where
 ///
 /// [`IndexSet`]: ../struct.IndexSet.html
 /// [`par_intersection`]: ../struct.IndexSet.html#method.par_intersection
-pub struct ParIntersection<'a, T: 'a, S1: 'a, S2: 'a> {
+pub struct ParIntersection<'a, T, S1, S2> {
     set1: &'a IndexSet<T, S1>,
     set2: &'a IndexSet<T, S2>,
 }
@@ -309,7 +309,7 @@ where
     S1: BuildHasher,
     S2: BuildHasher,
 {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_list()
             .entries(self.set1.intersection(&self.set2))
             .finish()
@@ -343,7 +343,7 @@ where
 ///
 /// [`IndexSet`]: ../struct.IndexSet.html
 /// [`par_symmetric_difference`]: ../struct.IndexSet.html#method.par_symmetric_difference
-pub struct ParSymmetricDifference<'a, T: 'a, S1: 'a, S2: 'a> {
+pub struct ParSymmetricDifference<'a, T, S1, S2> {
     set1: &'a IndexSet<T, S1>,
     set2: &'a IndexSet<T, S2>,
 }
@@ -360,7 +360,7 @@ where
     S1: BuildHasher,
     S2: BuildHasher,
 {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_list()
             .entries(self.set1.symmetric_difference(&self.set2))
             .finish()
@@ -394,7 +394,7 @@ where
 ///
 /// [`IndexSet`]: ../struct.IndexSet.html
 /// [`par_union`]: ../struct.IndexSet.html#method.par_union
-pub struct ParUnion<'a, T: 'a, S1: 'a, S2: 'a> {
+pub struct ParUnion<'a, T, S1, S2> {
     set1: &'a IndexSet<T, S1>,
     set2: &'a IndexSet<T, S2>,
 }
@@ -411,7 +411,7 @@ where
     S1: BuildHasher,
     S2: BuildHasher,
 {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_list().entries(self.set1.union(&self.set2)).finish()
     }
 }

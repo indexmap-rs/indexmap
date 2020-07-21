@@ -1,22 +1,18 @@
 //! A hash set implemented using `IndexMap`
 
 #[cfg(feature = "rayon")]
-pub use rayon::set as rayon;
-
-#[cfg(not(has_std))]
-use std::vec::Vec;
+pub use crate::rayon::set as rayon;
 
 #[cfg(has_std)]
 use std::collections::hash_map::RandomState;
 
-use std::cmp::Ordering;
-use std::fmt;
-use std::hash::{BuildHasher, Hash};
-use std::iter::{Chain, FromIterator};
-use std::ops::RangeFull;
-use std::ops::{BitAnd, BitOr, BitXor, Sub};
-use std::slice;
-use std::vec;
+use crate::vec::{self, Vec};
+use core::cmp::Ordering;
+use core::fmt;
+use core::hash::{BuildHasher, Hash};
+use core::iter::{Chain, FromIterator};
+use core::ops::{BitAnd, BitOr, BitXor, RangeFull, Sub};
+use core::slice;
 
 use super::{Entries, Equivalent, IndexMap};
 
@@ -119,7 +115,7 @@ where
     T: fmt::Debug + Hash + Eq,
     S: BuildHasher,
 {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         if cfg!(not(feature = "test_debug")) {
             f.debug_set().entries(self.iter()).finish()
         } else {
@@ -262,7 +258,7 @@ where
     }
 
     /// Return an iterator over the values of the set, in their order
-    pub fn iter(&self) -> Iter<T> {
+    pub fn iter(&self) -> Iter<'_, T> {
         Iter {
             iter: self.map.keys().iter,
         }
@@ -562,7 +558,7 @@ where
 
     /// Clears the `IndexSet`, returning all values as a drain iterator.
     /// Keeps the allocated memory for reuse.
-    pub fn drain(&mut self, range: RangeFull) -> Drain<T> {
+    pub fn drain(&mut self, range: RangeFull) -> Drain<'_, T> {
         Drain {
             iter: self.map.drain(range).iter,
         }
@@ -636,7 +632,7 @@ impl<T> ExactSizeIterator for IntoIter<T> {
 }
 
 impl<T: fmt::Debug> fmt::Debug for IntoIter<T> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let iter = self.iter.as_slice().iter().map(Bucket::key_ref);
         f.debug_list().entries(iter).finish()
     }
@@ -649,7 +645,7 @@ impl<T: fmt::Debug> fmt::Debug for IntoIter<T> {
 ///
 /// [`IndexSet`]: struct.IndexSet.html
 /// [`iter`]: struct.IndexSet.html#method.iter
-pub struct Iter<'a, T: 'a> {
+pub struct Iter<'a, T> {
     iter: slice::Iter<'a, Bucket<T>>,
 }
 
@@ -680,7 +676,7 @@ impl<'a, T> Clone for Iter<'a, T> {
 }
 
 impl<'a, T: fmt::Debug> fmt::Debug for Iter<'a, T> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_list().entries(self.clone()).finish()
     }
 }
@@ -692,7 +688,7 @@ impl<'a, T: fmt::Debug> fmt::Debug for Iter<'a, T> {
 ///
 /// [`IndexSet`]: struct.IndexSet.html
 /// [`drain`]: struct.IndexSet.html#method.drain
-pub struct Drain<'a, T: 'a> {
+pub struct Drain<'a, T> {
     iter: vec::Drain<'a, Bucket<T>>,
 }
 
@@ -840,7 +836,7 @@ where
 ///
 /// [`IndexSet`]: struct.IndexSet.html
 /// [`difference`]: struct.IndexSet.html#method.difference
-pub struct Difference<'a, T: 'a, S: 'a> {
+pub struct Difference<'a, T, S> {
     iter: Iter<'a, T>,
     other: &'a IndexSet<T, S>,
 }
@@ -895,7 +891,7 @@ where
     T: fmt::Debug + Eq + Hash,
     S: BuildHasher,
 {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_list().entries(self.clone()).finish()
     }
 }
@@ -907,7 +903,7 @@ where
 ///
 /// [`IndexSet`]: struct.IndexSet.html
 /// [`intersection`]: struct.IndexSet.html#method.intersection
-pub struct Intersection<'a, T: 'a, S: 'a> {
+pub struct Intersection<'a, T, S> {
     iter: Iter<'a, T>,
     other: &'a IndexSet<T, S>,
 }
@@ -962,7 +958,7 @@ where
     T: fmt::Debug + Eq + Hash,
     S: BuildHasher,
 {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_list().entries(self.clone()).finish()
     }
 }
@@ -974,7 +970,7 @@ where
 ///
 /// [`IndexSet`]: struct.IndexSet.html
 /// [`symmetric_difference`]: struct.IndexSet.html#method.symmetric_difference
-pub struct SymmetricDifference<'a, T: 'a, S1: 'a, S2: 'a> {
+pub struct SymmetricDifference<'a, T, S1, S2> {
     iter: Chain<Difference<'a, T, S2>, Difference<'a, T, S1>>,
 }
 
@@ -1027,7 +1023,7 @@ where
     S1: BuildHasher,
     S2: BuildHasher,
 {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_list().entries(self.clone()).finish()
     }
 }
@@ -1039,7 +1035,7 @@ where
 ///
 /// [`IndexSet`]: struct.IndexSet.html
 /// [`union`]: struct.IndexSet.html#method.union
-pub struct Union<'a, T: 'a, S: 'a> {
+pub struct Union<'a, T, S> {
     iter: Chain<Iter<'a, T>, Difference<'a, T, S>>,
 }
 
@@ -1089,7 +1085,7 @@ where
     T: fmt::Debug + Eq + Hash,
     S: BuildHasher,
 {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_list().entries(self.clone()).finish()
     }
 }
@@ -1163,7 +1159,8 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use util::enumerate;
+    use crate::util::enumerate;
+    use std::string::String;
 
     #[test]
     fn it_works() {

@@ -1,16 +1,14 @@
-extern crate serde;
-
-use self::serde::de::value::{MapDeserializer, SeqDeserializer};
-use self::serde::de::{
+use serde::de::value::{MapDeserializer, SeqDeserializer};
+use serde::de::{
     Deserialize, Deserializer, Error, IntoDeserializer, MapAccess, SeqAccess, Visitor,
 };
-use self::serde::ser::{Serialize, SerializeMap, SerializeSeq, Serializer};
+use serde::ser::{Serialize, SerializeMap, SerializeSeq, Serializer};
 
-use std::fmt::{self, Formatter};
-use std::hash::{BuildHasher, Hash};
-use std::marker::PhantomData;
+use core::fmt::{self, Formatter};
+use core::hash::{BuildHasher, Hash};
+use core::marker::PhantomData;
 
-use IndexMap;
+use crate::IndexMap;
 
 /// Requires crate feature `"serde-1"`
 impl<K, V, S> Serialize for IndexMap<K, V, S>
@@ -41,7 +39,7 @@ where
 {
     type Value = IndexMap<K, V, S>;
 
-    fn expecting(&self, formatter: &mut Formatter) -> fmt::Result {
+    fn expecting(&self, formatter: &mut Formatter<'_>) -> fmt::Result {
         write!(formatter, "a map")
     }
 
@@ -89,7 +87,7 @@ where
     }
 }
 
-use IndexSet;
+use crate::IndexSet;
 
 /// Requires crate feature `"serde-1"`
 impl<T, S> Serialize for IndexSet<T, S>
@@ -118,7 +116,7 @@ where
 {
     type Value = IndexSet<T, S>;
 
-    fn expecting(&self, formatter: &mut Formatter) -> fmt::Result {
+    fn expecting(&self, formatter: &mut Formatter<'_>) -> fmt::Result {
         write!(formatter, "a set")
     }
 

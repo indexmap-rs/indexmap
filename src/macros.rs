@@ -1,12 +1,11 @@
 #[cfg(has_std)]
-#[macro_export(local_inner_macros)]
+#[macro_export]
 /// Create an `IndexMap` from a list of key-value pairs
 ///
 /// ## Example
 ///
 /// ```
-/// #[macro_use] extern crate indexmap;
-/// # fn main() {
+/// use indexmap::indexmap;
 ///
 /// let map = indexmap!{
 ///     "a" => 1,
@@ -18,16 +17,15 @@
 ///
 /// // "a" is the first key
 /// assert_eq!(map.keys().next(), Some(&"a"));
-/// # }
 /// ```
 macro_rules! indexmap {
     (@single $($x:tt)*) => (());
-    (@count $($rest:expr),*) => (<[()]>::len(&[$(indexmap!(@single $rest)),*]));
+    (@count $($rest:expr),*) => (<[()]>::len(&[$($crate::indexmap!(@single $rest)),*]));
 
-    ($($key:expr => $value:expr,)+) => { indexmap!($($key => $value),+) };
+    ($($key:expr => $value:expr,)+) => { $crate::indexmap!($($key => $value),+) };
     ($($key:expr => $value:expr),*) => {
         {
-            let _cap = indexmap!(@count $($key),*);
+            let _cap = $crate::indexmap!(@count $($key),*);
             let mut _map = $crate::IndexMap::with_capacity(_cap);
             $(
                 _map.insert($key, $value);
@@ -38,14 +36,13 @@ macro_rules! indexmap {
 }
 
 #[cfg(has_std)]
-#[macro_export(local_inner_macros)]
+#[macro_export]
 /// Create an `IndexSet` from a list of values
 ///
 /// ## Example
 ///
 /// ```
-/// #[macro_use] extern crate indexmap;
-/// # fn main() {
+/// use indexmap::indexset;
 ///
 /// let set = indexset!{
 ///     "a",
@@ -57,16 +54,15 @@ macro_rules! indexmap {
 ///
 /// // "a" is the first value
 /// assert_eq!(set.iter().next(), Some(&"a"));
-/// # }
 /// ```
 macro_rules! indexset {
     (@single $($x:tt)*) => (());
-    (@count $($rest:expr),*) => (<[()]>::len(&[$(indexset!(@single $rest)),*]));
+    (@count $($rest:expr),*) => (<[()]>::len(&[$($crate::indexset!(@single $rest)),*]));
 
-    ($($value:expr,)+) => { indexset!($($value),+) };
+    ($($value:expr,)+) => { $crate::indexset!($($value),+) };
     ($($value:expr),*) => {
         {
-            let _cap = indexset!(@count $($value),*);
+            let _cap = $crate::indexset!(@count $($value),*);
             let mut _set = $crate::IndexSet::with_capacity(_cap);
             $(
                 _set.insert($value);

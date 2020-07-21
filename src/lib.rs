@@ -1,7 +1,8 @@
 // We *mostly* avoid unsafe code, but `map::core::raw` allows it to use `RawTable` buckets.
 #![deny(unsafe_code)]
+#![warn(rust_2018_idioms)]
 #![doc(html_root_url = "https://docs.rs/indexmap/1/")]
-#![cfg_attr(not(has_std), no_std)]
+#![no_std]
 
 //! [`IndexMap`] is a hash table where the iteration order of the key-value
 //! pairs is independent of the hash values of the keys.
@@ -33,8 +34,6 @@
 //! to use alternate hashers:
 //!
 //! ```
-//! # extern crate fnv;
-//! # extern crate fxhash;
 //! use fnv::FnvBuildHasher;
 //! use fxhash::FxBuildHasher;
 //! use indexmap::{IndexMap, IndexSet};
@@ -82,22 +81,15 @@
 #[cfg(not(has_std))]
 extern crate alloc;
 
-extern crate hashbrown;
+#[cfg(has_std)]
+#[macro_use]
+extern crate std;
 
 #[cfg(not(has_std))]
-pub(crate) mod std {
-    pub use core::*;
-    pub mod alloc {
-        pub use alloc::*;
-    }
-    pub mod collections {
-        pub use alloc::collections::*;
-    }
-    pub use alloc::vec;
-}
+use alloc::vec::{self, Vec};
 
-#[cfg(not(has_std))]
-use std::vec::Vec;
+#[cfg(has_std)]
+use std::vec::{self, Vec};
 
 #[macro_use]
 mod macros;
@@ -115,9 +107,9 @@ pub mod set;
 #[cfg(feature = "rayon")]
 mod rayon;
 
-pub use equivalent::Equivalent;
-pub use map::IndexMap;
-pub use set::IndexSet;
+pub use crate::equivalent::Equivalent;
+pub use crate::map::IndexMap;
+pub use crate::set::IndexSet;
 
 // shared private items
 

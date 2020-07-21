@@ -3,15 +3,15 @@
 //! mostly in dealing with its bucket "pointers".
 
 use super::{Entry, Equivalent, HashValue, IndexMapCore, VacantEntry};
+use core::fmt;
+use core::mem::replace;
 use hashbrown::raw::RawTable;
-use std::fmt;
-use std::mem::replace;
 
 type RawBucket = hashbrown::raw::Bucket<usize>;
 
 pub(super) struct DebugIndices<'a>(pub &'a RawTable<usize>);
 impl fmt::Debug for DebugIndices<'_> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let indices = unsafe { self.0.iter().map(|raw_bucket| raw_bucket.read()) };
         f.debug_list().entries(indices).finish()
     }
@@ -49,7 +49,7 @@ impl<K, V> IndexMapCore<K, V> {
         unsafe { self.indices.erase(raw_bucket) };
     }
 
-    pub(crate) fn entry(&mut self, hash: HashValue, key: K) -> Entry<K, V>
+    pub(crate) fn entry(&mut self, hash: HashValue, key: K) -> Entry<'_, K, V>
     where
         K: Eq,
     {
@@ -193,7 +193,7 @@ impl<K, V> IndexMapCore<K, V> {
 /// [`Entry`]: enum.Entry.html
 // SAFETY: The lifetime of the map reference also constrains the raw bucket,
 // which is essentially a raw pointer into the map indices.
-pub struct OccupiedEntry<'a, K: 'a, V: 'a> {
+pub struct OccupiedEntry<'a, K, V> {
     map: &'a mut IndexMapCore<K, V>,
     raw_bucket: RawBucket,
     key: K,
