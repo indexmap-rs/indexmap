@@ -296,7 +296,7 @@ impl<'a, K, V> Entry<'a, K, V> {
     }
 }
 
-impl<'a, K: 'a + fmt::Debug, V: 'a + fmt::Debug> fmt::Debug for Entry<'a, K, V> {
+impl<K: fmt::Debug, V: fmt::Debug> fmt::Debug for Entry<'_, K, V> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match *self {
             Entry::Vacant(ref v) => f.debug_tuple(stringify!(Entry)).field(v).finish(),
@@ -308,7 +308,7 @@ impl<'a, K: 'a + fmt::Debug, V: 'a + fmt::Debug> fmt::Debug for Entry<'a, K, V> 
 pub use self::raw::OccupiedEntry;
 
 // Extra methods that don't threaten the unsafe encapsulation.
-impl<'a, K, V> OccupiedEntry<'a, K, V> {
+impl<K, V> OccupiedEntry<'_, K, V> {
     /// Sets the value of the entry to `value`, and returns the entry's old value.
     pub fn insert(&mut self, value: V) -> V {
         replace(self.get_mut(), value)
@@ -351,7 +351,7 @@ impl<'a, K, V> OccupiedEntry<'a, K, V> {
     }
 }
 
-impl<'a, K: 'a + fmt::Debug, V: 'a + fmt::Debug> fmt::Debug for OccupiedEntry<'a, K, V> {
+impl<K: fmt::Debug, V: fmt::Debug> fmt::Debug for OccupiedEntry<'_, K, V> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct(stringify!(OccupiedEntry))
             .field("key", self.key())
@@ -390,7 +390,7 @@ impl<'a, K, V> VacantEntry<'a, K, V> {
     }
 }
 
-impl<'a, K: 'a + fmt::Debug, V: 'a> fmt::Debug for VacantEntry<'a, K, V> {
+impl<K: fmt::Debug, V> fmt::Debug for VacantEntry<'_, K, V> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_tuple(stringify!(VacantEntry))
             .field(self.key())

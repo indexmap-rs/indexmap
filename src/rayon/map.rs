@@ -91,13 +91,13 @@ pub struct ParIter<'a, K, V> {
     entries: &'a [Bucket<K, V>],
 }
 
-impl<'a, K, V> Clone for ParIter<'a, K, V> {
-    fn clone(&self) -> ParIter<'a, K, V> {
+impl<K, V> Clone for ParIter<'_, K, V> {
+    fn clone(&self) -> Self {
         ParIter { ..*self }
     }
 }
 
-impl<'a, K: fmt::Debug, V: fmt::Debug> fmt::Debug for ParIter<'a, K, V> {
+impl<K: fmt::Debug, V: fmt::Debug> fmt::Debug for ParIter<'_, K, V> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let iter = self.entries.iter().map(Bucket::refs);
         f.debug_list().entries(iter).finish()
@@ -110,7 +110,7 @@ impl<'a, K: Sync, V: Sync> ParallelIterator for ParIter<'a, K, V> {
     parallel_iterator_methods!(Bucket::refs);
 }
 
-impl<'a, K: Sync, V: Sync> IndexedParallelIterator for ParIter<'a, K, V> {
+impl<K: Sync, V: Sync> IndexedParallelIterator for ParIter<'_, K, V> {
     indexed_parallel_iterator_methods!(Bucket::refs);
 }
 
@@ -148,7 +148,7 @@ impl<'a, K: Sync + Send, V: Send> ParallelIterator for ParIterMut<'a, K, V> {
     parallel_iterator_methods!(Bucket::ref_mut);
 }
 
-impl<'a, K: Sync + Send, V: Send> IndexedParallelIterator for ParIterMut<'a, K, V> {
+impl<K: Sync + Send, V: Send> IndexedParallelIterator for ParIterMut<'_, K, V> {
     indexed_parallel_iterator_methods!(Bucket::ref_mut);
 }
 
@@ -209,13 +209,13 @@ pub struct ParKeys<'a, K, V> {
     entries: &'a [Bucket<K, V>],
 }
 
-impl<'a, K, V> Clone for ParKeys<'a, K, V> {
-    fn clone(&self) -> ParKeys<'a, K, V> {
+impl<K, V> Clone for ParKeys<'_, K, V> {
+    fn clone(&self) -> Self {
         ParKeys { ..*self }
     }
 }
 
-impl<'a, K: fmt::Debug, V> fmt::Debug for ParKeys<'a, K, V> {
+impl<K: fmt::Debug, V> fmt::Debug for ParKeys<'_, K, V> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let iter = self.entries.iter().map(Bucket::key_ref);
         f.debug_list().entries(iter).finish()
@@ -228,7 +228,7 @@ impl<'a, K: Sync, V: Sync> ParallelIterator for ParKeys<'a, K, V> {
     parallel_iterator_methods!(Bucket::key_ref);
 }
 
-impl<'a, K: Sync, V: Sync> IndexedParallelIterator for ParKeys<'a, K, V> {
+impl<K: Sync, V: Sync> IndexedParallelIterator for ParKeys<'_, K, V> {
     indexed_parallel_iterator_methods!(Bucket::key_ref);
 }
 
@@ -243,13 +243,13 @@ pub struct ParValues<'a, K, V> {
     entries: &'a [Bucket<K, V>],
 }
 
-impl<'a, K, V> Clone for ParValues<'a, K, V> {
-    fn clone(&self) -> ParValues<'a, K, V> {
+impl<K, V> Clone for ParValues<'_, K, V> {
+    fn clone(&self) -> Self {
         ParValues { ..*self }
     }
 }
 
-impl<'a, K, V: fmt::Debug> fmt::Debug for ParValues<'a, K, V> {
+impl<K, V: fmt::Debug> fmt::Debug for ParValues<'_, K, V> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let iter = self.entries.iter().map(Bucket::value_ref);
         f.debug_list().entries(iter).finish()
@@ -262,7 +262,7 @@ impl<'a, K: Sync, V: Sync> ParallelIterator for ParValues<'a, K, V> {
     parallel_iterator_methods!(Bucket::value_ref);
 }
 
-impl<'a, K: Sync, V: Sync> IndexedParallelIterator for ParValues<'a, K, V> {
+impl<K: Sync, V: Sync> IndexedParallelIterator for ParValues<'_, K, V> {
     indexed_parallel_iterator_methods!(Bucket::value_ref);
 }
 
@@ -336,7 +336,7 @@ impl<'a, K: Send, V: Send> ParallelIterator for ParValuesMut<'a, K, V> {
     parallel_iterator_methods!(Bucket::value_mut);
 }
 
-impl<'a, K: Send, V: Send> IndexedParallelIterator for ParValuesMut<'a, K, V> {
+impl<K: Send, V: Send> IndexedParallelIterator for ParValuesMut<'_, K, V> {
     indexed_parallel_iterator_methods!(Bucket::value_mut);
 }
 

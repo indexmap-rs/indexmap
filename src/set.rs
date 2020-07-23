@@ -655,19 +655,19 @@ impl<'a, T> Iterator for Iter<'a, T> {
     iterator_methods!(Bucket::key_ref);
 }
 
-impl<'a, T> DoubleEndedIterator for Iter<'a, T> {
+impl<T> DoubleEndedIterator for Iter<'_, T> {
     fn next_back(&mut self) -> Option<Self::Item> {
         self.iter.next_back().map(Bucket::key_ref)
     }
 }
 
-impl<'a, T> ExactSizeIterator for Iter<'a, T> {
+impl<T> ExactSizeIterator for Iter<'_, T> {
     fn len(&self) -> usize {
         self.iter.len()
     }
 }
 
-impl<'a, T> Clone for Iter<'a, T> {
+impl<T> Clone for Iter<'_, T> {
     fn clone(&self) -> Self {
         Iter {
             iter: self.iter.clone(),
@@ -675,7 +675,7 @@ impl<'a, T> Clone for Iter<'a, T> {
     }
 }
 
-impl<'a, T: fmt::Debug> fmt::Debug for Iter<'a, T> {
+impl<T: fmt::Debug> fmt::Debug for Iter<'_, T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_list().entries(self.clone()).finish()
     }
@@ -692,13 +692,13 @@ pub struct Drain<'a, T> {
     iter: vec::Drain<'a, Bucket<T>>,
 }
 
-impl<'a, T> Iterator for Drain<'a, T> {
+impl<T> Iterator for Drain<'_, T> {
     type Item = T;
 
     iterator_methods!(Bucket::key);
 }
 
-impl<'a, T> DoubleEndedIterator for Drain<'a, T> {
+impl<T> DoubleEndedIterator for Drain<'_, T> {
     double_ended_iterator_methods!(Bucket::key);
 }
 
@@ -862,7 +862,7 @@ where
     }
 }
 
-impl<'a, T, S> DoubleEndedIterator for Difference<'a, T, S>
+impl<T, S> DoubleEndedIterator for Difference<'_, T, S>
 where
     T: Eq + Hash,
     S: BuildHasher,
@@ -877,7 +877,7 @@ where
     }
 }
 
-impl<'a, T, S> Clone for Difference<'a, T, S> {
+impl<T, S> Clone for Difference<'_, T, S> {
     fn clone(&self) -> Self {
         Difference {
             iter: self.iter.clone(),
@@ -886,7 +886,7 @@ impl<'a, T, S> Clone for Difference<'a, T, S> {
     }
 }
 
-impl<'a, T, S> fmt::Debug for Difference<'a, T, S>
+impl<T, S> fmt::Debug for Difference<'_, T, S>
 where
     T: fmt::Debug + Eq + Hash,
     S: BuildHasher,
@@ -929,7 +929,7 @@ where
     }
 }
 
-impl<'a, T, S> DoubleEndedIterator for Intersection<'a, T, S>
+impl<T, S> DoubleEndedIterator for Intersection<'_, T, S>
 where
     T: Eq + Hash,
     S: BuildHasher,
@@ -944,7 +944,7 @@ where
     }
 }
 
-impl<'a, T, S> Clone for Intersection<'a, T, S> {
+impl<T, S> Clone for Intersection<'_, T, S> {
     fn clone(&self) -> Self {
         Intersection {
             iter: self.iter.clone(),
@@ -953,7 +953,7 @@ impl<'a, T, S> Clone for Intersection<'a, T, S> {
     }
 }
 
-impl<'a, T, S> fmt::Debug for Intersection<'a, T, S>
+impl<T, S> fmt::Debug for Intersection<'_, T, S>
 where
     T: fmt::Debug + Eq + Hash,
     S: BuildHasher,
@@ -998,7 +998,7 @@ where
     }
 }
 
-impl<'a, T, S1, S2> DoubleEndedIterator for SymmetricDifference<'a, T, S1, S2>
+impl<T, S1, S2> DoubleEndedIterator for SymmetricDifference<'_, T, S1, S2>
 where
     T: Eq + Hash,
     S1: BuildHasher,
@@ -1009,7 +1009,7 @@ where
     }
 }
 
-impl<'a, T, S1, S2> Clone for SymmetricDifference<'a, T, S1, S2> {
+impl<T, S1, S2> Clone for SymmetricDifference<'_, T, S1, S2> {
     fn clone(&self) -> Self {
         SymmetricDifference {
             iter: self.iter.clone(),
@@ -1017,7 +1017,7 @@ impl<'a, T, S1, S2> Clone for SymmetricDifference<'a, T, S1, S2> {
     }
 }
 
-impl<'a, T, S1, S2> fmt::Debug for SymmetricDifference<'a, T, S1, S2>
+impl<T, S1, S2> fmt::Debug for SymmetricDifference<'_, T, S1, S2>
 where
     T: fmt::Debug + Eq + Hash,
     S1: BuildHasher,
@@ -1062,7 +1062,7 @@ where
     }
 }
 
-impl<'a, T, S> DoubleEndedIterator for Union<'a, T, S>
+impl<T, S> DoubleEndedIterator for Union<'_, T, S>
 where
     T: Eq + Hash,
     S: BuildHasher,
@@ -1072,7 +1072,7 @@ where
     }
 }
 
-impl<'a, T, S> Clone for Union<'a, T, S> {
+impl<T, S> Clone for Union<'_, T, S> {
     fn clone(&self) -> Self {
         Union {
             iter: self.iter.clone(),
@@ -1080,7 +1080,7 @@ impl<'a, T, S> Clone for Union<'a, T, S> {
     }
 }
 
-impl<'a, T, S> fmt::Debug for Union<'a, T, S>
+impl<T, S> fmt::Debug for Union<'_, T, S>
 where
     T: fmt::Debug + Eq + Hash,
     S: BuildHasher,
@@ -1090,7 +1090,7 @@ where
     }
 }
 
-impl<'a, 'b, T, S1, S2> BitAnd<&'b IndexSet<T, S2>> for &'a IndexSet<T, S1>
+impl<T, S1, S2> BitAnd<&IndexSet<T, S2>> for &IndexSet<T, S1>
 where
     T: Eq + Hash + Clone,
     S1: BuildHasher + Default,
@@ -1101,12 +1101,12 @@ where
     /// Returns the set intersection, cloned into a new set.
     ///
     /// Values are collected in the same order that they appear in `self`.
-    fn bitand(self, other: &'b IndexSet<T, S2>) -> Self::Output {
+    fn bitand(self, other: &IndexSet<T, S2>) -> Self::Output {
         self.intersection(other).cloned().collect()
     }
 }
 
-impl<'a, 'b, T, S1, S2> BitOr<&'b IndexSet<T, S2>> for &'a IndexSet<T, S1>
+impl<T, S1, S2> BitOr<&IndexSet<T, S2>> for &IndexSet<T, S1>
 where
     T: Eq + Hash + Clone,
     S1: BuildHasher + Default,
@@ -1118,12 +1118,12 @@ where
     ///
     /// Values from `self` are collected in their original order, followed by
     /// values that are unique to `other` in their original order.
-    fn bitor(self, other: &'b IndexSet<T, S2>) -> Self::Output {
+    fn bitor(self, other: &IndexSet<T, S2>) -> Self::Output {
         self.union(other).cloned().collect()
     }
 }
 
-impl<'a, 'b, T, S1, S2> BitXor<&'b IndexSet<T, S2>> for &'a IndexSet<T, S1>
+impl<T, S1, S2> BitXor<&IndexSet<T, S2>> for &IndexSet<T, S1>
 where
     T: Eq + Hash + Clone,
     S1: BuildHasher + Default,
@@ -1135,12 +1135,12 @@ where
     ///
     /// Values from `self` are collected in their original order, followed by
     /// values from `other` in their original order.
-    fn bitxor(self, other: &'b IndexSet<T, S2>) -> Self::Output {
+    fn bitxor(self, other: &IndexSet<T, S2>) -> Self::Output {
         self.symmetric_difference(other).cloned().collect()
     }
 }
 
-impl<'a, 'b, T, S1, S2> Sub<&'b IndexSet<T, S2>> for &'a IndexSet<T, S1>
+impl<T, S1, S2> Sub<&IndexSet<T, S2>> for &IndexSet<T, S1>
 where
     T: Eq + Hash + Clone,
     S1: BuildHasher + Default,
@@ -1151,7 +1151,7 @@ where
     /// Returns the set difference, cloned into a new set.
     ///
     /// Values are collected in the same order that they appear in `self`.
-    fn sub(self, other: &'b IndexSet<T, S2>) -> Self::Output {
+    fn sub(self, other: &IndexSet<T, S2>) -> Self::Output {
         self.difference(other).cloned().collect()
     }
 }
