@@ -11,7 +11,7 @@ use core::cmp::Ordering;
 use core::fmt;
 use core::hash::{BuildHasher, Hash};
 use core::iter::{Chain, FromIterator};
-use core::ops::{BitAnd, BitOr, BitXor, RangeBounds, Sub};
+use core::ops::{BitAnd, BitOr, BitXor, Index, RangeBounds, Sub};
 use core::slice;
 
 use super::{Entries, Equivalent, IndexMap};
@@ -603,6 +603,16 @@ impl<T, S> IndexSet<T, S> {
     /// Computes in **O(n)** time (average).
     pub fn shift_remove_index(&mut self, index: usize) -> Option<T> {
         self.map.shift_remove_index(index).map(|(x, ())| x)
+    }
+}
+
+impl<T, S> Index<usize> for IndexSet<T, S> {
+    type Output = T;
+
+    /// ***Panics*** if `index` is out of bounds.
+    fn index(&self, index: usize) -> &T {
+        self.get_index(index)
+            .expect("IndexSet: index out of bounds")
     }
 }
 

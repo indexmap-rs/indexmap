@@ -1023,6 +1023,30 @@ where
     }
 }
 
+impl<K, V, S> Index<usize> for IndexMap<K, V, S> {
+    type Output = V;
+
+    /// ***Panics*** if `index` is out of bounds.
+    fn index(&self, index: usize) -> &V {
+        self.get_index(index)
+            .expect("IndexMap: index out of bounds")
+            .1
+    }
+}
+
+/// Mutable indexing allows changing / updating indexed values
+/// that are already present.
+///
+/// You can **not** insert new values with index syntax, use `.insert()`.
+impl<K, V, S> IndexMut<usize> for IndexMap<K, V, S> {
+    /// ***Panics*** if `index` is out of bounds.
+    fn index_mut(&mut self, index: usize) -> &mut V {
+        self.get_index_mut(index)
+            .expect("IndexMap: index out of bounds")
+            .1
+    }
+}
+
 impl<K, V, S> FromIterator<(K, V)> for IndexMap<K, V, S>
 where
     K: Hash + Eq,
