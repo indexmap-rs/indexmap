@@ -125,9 +125,8 @@ impl<K, V, S> Entries for IndexMap<K, V, S> {
 
 impl<K, V, S> fmt::Debug for IndexMap<K, V, S>
 where
-    K: fmt::Debug + Hash + Eq,
+    K: fmt::Debug,
     V: fmt::Debug,
-    S: BuildHasher,
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         if cfg!(not(feature = "test_debug")) {
@@ -165,10 +164,7 @@ impl<K, V, S> IndexMap<K, V, S> {
     ///
     /// Computes in **O(n)** time.
     #[inline]
-    pub fn with_capacity_and_hasher(n: usize, hash_builder: S) -> Self
-    where
-        S: BuildHasher,
-    {
+    pub fn with_capacity_and_hasher(n: usize, hash_builder: S) -> Self {
         if n == 0 {
             IndexMap {
                 core: IndexMapCore::new(),
@@ -180,6 +176,21 @@ impl<K, V, S> IndexMap<K, V, S> {
                 hash_builder,
             }
         }
+    }
+
+    /// Create a new map with `hash_builder`
+    pub fn with_hasher(hash_builder: S) -> Self {
+        Self::with_capacity_and_hasher(0, hash_builder)
+    }
+
+    /// Computes in **O(1)** time.
+    pub fn capacity(&self) -> usize {
+        self.core.capacity()
+    }
+
+    /// Return a reference to the map's `BuildHasher`.
+    pub fn hasher(&self) -> &S {
+        &self.hash_builder
     }
 
     /// Return the number of key-value pairs in the map.
@@ -198,25 +209,55 @@ impl<K, V, S> IndexMap<K, V, S> {
         self.len() == 0
     }
 
-    /// Create a new map with `hash_builder`
-    pub fn with_hasher(hash_builder: S) -> Self
-    where
-        S: BuildHasher,
-    {
-        Self::with_capacity_and_hasher(0, hash_builder)
+    /// Return an iterator over the key-value pairs of the map, in their order
+    pub fn iter(&self) -> Iter<'_, K, V> {
+        Iter {
+            iter: self.as_entries().iter(),
+        }
     }
 
-    /// Return a reference to the map's `BuildHasher`.
-    pub fn hasher(&self) -> &S
-    where
-        S: BuildHasher,
-    {
-        &self.hash_builder
+    /// Return an iterator over the key-value pairs of the map, in their order
+    pub fn iter_mut(&mut self) -> IterMut<'_, K, V> {
+        IterMut {
+            iter: self.as_entries_mut().iter_mut(),
+        }
     }
 
-    /// Computes in **O(1)** time.
-    pub fn capacity(&self) -> usize {
-        self.core.capacity()
+    /// Return an iterator over the keys of the map, in their order
+    pub fn keys(&self) -> Keys<'_, K, V> {
+        Keys {
+            iter: self.as_entries().iter(),
+        }
+    }
+
+    /// Return an iterator over the values of the map, in their order
+    pub fn values(&self) -> Values<'_, K, V> {
+        Values {
+            iter: self.as_entries().iter(),
+        }
+    }
+
+    /// Return an iterator over mutable references to the the values of the map,
+    /// in their order
+    pub fn values_mut(&mut self) -> ValuesMut<'_, K, V> {
+        ValuesMut {
+            iter: self.as_entries_mut().iter_mut(),
+        }
+    }
+
+    /// Remove all key-value pairs in the map, while preserving its capacity.
+    ///
+    /// Computes in **O(n)** time.
+    pub fn clear(&mut self) {
+        self.core.clear();
+    }
+
+    /// Clears the `IndexMap`, returning all key-value pairs as a drain iterator.
+    /// Keeps the allocated memory for reuse.
+    pub fn drain(&mut self, range: RangeFull) -> Drain<'_, K, V> {
+        Drain {
+            iter: self.core.drain(range),
+        }
     }
 }
 
@@ -225,13 +266,6 @@ where
     K: Hash + Eq,
     S: BuildHasher,
 {
-    /// Remove all key-value pairs in the map, while preserving its capacity.
-    ///
-    /// Computes in **O(n)** time.
-    pub fn clear(&mut self) {
-        self.core.clear();
-    }
-
     /// Reserve capacity for `additional` more key-value pairs.
     ///
     /// Computes in **O(n)** time.
@@ -294,42 +328,6 @@ where
     pub fn entry(&mut self, key: K) -> Entry<'_, K, V> {
         let hash = self.hash(&key);
         self.core.entry(hash, key)
-    }
-
-    /// Return an iterator over the key-value pairs of the map, in their order
-    pub fn iter(&self) -> Iter<'_, K, V> {
-        Iter {
-            iter: self.as_entries().iter(),
-        }
-    }
-
-    /// Return an iterator over the key-value pairs of the map, in their order
-    pub fn iter_mut(&mut self) -> IterMut<'_, K, V> {
-        IterMut {
-            iter: self.as_entries_mut().iter_mut(),
-        }
-    }
-
-    /// Return an iterator over the keys of the map, in their order
-    pub fn keys(&self) -> Keys<'_, K, V> {
-        Keys {
-            iter: self.as_entries().iter(),
-        }
-    }
-
-    /// Return an iterator over the values of the map, in their order
-    pub fn values(&self) -> Values<'_, K, V> {
-        Values {
-            iter: self.as_entries().iter(),
-        }
-    }
-
-    /// Return an iterator over mutable references to the the values of the map,
-    /// in their order
-    pub fn values_mut(&mut self) -> ValuesMut<'_, K, V> {
-        ValuesMut {
-            iter: self.as_entries_mut().iter_mut(),
-        }
     }
 
     /// Return `true` if an equivalent to `key` exists in the map.
@@ -660,14 +658,6 @@ where
     pub fn reverse(&mut self) {
         self.core.reverse()
     }
-
-    /// Clears the `IndexMap`, returning all key-value pairs as a drain iterator.
-    /// Keeps the allocated memory for reuse.
-    pub fn drain(&mut self, range: RangeFull) -> Drain<'_, K, V> {
-        Drain {
-            iter: self.core.drain(range),
-        }
-    }
 }
 
 impl<K, V, S> IndexMap<K, V, S> {
@@ -963,11 +953,7 @@ impl<K, V> DoubleEndedIterator for Drain<'_, K, V> {
     double_ended_iterator_methods!(Bucket::key_value);
 }
 
-impl<'a, K, V, S> IntoIterator for &'a IndexMap<K, V, S>
-where
-    K: Hash + Eq,
-    S: BuildHasher,
-{
+impl<'a, K, V, S> IntoIterator for &'a IndexMap<K, V, S> {
     type Item = (&'a K, &'a V);
     type IntoIter = Iter<'a, K, V>;
     fn into_iter(self) -> Self::IntoIter {
@@ -975,11 +961,7 @@ where
     }
 }
 
-impl<'a, K, V, S> IntoIterator for &'a mut IndexMap<K, V, S>
-where
-    K: Hash + Eq,
-    S: BuildHasher,
-{
+impl<'a, K, V, S> IntoIterator for &'a mut IndexMap<K, V, S> {
     type Item = (&'a K, &'a mut V);
     type IntoIter = IterMut<'a, K, V>;
     fn into_iter(self) -> Self::IntoIter {
@@ -987,11 +969,7 @@ where
     }
 }
 
-impl<K, V, S> IntoIterator for IndexMap<K, V, S>
-where
-    K: Hash + Eq,
-    S: BuildHasher,
-{
+impl<K, V, S> IntoIterator for IndexMap<K, V, S> {
     type Item = (K, V);
     type IntoIter = IntoIter<K, V>;
     fn into_iter(self) -> Self::IntoIter {
@@ -1099,7 +1077,7 @@ where
 
 impl<K, V, S> Default for IndexMap<K, V, S>
 where
-    S: BuildHasher + Default,
+    S: Default,
 {
     /// Return an empty `IndexMap`
     fn default() -> Self {

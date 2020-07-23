@@ -112,8 +112,7 @@ impl<T, S> Entries for IndexSet<T, S> {
 
 impl<T, S> fmt::Debug for IndexSet<T, S>
 where
-    T: fmt::Debug + Hash + Eq,
-    S: BuildHasher,
+    T: fmt::Debug,
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         if cfg!(not(feature = "test_debug")) {
@@ -150,13 +149,27 @@ impl<T, S> IndexSet<T, S> {
     /// (Does not allocate if `n` is zero.)
     ///
     /// Computes in **O(n)** time.
-    pub fn with_capacity_and_hasher(n: usize, hash_builder: S) -> Self
-    where
-        S: BuildHasher,
-    {
+    pub fn with_capacity_and_hasher(n: usize, hash_builder: S) -> Self {
         IndexSet {
             map: IndexMap::with_capacity_and_hasher(n, hash_builder),
         }
+    }
+
+    /// Create a new set with `hash_builder`
+    pub fn with_hasher(hash_builder: S) -> Self {
+        IndexSet {
+            map: IndexMap::with_hasher(hash_builder),
+        }
+    }
+
+    /// Computes in **O(1)** time.
+    pub fn capacity(&self) -> usize {
+        self.map.capacity()
+    }
+
+    /// Return a reference to the set's `BuildHasher`.
+    pub fn hasher(&self) -> &S {
+        self.map.hasher()
     }
 
     /// Return the number of elements in the set.
@@ -173,27 +186,26 @@ impl<T, S> IndexSet<T, S> {
         self.map.is_empty()
     }
 
-    /// Create a new set with `hash_builder`
-    pub fn with_hasher(hash_builder: S) -> Self
-    where
-        S: BuildHasher,
-    {
-        IndexSet {
-            map: IndexMap::with_hasher(hash_builder),
+    /// Return an iterator over the values of the set, in their order
+    pub fn iter(&self) -> Iter<'_, T> {
+        Iter {
+            iter: self.map.keys().iter,
         }
     }
 
-    /// Return a reference to the set's `BuildHasher`.
-    pub fn hasher(&self) -> &S
-    where
-        S: BuildHasher,
-    {
-        self.map.hasher()
+    /// Remove all elements in the set, while preserving its capacity.
+    ///
+    /// Computes in **O(n)** time.
+    pub fn clear(&mut self) {
+        self.map.clear();
     }
 
-    /// Computes in **O(1)** time.
-    pub fn capacity(&self) -> usize {
-        self.map.capacity()
+    /// Clears the `IndexSet`, returning all values as a drain iterator.
+    /// Keeps the allocated memory for reuse.
+    pub fn drain(&mut self, range: RangeFull) -> Drain<'_, T> {
+        Drain {
+            iter: self.map.drain(range).iter,
+        }
     }
 }
 
@@ -202,13 +214,6 @@ where
     T: Hash + Eq,
     S: BuildHasher,
 {
-    /// Remove all elements in the set, while preserving its capacity.
-    ///
-    /// Computes in **O(n)** time.
-    pub fn clear(&mut self) {
-        self.map.clear();
-    }
-
     /// Reserve capacity for `additional` more values.
     ///
     /// Computes in **O(n)** time.
@@ -254,13 +259,6 @@ where
                 e.insert(());
                 (index, true)
             }
-        }
-    }
-
-    /// Return an iterator over the values of the set, in their order
-    pub fn iter(&self) -> Iter<'_, T> {
-        Iter {
-            iter: self.map.keys().iter,
         }
     }
 
@@ -555,14 +553,6 @@ where
     pub fn reverse(&mut self) {
         self.map.reverse()
     }
-
-    /// Clears the `IndexSet`, returning all values as a drain iterator.
-    /// Keeps the allocated memory for reuse.
-    pub fn drain(&mut self, range: RangeFull) -> Drain<'_, T> {
-        Drain {
-            iter: self.map.drain(range).iter,
-        }
-    }
 }
 
 impl<T, S> IndexSet<T, S> {
@@ -702,11 +692,7 @@ impl<T> DoubleEndedIterator for Drain<'_, T> {
     double_ended_iterator_methods!(Bucket::key);
 }
 
-impl<'a, T, S> IntoIterator for &'a IndexSet<T, S>
-where
-    T: Hash + Eq,
-    S: BuildHasher,
-{
+impl<'a, T, S> IntoIterator for &'a IndexSet<T, S> {
     type Item = &'a T;
     type IntoIter = Iter<'a, T>;
 
@@ -715,11 +701,7 @@ where
     }
 }
 
-impl<T, S> IntoIterator for IndexSet<T, S>
-where
-    T: Hash + Eq,
-    S: BuildHasher,
-{
+impl<T, S> IntoIterator for IndexSet<T, S> {
     type Item = T;
     type IntoIter = IntoIter<T>;
 
@@ -767,7 +749,7 @@ where
 
 impl<T, S> Default for IndexSet<T, S>
 where
-    S: BuildHasher + Default,
+    S: Default,
 {
     /// Return an empty `IndexSet`
     fn default() -> Self {

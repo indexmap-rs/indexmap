@@ -21,9 +21,8 @@ use crate::IndexMap;
 /// Requires crate feature `"rayon"`.
 impl<K, V, S> IntoParallelIterator for IndexMap<K, V, S>
 where
-    K: Hash + Eq + Send,
+    K: Send,
     V: Send,
-    S: BuildHasher,
 {
     type Item = (K, V);
     type Iter = IntoParIter<K, V>;
@@ -66,9 +65,8 @@ impl<K: Send, V: Send> IndexedParallelIterator for IntoParIter<K, V> {
 /// Requires crate feature `"rayon"`.
 impl<'a, K, V, S> IntoParallelIterator for &'a IndexMap<K, V, S>
 where
-    K: Hash + Eq + Sync,
+    K: Sync,
     V: Sync,
-    S: BuildHasher,
 {
     type Item = (&'a K, &'a V);
     type Iter = ParIter<'a, K, V>;
@@ -117,7 +115,7 @@ impl<K: Sync, V: Sync> IndexedParallelIterator for ParIter<'_, K, V> {
 /// Requires crate feature `"rayon"`.
 impl<'a, K, V, S> IntoParallelIterator for &'a mut IndexMap<K, V, S>
 where
-    K: Hash + Eq + Sync + Send,
+    K: Sync + Send,
     V: Send,
     S: BuildHasher,
 {
@@ -159,9 +157,8 @@ impl<K: Sync + Send, V: Send> IndexedParallelIterator for ParIterMut<'_, K, V> {
 /// See also the `IntoParallelIterator` implementations.
 impl<K, V, S> IndexMap<K, V, S>
 where
-    K: Hash + Eq + Sync,
+    K: Sync,
     V: Sync,
-    S: BuildHasher,
 {
     /// Return a parallel iterator over the keys of the map.
     ///
@@ -182,7 +179,14 @@ where
             entries: self.as_entries(),
         }
     }
+}
 
+impl<K, V, S> IndexMap<K, V, S>
+where
+    K: Hash + Eq + Sync,
+    V: Sync,
+    S: BuildHasher,
+{
     /// Returns `true` if `self` contains all of the same key-value pairs as `other`,
     /// regardless of each map's indexed order, determined in parallel.
     pub fn par_eq<V2, S2>(&self, other: &IndexMap<K, V2, S2>) -> bool
@@ -269,9 +273,8 @@ impl<K: Sync, V: Sync> IndexedParallelIterator for ParValues<'_, K, V> {
 /// Requires crate feature `"rayon"`.
 impl<K, V, S> IndexMap<K, V, S>
 where
-    K: Hash + Eq + Send,
+    K: Send,
     V: Send,
-    S: BuildHasher,
 {
     /// Return a parallel iterator over mutable references to the the values of the map
     ///
@@ -282,7 +285,14 @@ where
             entries: self.as_entries_mut(),
         }
     }
+}
 
+impl<K, V, S> IndexMap<K, V, S>
+where
+    K: Hash + Eq + Send,
+    V: Send,
+    S: BuildHasher,
+{
     /// Sort the map’s key-value pairs in parallel, by the default ordering of the keys.
     pub fn par_sort_keys(&mut self)
     where
