@@ -733,28 +733,28 @@ impl<'a, K, V> Iterator for Keys<'a, K, V> {
     iterator_methods!(Bucket::key_ref);
 }
 
-impl<'a, K, V> DoubleEndedIterator for Keys<'a, K, V> {
-    fn next_back(&mut self) -> Option<&'a K> {
+impl<K, V> DoubleEndedIterator for Keys<'_, K, V> {
+    fn next_back(&mut self) -> Option<Self::Item> {
         self.iter.next_back().map(Bucket::key_ref)
     }
 }
 
-impl<'a, K, V> ExactSizeIterator for Keys<'a, K, V> {
+impl<K, V> ExactSizeIterator for Keys<'_, K, V> {
     fn len(&self) -> usize {
         self.iter.len()
     }
 }
 
 // FIXME(#26925) Remove in favor of `#[derive(Clone)]`
-impl<'a, K, V> Clone for Keys<'a, K, V> {
-    fn clone(&self) -> Keys<'a, K, V> {
+impl<K, V> Clone for Keys<'_, K, V> {
+    fn clone(&self) -> Self {
         Keys {
             iter: self.iter.clone(),
         }
     }
 }
 
-impl<'a, K: fmt::Debug, V> fmt::Debug for Keys<'a, K, V> {
+impl<K: fmt::Debug, V> fmt::Debug for Keys<'_, K, V> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_list().entries(self.clone()).finish()
     }
@@ -777,28 +777,28 @@ impl<'a, K, V> Iterator for Values<'a, K, V> {
     iterator_methods!(Bucket::value_ref);
 }
 
-impl<'a, K, V> DoubleEndedIterator for Values<'a, K, V> {
+impl<K, V> DoubleEndedIterator for Values<'_, K, V> {
     fn next_back(&mut self) -> Option<Self::Item> {
         self.iter.next_back().map(Bucket::value_ref)
     }
 }
 
-impl<'a, K, V> ExactSizeIterator for Values<'a, K, V> {
+impl<K, V> ExactSizeIterator for Values<'_, K, V> {
     fn len(&self) -> usize {
         self.iter.len()
     }
 }
 
 // FIXME(#26925) Remove in favor of `#[derive(Clone)]`
-impl<'a, K, V> Clone for Values<'a, K, V> {
-    fn clone(&self) -> Values<'a, K, V> {
+impl<K, V> Clone for Values<'_, K, V> {
+    fn clone(&self) -> Self {
         Values {
             iter: self.iter.clone(),
         }
     }
 }
 
-impl<'a, K, V: fmt::Debug> fmt::Debug for Values<'a, K, V> {
+impl<K, V: fmt::Debug> fmt::Debug for Values<'_, K, V> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_list().entries(self.clone()).finish()
     }
@@ -821,13 +821,13 @@ impl<'a, K, V> Iterator for ValuesMut<'a, K, V> {
     iterator_methods!(Bucket::value_mut);
 }
 
-impl<'a, K, V> DoubleEndedIterator for ValuesMut<'a, K, V> {
+impl<K, V> DoubleEndedIterator for ValuesMut<'_, K, V> {
     fn next_back(&mut self) -> Option<Self::Item> {
         self.iter.next_back().map(Bucket::value_mut)
     }
 }
 
-impl<'a, K, V> ExactSizeIterator for ValuesMut<'a, K, V> {
+impl<K, V> ExactSizeIterator for ValuesMut<'_, K, V> {
     fn len(&self) -> usize {
         self.iter.len()
     }
@@ -850,28 +850,28 @@ impl<'a, K, V> Iterator for Iter<'a, K, V> {
     iterator_methods!(Bucket::refs);
 }
 
-impl<'a, K, V> DoubleEndedIterator for Iter<'a, K, V> {
+impl<K, V> DoubleEndedIterator for Iter<'_, K, V> {
     fn next_back(&mut self) -> Option<Self::Item> {
         self.iter.next_back().map(Bucket::refs)
     }
 }
 
-impl<'a, K, V> ExactSizeIterator for Iter<'a, K, V> {
+impl<K, V> ExactSizeIterator for Iter<'_, K, V> {
     fn len(&self) -> usize {
         self.iter.len()
     }
 }
 
 // FIXME(#26925) Remove in favor of `#[derive(Clone)]`
-impl<'a, K, V> Clone for Iter<'a, K, V> {
-    fn clone(&self) -> Iter<'a, K, V> {
+impl<K, V> Clone for Iter<'_, K, V> {
+    fn clone(&self) -> Self {
         Iter {
             iter: self.iter.clone(),
         }
     }
 }
 
-impl<'a, K: fmt::Debug, V: fmt::Debug> fmt::Debug for Iter<'a, K, V> {
+impl<K: fmt::Debug, V: fmt::Debug> fmt::Debug for Iter<'_, K, V> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_list().entries(self.clone()).finish()
     }
@@ -894,13 +894,13 @@ impl<'a, K, V> Iterator for IterMut<'a, K, V> {
     iterator_methods!(Bucket::ref_mut);
 }
 
-impl<'a, K, V> DoubleEndedIterator for IterMut<'a, K, V> {
+impl<K, V> DoubleEndedIterator for IterMut<'_, K, V> {
     fn next_back(&mut self) -> Option<Self::Item> {
         self.iter.next_back().map(Bucket::ref_mut)
     }
 }
 
-impl<'a, K, V> ExactSizeIterator for IterMut<'a, K, V> {
+impl<K, V> ExactSizeIterator for IterMut<'_, K, V> {
     fn len(&self) -> usize {
         self.iter.len()
     }
@@ -923,7 +923,7 @@ impl<K, V> Iterator for IntoIter<K, V> {
     iterator_methods!(Bucket::key_value);
 }
 
-impl<'a, K, V> DoubleEndedIterator for IntoIter<K, V> {
+impl<K, V> DoubleEndedIterator for IntoIter<K, V> {
     fn next_back(&mut self) -> Option<Self::Item> {
         self.iter.next_back().map(Bucket::key_value)
     }
@@ -953,13 +953,13 @@ pub struct Drain<'a, K, V> {
     pub(crate) iter: vec::Drain<'a, Bucket<K, V>>,
 }
 
-impl<'a, K, V> Iterator for Drain<'a, K, V> {
+impl<K, V> Iterator for Drain<'_, K, V> {
     type Item = (K, V);
 
     iterator_methods!(Bucket::key_value);
 }
 
-impl<'a, K, V> DoubleEndedIterator for Drain<'a, K, V> {
+impl<K, V> DoubleEndedIterator for Drain<'_, K, V> {
     double_ended_iterator_methods!(Bucket::key_value);
 }
 
@@ -1001,7 +1001,7 @@ where
     }
 }
 
-impl<'a, K, V, Q: ?Sized, S> Index<&'a Q> for IndexMap<K, V, S>
+impl<K, V, Q: ?Sized, S> Index<&Q> for IndexMap<K, V, S>
 where
     Q: Hash + Equivalent<K>,
     K: Hash + Eq,
@@ -1010,7 +1010,7 @@ where
     type Output = V;
 
     /// ***Panics*** if `key` is not present in the map.
-    fn index(&self, key: &'a Q) -> &V {
+    fn index(&self, key: &Q) -> &V {
         self.get(key).expect("IndexMap: key not found")
     }
 }
@@ -1019,14 +1019,14 @@ where
 /// pairs that are already present.
 ///
 /// You can **not** insert new pairs with index syntax, use `.insert()`.
-impl<'a, K, V, Q: ?Sized, S> IndexMut<&'a Q> for IndexMap<K, V, S>
+impl<K, V, Q: ?Sized, S> IndexMut<&Q> for IndexMap<K, V, S>
 where
     Q: Hash + Equivalent<K>,
     K: Hash + Eq,
     S: BuildHasher,
 {
     /// ***Panics*** if `key` is not present in the map.
-    fn index_mut(&mut self, key: &'a Q) -> &mut V {
+    fn index_mut(&mut self, key: &Q) -> &mut V {
         self.get_mut(key).expect("IndexMap: key not found")
     }
 }
