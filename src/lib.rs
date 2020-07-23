@@ -86,9 +86,11 @@ extern crate alloc;
 extern crate std;
 
 #[cfg(not(has_std))]
+#[cfg_attr(feature = "amortize", allow(unused_imports))]
 use alloc::vec::{self, Vec};
 
 #[cfg(has_std)]
+#[cfg_attr(feature = "amortize", allow(unused_imports))]
 use std::vec::{self, Vec};
 
 #[macro_use]
@@ -112,6 +114,11 @@ pub use crate::map::IndexMap;
 pub use crate::set::IndexSet;
 
 // shared private items
+
+#[cfg(feature = "amortize")]
+type EntryVec<T> = atone::Vc<T>;
+#[cfg(not(feature = "amortize"))]
+type EntryVec<T> = Vec<T>;
 
 /// Hash value newtype. Not larger than usize, since anything larger
 /// isn't used for selecting position anyway.
@@ -182,10 +189,10 @@ impl<K, V> Bucket<K, V> {
 
 trait Entries {
     type Entry;
-    fn into_entries(self) -> Vec<Self::Entry>;
-    fn as_entries(&self) -> &[Self::Entry];
-    fn as_entries_mut(&mut self) -> &mut [Self::Entry];
+    fn into_entries(self) -> EntryVec<Self::Entry>;
+    fn as_entries(&self) -> &EntryVec<Self::Entry>;
+    fn as_entries_mut(&mut self) -> &mut EntryVec<Self::Entry>;
     fn with_entries<F>(&mut self, f: F)
     where
-        F: FnOnce(&mut [Self::Entry]);
+        F: FnOnce(&mut EntryVec<Self::Entry>);
 }

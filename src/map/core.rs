@@ -9,9 +9,16 @@
 
 mod raw;
 
+#[cfg(feature = "amortize")]
+use griddle::raw::RawTable;
+#[cfg(not(feature = "amortize"))]
 use hashbrown::raw::RawTable;
 
-use crate::vec::{Drain, Vec};
+#[cfg(not(feature = "amortize"))]
+use crate::vec::Drain;
+#[cfg(feature = "amortize")]
+use atone::vc::Drain;
+
 use core::cmp;
 use core::fmt;
 use core::mem::replace;
@@ -19,6 +26,7 @@ use core::ops::RangeFull;
 
 use crate::equivalent::Equivalent;
 use crate::util::enumerate;
+use crate::EntryVec;
 use crate::{Bucket, Entries, HashValue};
 
 /// Core of the map that does not depend on S
@@ -26,11 +34,11 @@ pub(crate) struct IndexMapCore<K, V> {
     /// indices mapping from the entry hash to its index.
     indices: RawTable<usize>,
     /// entries is a dense vec of entries in their order.
-    entries: Vec<Bucket<K, V>>,
+    entries: EntryVec<Bucket<K, V>>,
 }
 
 #[inline(always)]
-fn get_hash<K, V>(entries: &[Bucket<K, V>]) -> impl Fn(&usize) -> u64 + '_ {
+fn get_hash<K, V>(entries: &EntryVec<Bucket<K, V>>) -> impl Fn(&usize) -> u64 + '_ {
     move |&i| entries[i].hash.get()
 }
 
@@ -40,8 +48,14 @@ where
     V: Clone,
 {
     fn clone(&self) -> Self {
+        #[cfg(feature = "amortize")]
+        let indices = {
+            let hasher = get_hash(&self.entries);
+            self.indices.clone_with_hasher(hasher)
+        };
+        #[cfg(not(feature = "amortize"))]
         let indices = self.indices.clone();
-        let mut entries = Vec::with_capacity(indices.capacity());
+        let mut entries = EntryVec::with_capacity(indices.capacity());
         entries.clone_from(&self.entries);
         IndexMapCore { indices, entries }
     }
@@ -74,23 +88,23 @@ impl<K, V> Entries for IndexMapCore<K, V> {
     type Entry = Bucket<K, V>;
 
     #[inline]
-    fn into_entries(self) -> Vec<Self::Entry> {
+    fn into_entries(self) -> EntryVec<Self::Entry> {
         self.entries
     }
 
     #[inline]
-    fn as_entries(&self) -> &[Self::Entry] {
+    fn as_entries(&self) -> &EntryVec<Self::Entry> {
         &self.entries
     }
 
     #[inline]
-    fn as_entries_mut(&mut self) -> &mut [Self::Entry] {
+    fn as_entries_mut(&mut self) -> &mut EntryVec<Self::Entry> {
         &mut self.entries
     }
 
     fn with_entries<F>(&mut self, f: F)
     where
-        F: FnOnce(&mut [Self::Entry]),
+        F: FnOnce(&mut EntryVec<Self::Entry>),
     {
         f(&mut self.entries);
         self.rebuild_hash_table();
@@ -102,7 +116,7 @@ impl<K, V> IndexMapCore<K, V> {
     pub(crate) fn new() -> Self {
         IndexMapCore {
             indices: RawTable::new(),
-            entries: Vec::new(),
+            entries: EntryVec::new(),
         }
     }
 
@@ -110,7 +124,7 @@ impl<K, V> IndexMapCore<K, V> {
     pub(crate) fn with_capacity(n: usize) -> Self {
         IndexMapCore {
             indices: RawTable::with_capacity(n),
-            entries: Vec::with_capacity(n),
+            entries: EntryVec::with_capacity(n),
         }
     }
 
@@ -218,7 +232,11 @@ impl<K, V> IndexMapCore<K, V> {
         debug_assert!(self.indices.capacity() >= self.entries.len());
         for (i, entry) in enumerate(&self.entries) {
             // We should never have to reallocate, so there's no need for a real hasher.
+            #[cfg(not(feature = "amortize"))]
             self.indices.insert_no_grow(entry.hash.get(), i);
+            #[cfg(feature = "amortize")]
+            self.indices
+                .insert_no_grow(entry.hash.get(), i, |_| unreachable!());
         }
     }
 }

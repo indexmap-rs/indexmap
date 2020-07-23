@@ -1,4 +1,4 @@
-use rayon::prelude::*;
+use rayon_::prelude::*;
 
 #[cfg(not(has_std))]
 use alloc::collections::LinkedList;

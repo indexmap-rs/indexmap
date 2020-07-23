@@ -5,8 +5,14 @@
 use super::{Entry, Equivalent, HashValue, IndexMapCore, VacantEntry};
 use core::fmt;
 use core::mem::replace;
+#[cfg(feature = "amortize")]
+use griddle::raw::RawTable;
+#[cfg(not(feature = "amortize"))]
 use hashbrown::raw::RawTable;
 
+#[cfg(feature = "amortize")]
+type RawBucket = griddle::raw::Bucket<usize>;
+#[cfg(not(feature = "amortize"))]
 type RawBucket = hashbrown::raw::Bucket<usize>;
 
 pub(super) struct DebugIndices<'a>(pub &'a RawTable<usize>);
@@ -105,6 +111,9 @@ impl<K, V> IndexMapCore<K, V> {
         // correct indices that point to the entries that followed the removed entry.
         // use a heuristic between a full sweep vs. a `find()` for every shifted item.
         let raw_capacity = self.indices.buckets();
+        #[cfg(feature = "amortize")]
+        let shifted_entries = self.entries.range(index..);
+        #[cfg(not(feature = "amortize"))]
         let shifted_entries = &self.entries[index..];
         if shifted_entries.len() > raw_capacity / 2 {
             // shift all indices greater than `index`
