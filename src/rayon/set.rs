@@ -22,8 +22,7 @@ type Bucket<T> = crate::Bucket<T, ()>;
 /// Requires crate feature `"rayon"`.
 impl<T, S> IntoParallelIterator for IndexSet<T, S>
 where
-    T: Hash + Eq + Send,
-    S: BuildHasher,
+    T: Send,
 {
     type Item = T;
     type Iter = IntoParIter<T>;
@@ -66,8 +65,7 @@ impl<T: Send> IndexedParallelIterator for IntoParIter<T> {
 /// Requires crate feature `"rayon"`.
 impl<'a, T, S> IntoParallelIterator for &'a IndexSet<T, S>
 where
-    T: Hash + Eq + Sync,
-    S: BuildHasher,
+    T: Sync,
 {
     type Item = &'a T;
     type Iter = ParIter<'a, T>;
