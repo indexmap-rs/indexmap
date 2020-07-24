@@ -38,11 +38,7 @@ was indexmap, a hash table that has following properties:
 - Fast to iterate.
 - Indexed in compact space.
 - Preserves insertion order **as long** as you don't call ``.remove()``.
-- Uses robin hood hashing just like Rust's libstd ``HashMap`` used to do
-  (before std switched to hashbrown).
-
-  - It's the usual backwards shift deletion, but only on the index vector, so
-    it's cheaper because it's moving less memory around.
+- Uses hashbrown for the inner table, just like Rust's libstd ``HashMap`` does.
 
 Performance
 -----------
@@ -50,15 +46,14 @@ Performance
 ``IndexMap`` derives a couple of performance facts directly from how it is constructed,
 which is roughly:
 
-  Two vectors, the first, sparse, with hashes and key-value indices, and the
-  second, dense, the key-value pairs.
+  A raw hash table of key-value indices, and a vector of key-value pairs.
 
 - Iteration is very fast since it is on the dense key-values.
-- Removal is fast since it moves memory areas only in the first vector,
-  and uses a single swap in the second vector.
-- Lookup is fast-ish because the hashes and indices are densely stored.
-  Lookup also is slow-ish since hashes and key-value pairs are stored in
-  separate places. (Visible when cpu caches size is limiting.)
+- Removal is fast since it moves memory areas only in the table,
+  and uses a single swap in the vector.
+- Lookup is fast-ish because the initial 7-bit hash lookup uses SIMD, and indices are
+  densely stored. Lookup also is slow-ish since the actual key-value pairs are stored
+  separately. (Visible when cpu caches size is limiting.)
 
 - In practice, ``IndexMap`` has been tested out as the hashmap in rustc in PR45282_ and
   the performance was roughly on par across the whole workload. 
@@ -66,15 +61,6 @@ which is roughly:
   fits your workload, it might be the best hash table implementation.
 
 .. _PR45282: https://github.com/rust-lang/rust/pull/45282
-
-
-- Idea for more cache efficient lookup (This was implemented in 0.1.2).
-
-  Current ``indices: Vec<Pos>``. ``Pos`` is interpreted as ``(u32, u32)`` more
-  or less when ``.raw_capacity()`` fits in 32 bits. ``Pos`` then stores both the lower
-  half of the hash and the entry index.
-  This means that the hash values in ``Bucket`` don't need to be accessed
-  while scanning for an entry.
 
 
 Recent Changes
