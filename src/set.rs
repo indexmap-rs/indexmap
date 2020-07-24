@@ -11,7 +11,7 @@ use core::cmp::Ordering;
 use core::fmt;
 use core::hash::{BuildHasher, Hash};
 use core::iter::{Chain, FromIterator};
-use core::ops::{BitAnd, BitOr, BitXor, RangeFull, Sub};
+use core::ops::{BitAnd, BitOr, BitXor, RangeBounds, Sub};
 use core::slice;
 
 use super::{Entries, Equivalent, IndexMap};
@@ -200,9 +200,23 @@ impl<T, S> IndexSet<T, S> {
         self.map.clear();
     }
 
-    /// Clears the `IndexSet`, returning all values as a drain iterator.
-    /// Keeps the allocated memory for reuse.
-    pub fn drain(&mut self, range: RangeFull) -> Drain<'_, T> {
+    /// Clears the `IndexSet` in the given index range, returning those values
+    /// as a drain iterator.
+    ///
+    /// The range may be any type that implements `RangeBounds<usize>`,
+    /// including all of the `std::ops::Range*` types, or even a tuple pair of
+    /// `Bound` start and end values. To drain the set entirely, use `RangeFull`
+    /// like `set.drain(..)`.
+    ///
+    /// This shifts down all entries following the drained range to fill the
+    /// gap, and keeps the allocated memory for reuse.
+    ///
+    /// ***Panics*** if the starting point is greater than the end point or if
+    /// the end point is greater than the length of the set.
+    pub fn drain<R>(&mut self, range: R) -> Drain<'_, T>
+    where
+        R: RangeBounds<usize>,
+    {
         Drain {
             iter: self.map.drain(range).iter,
         }

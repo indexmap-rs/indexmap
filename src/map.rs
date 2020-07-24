@@ -13,7 +13,7 @@ use ::core::cmp::Ordering;
 use ::core::fmt;
 use ::core::hash::{BuildHasher, Hash, Hasher};
 use ::core::iter::FromIterator;
-use ::core::ops::{Index, IndexMut, RangeFull};
+use ::core::ops::{Index, IndexMut, RangeBounds};
 use ::core::slice::{Iter as SliceIter, IterMut as SliceIterMut};
 
 #[cfg(has_std)]
@@ -252,9 +252,23 @@ impl<K, V, S> IndexMap<K, V, S> {
         self.core.clear();
     }
 
-    /// Clears the `IndexMap`, returning all key-value pairs as a drain iterator.
-    /// Keeps the allocated memory for reuse.
-    pub fn drain(&mut self, range: RangeFull) -> Drain<'_, K, V> {
+    /// Clears the `IndexMap` in the given index range, returning those
+    /// key-value pairs as a drain iterator.
+    ///
+    /// The range may be any type that implements `RangeBounds<usize>`,
+    /// including all of the `std::ops::Range*` types, or even a tuple pair of
+    /// `Bound` start and end values. To drain the map entirely, use `RangeFull`
+    /// like `map.drain(..)`.
+    ///
+    /// This shifts down all entries following the drained range to fill the
+    /// gap, and keeps the allocated memory for reuse.
+    ///
+    /// ***Panics*** if the starting point is greater than the end point or if
+    /// the end point is greater than the length of the map.
+    pub fn drain<R>(&mut self, range: R) -> Drain<'_, K, V>
+    where
+        R: RangeBounds<usize>,
+    {
         Drain {
             iter: self.core.drain(range),
         }

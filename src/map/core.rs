@@ -15,10 +15,10 @@ use crate::vec::{Drain, Vec};
 use core::cmp;
 use core::fmt;
 use core::mem::replace;
-use core::ops::RangeFull;
+use core::ops::RangeBounds;
 
 use crate::equivalent::Equivalent;
-use crate::util::enumerate;
+use crate::util::{enumerate, simplify_range};
 use crate::{Bucket, Entries, HashValue};
 
 /// Core of the map that does not depend on S
@@ -129,8 +129,12 @@ impl<K, V> IndexMapCore<K, V> {
         self.entries.clear();
     }
 
-    pub(crate) fn drain(&mut self, range: RangeFull) -> Drain<'_, Bucket<K, V>> {
-        self.indices.clear();
+    pub(crate) fn drain<R>(&mut self, range: R) -> Drain<'_, Bucket<K, V>>
+    where
+        R: RangeBounds<usize>,
+    {
+        let range = simplify_range(range, self.entries.len());
+        self.erase_indices(range.start, range.end);
         self.entries.drain(range)
     }
 

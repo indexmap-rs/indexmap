@@ -3,6 +3,7 @@
 //! mostly in dealing with its bucket "pointers".
 
 use super::{Entry, Equivalent, HashValue, IndexMapCore, VacantEntry};
+use crate::util::enumerate;
 use core::fmt;
 use core::mem::replace;
 use hashbrown::raw::RawTable;
@@ -44,9 +45,73 @@ impl<K, V> IndexMapCore<K, V> {
         }
     }
 
+    /// Erase the given index from `indices`.
+    ///
+    /// The index doesn't need to be valid in `entries` while calling this.  No other index
+    /// adjustments are made -- this is only used by `pop` for the greatest index.
     pub(super) fn erase_index(&mut self, hash: HashValue, index: usize) {
+        debug_assert_eq!(index, self.indices.len() - 1);
         let raw_bucket = self.find_index(hash, index).unwrap();
         unsafe { self.indices.erase(raw_bucket) };
+    }
+
+    /// Erase `start..end` from `indices`, and shift `end..` indices down to `start..`
+    ///
+    /// All of these items should still be at their original location in `entries`.
+    /// This is used by `drain`, which will let `Vec::drain` do the work on `entries`.
+    pub(super) fn erase_indices(&mut self, start: usize, end: usize) {
+        let (init, shifted_entries) = self.entries.split_at(end);
+        let (start_entries, erased_entries) = init.split_at(start);
+
+        let erased = erased_entries.len();
+        let shifted = shifted_entries.len();
+        let half_capacity = self.indices.buckets() / 2;
+
+        // Use a heuristic between different strategies
+        if erased == 0 {
+            // Degenerate case, nothing to do
+        } else if start + shifted < half_capacity && start < erased {
+            // Reinsert everything, as there are few kept indices
+            self.indices.clear();
+
+            // Reinsert stable indices
+            for (i, entry) in enumerate(start_entries) {
+                self.indices.insert_no_grow(entry.hash.get(), i);
+            }
+
+            // Reinsert shifted indices
+            for (i, entry) in (start..).zip(shifted_entries) {
+                self.indices.insert_no_grow(entry.hash.get(), i);
+            }
+        } else if erased + shifted < half_capacity {
+            // Find each affected index, as there are few to adjust
+
+            // Find erased indices
+            for (i, entry) in (start..).zip(erased_entries) {
+                let bucket = self.find_index(entry.hash, i).unwrap();
+                unsafe { self.indices.erase(bucket) };
+            }
+
+            // Find shifted indices
+            for ((new, old), entry) in (start..).zip(end..).zip(shifted_entries) {
+                let bucket = self.find_index(entry.hash, old).unwrap();
+                unsafe { bucket.write(new) };
+            }
+        } else {
+            // Sweep the whole table for adjustments
+            unsafe {
+                for bucket in self.indices.iter() {
+                    let i = bucket.read();
+                    if i >= end {
+                        bucket.write(i - erased);
+                    } else if i >= start {
+                        self.indices.erase(bucket);
+                    }
+                }
+            }
+        }
+
+        debug_assert_eq!(self.indices.len(), start + shifted);
     }
 
     pub(crate) fn entry(&mut self, hash: HashValue, key: K) -> Entry<'_, K, V>
