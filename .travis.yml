@@ -10,6 +10,9 @@ matrix:
     - rust: stable
       env:
        - FEATURES='rayon'
+    - rust: stable
+      env:
+       - FEATURES='std'
     - rust: beta
     - rust: nightly
       env:
