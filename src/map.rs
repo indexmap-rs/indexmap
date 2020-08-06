@@ -993,6 +993,28 @@ impl<K, V, S> IntoIterator for IndexMap<K, V, S> {
     }
 }
 
+/// Access `IndexMap` values corresponding to a key.
+///
+/// # Examples
+///
+/// ```
+/// use indexmap::IndexMap;
+///
+/// let mut map = IndexMap::new();
+/// for word in "Lorem ipsum dolor sit amet".split_whitespace() {
+///     map.insert(word.to_lowercase(), word.to_uppercase());
+/// }
+/// assert_eq!(map["lorem"], "LOREM");
+/// assert_eq!(map["ipsum"], "IPSUM");
+/// ```
+///
+/// ```should_panic
+/// use indexmap::IndexMap;
+///
+/// let mut map = IndexMap::new();
+/// map.insert("foo", 1);
+/// println!("{:?}", map["bar"]); // panics!
+/// ```
 impl<K, V, Q: ?Sized, S> Index<&Q> for IndexMap<K, V, S>
 where
     Q: Hash + Equivalent<K>,
@@ -1001,31 +1023,90 @@ where
 {
     type Output = V;
 
+    /// Returns a reference to the value corresponding to the supplied `key`.
+    ///
     /// ***Panics*** if `key` is not present in the map.
     fn index(&self, key: &Q) -> &V {
         self.get(key).expect("IndexMap: key not found")
     }
 }
 
+/// Access `IndexMap` values corresponding to a key.
+///
 /// Mutable indexing allows changing / updating values of key-value
 /// pairs that are already present.
 ///
 /// You can **not** insert new pairs with index syntax, use `.insert()`.
+///
+/// # Examples
+///
+/// ```
+/// use indexmap::IndexMap;
+///
+/// let mut map = IndexMap::new();
+/// for word in "Lorem ipsum dolor sit amet".split_whitespace() {
+///     map.insert(word.to_lowercase(), word.to_string());
+/// }
+/// let lorem = &mut map["lorem"];
+/// assert_eq!(lorem, "Lorem");
+/// lorem.retain(char::is_lowercase);
+/// assert_eq!(map["lorem"], "orem");
+/// ```
+///
+/// ```should_panic
+/// use indexmap::IndexMap;
+///
+/// let mut map = IndexMap::new();
+/// map.insert("foo", 1);
+/// map["bar"] = 1; // panics!
+/// ```
 impl<K, V, Q: ?Sized, S> IndexMut<&Q> for IndexMap<K, V, S>
 where
     Q: Hash + Equivalent<K>,
     K: Hash + Eq,
     S: BuildHasher,
 {
+    /// Returns a mutable reference to the value corresponding to the supplied `key`.
+    ///
     /// ***Panics*** if `key` is not present in the map.
     fn index_mut(&mut self, key: &Q) -> &mut V {
         self.get_mut(key).expect("IndexMap: key not found")
     }
 }
 
+/// Access `IndexMap` values at indexed positions.
+///
+/// # Examples
+///
+/// ```
+/// use indexmap::IndexMap;
+///
+/// let mut map = IndexMap::new();
+/// for word in "Lorem ipsum dolor sit amet".split_whitespace() {
+///     map.insert(word.to_lowercase(), word.to_uppercase());
+/// }
+/// assert_eq!(map[0], "LOREM");
+/// assert_eq!(map[1], "IPSUM");
+/// map.reverse();
+/// assert_eq!(map[0], "AMET");
+/// assert_eq!(map[1], "SIT");
+/// map.sort_keys();
+/// assert_eq!(map[0], "AMET");
+/// assert_eq!(map[1], "DOLOR");
+/// ```
+///
+/// ```should_panic
+/// use indexmap::IndexMap;
+///
+/// let mut map = IndexMap::new();
+/// map.insert("foo", 1);
+/// println!("{:?}", map[10]); // panics!
+/// ```
 impl<K, V, S> Index<usize> for IndexMap<K, V, S> {
     type Output = V;
 
+    /// Returns a reference to the value at the supplied `index`.
+    ///
     /// ***Panics*** if `index` is out of bounds.
     fn index(&self, index: usize) -> &V {
         self.get_index(index)
@@ -1034,11 +1115,38 @@ impl<K, V, S> Index<usize> for IndexMap<K, V, S> {
     }
 }
 
+/// Access `IndexMap` values at indexed positions.
+///
 /// Mutable indexing allows changing / updating indexed values
 /// that are already present.
 ///
 /// You can **not** insert new values with index syntax, use `.insert()`.
+///
+/// # Examples
+///
+/// ```
+/// use indexmap::IndexMap;
+///
+/// let mut map = IndexMap::new();
+/// for word in "Lorem ipsum dolor sit amet".split_whitespace() {
+///     map.insert(word.to_lowercase(), word.to_string());
+/// }
+/// let lorem = &mut map[0];
+/// assert_eq!(lorem, "Lorem");
+/// lorem.retain(char::is_lowercase);
+/// assert_eq!(map["lorem"], "orem");
+/// ```
+///
+/// ```should_panic
+/// use indexmap::IndexMap;
+///
+/// let mut map = IndexMap::new();
+/// map.insert("foo", 1);
+/// map[10] = 1; // panics!
+/// ```
 impl<K, V, S> IndexMut<usize> for IndexMap<K, V, S> {
+    /// Returns a mutable reference to the value at the supplied `index`.
+    ///
     /// ***Panics*** if `index` is out of bounds.
     fn index_mut(&mut self, index: usize) -> &mut V {
         self.get_index_mut(index)
