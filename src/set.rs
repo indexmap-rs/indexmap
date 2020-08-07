@@ -11,7 +11,7 @@ use core::cmp::Ordering;
 use core::fmt;
 use core::hash::{BuildHasher, Hash};
 use core::iter::{Chain, FromIterator};
-use core::ops::{BitAnd, BitOr, BitXor, RangeBounds, Sub};
+use core::ops::{BitAnd, BitOr, BitXor, Index, RangeBounds, Sub};
 use core::slice;
 
 use super::{Entries, Equivalent, IndexMap};
@@ -603,6 +603,46 @@ impl<T, S> IndexSet<T, S> {
     /// Computes in **O(n)** time (average).
     pub fn shift_remove_index(&mut self, index: usize) -> Option<T> {
         self.map.shift_remove_index(index).map(|(x, ())| x)
+    }
+}
+
+/// Access `IndexSet` values at indexed positions.
+///
+/// # Examples
+///
+/// ```
+/// use indexmap::IndexSet;
+///
+/// let mut set = IndexSet::new();
+/// for word in "Lorem ipsum dolor sit amet".split_whitespace() {
+///     set.insert(word.to_string());
+/// }
+/// assert_eq!(set[0], "Lorem");
+/// assert_eq!(set[1], "ipsum");
+/// set.reverse();
+/// assert_eq!(set[0], "amet");
+/// assert_eq!(set[1], "sit");
+/// set.sort();
+/// assert_eq!(set[0], "Lorem");
+/// assert_eq!(set[1], "amet");
+/// ```
+///
+/// ```should_panic
+/// use indexmap::IndexSet;
+///
+/// let mut set = IndexSet::new();
+/// set.insert("foo");
+/// println!("{:?}", set[10]); // panics!
+/// ```
+impl<T, S> Index<usize> for IndexSet<T, S> {
+    type Output = T;
+
+    /// Returns a reference to the value at the supplied `index`.
+    ///
+    /// ***Panics*** if `index` is out of bounds.
+    fn index(&self, index: usize) -> &T {
+        self.get_index(index)
+            .expect("IndexSet: index out of bounds")
     }
 }
 

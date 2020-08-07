@@ -1,4 +1,4 @@
-use indexmap::IndexMap;
+use indexmap::{IndexMap, IndexSet};
 use itertools::Itertools;
 
 use quickcheck::quickcheck;
@@ -163,6 +163,26 @@ quickcheck! {
             elements.iter().all(|k| map.get(k).is_some())
     }
 
+    fn indexing(insert: Vec<u8>) -> bool {
+        let mut map: IndexMap<_, _> = insert.into_iter().map(|x| (x, x)).collect();
+        let set: IndexSet<_> = map.keys().cloned().collect();
+        assert_eq!(map.len(), set.len());
+
+        for (i, &key) in set.iter().enumerate() {
+            assert_eq!(map.get_index(i), Some((&key, &key)));
+            assert_eq!(set.get_index(i), Some(&key));
+            assert_eq!(map[i], key);
+            assert_eq!(set[i], key);
+
+            *map.get_index_mut(i).unwrap().1 >>= 1;
+            map[i] <<= 1;
+        }
+
+        set.iter().enumerate().all(|(i, &key)| {
+            let value = key & !1;
+            map[&key] == value && map[i] == value
+        })
+    }
 }
 
 use crate::Op::*;
