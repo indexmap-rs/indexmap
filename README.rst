@@ -66,6 +66,18 @@ which is roughly:
 Recent Changes
 ==============
 
+- 1.5.1
+
+  - Values can now be indexed by their ``usize`` position by @cuviper in PR 132_.
+
+  - Some of the generic bounds have been relaxed to match ``std`` by @cuviper in PR 141_.
+
+  - ``drain`` now accepts any ``R: RangeBounds<usize>`` by @cuviper in PR 142_.
+
+.. _132: https://github.com/bluss/indexmap/pull/132
+.. _141: https://github.com/bluss/indexmap/pull/141
+.. _142: https://github.com/bluss/indexmap/pull/142
+
 - 1.5.0
 
   - **MSRV**: Rust 1.32 or later is now required.
