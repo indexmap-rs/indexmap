@@ -41,7 +41,7 @@ script:
       cargo build --verbose --features "$FEATURES" &&
       if [ -z "$SKIP_TEST" ]; then
         cargo test --verbose --features "$FEATURES" &&
-        cargo test --release --verbose --features "$FEATURES"
+        cargo test --release --verbose --features "$FEATURES" &&
         if [ "$FEATURES" = "serde-1" ]; then
           cargo test --verbose -p test-serde &&
           cargo test --release --verbose -p test-serde
