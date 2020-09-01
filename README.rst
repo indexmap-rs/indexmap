@@ -66,6 +66,14 @@ which is roughly:
 Recent Changes
 ==============
 
+- 1.5.2
+
+  - The new "std" feature will force the use of ``std`` for users that explicitly
+    want the default ``S = RandomState``, bypassing the autodetection added in 1.3.0,
+    by @cuviper in PR 145_.
+
+.. _145: https://github.com/bluss/indexmap/pull/145
+
 - 1.5.1
 
   - Values can now be indexed by their ``usize`` position by @cuviper in PR 132_.
