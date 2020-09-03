@@ -66,6 +66,10 @@ which is roughly:
 Recent Changes
 ==============
 
+- Unreleased
+
+  - **MSRV**: Rust 1.36 or later is now required.
+
 - 1.5.2
 
   - The new "std" feature will force the use of ``std`` for users that explicitly
