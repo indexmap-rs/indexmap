@@ -66,9 +66,11 @@ which is roughly:
 Recent Changes
 ==============
 
-- Unreleased
+- 1.6.0
 
   - **MSRV**: Rust 1.36 or later is now required.
+
+  - The ``hashbrown`` dependency has been updated to version 0.9.
 
 - 1.5.2
 
