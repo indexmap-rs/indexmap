@@ -319,7 +319,7 @@ quickcheck! {
         let mut map2 = IndexMapFnv::default();
         let mut reference2 = HashMap::new();
         do_ops(&ops2, &mut map2, &mut reference2);
-        assert_eq!(map == map2, reference == reference2);
+        assert_eq!(map.unordered_eq(&map2), reference == reference2);
         true
     }
 

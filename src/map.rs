@@ -370,6 +370,23 @@ where
         }
     }
 
+    /// Performs an equality comparison without accounting for the ordering of
+    /// the keys.
+    ///
+    /// This is effectively an equivalent to HashMap::eq.
+    pub fn unordered_eq<V2, S2>(&self, other: &IndexMap<K, V2, S2>) -> bool
+    where
+        V: PartialEq<V2>,
+        S2: BuildHasher,
+    {
+        if self.len() != other.len() {
+            return false;
+        }
+
+        self.iter()
+            .all(|(key, value)| other.get(key).map_or(false, |v| *value == *v))
+    }
+
     /// Return references to the key-value pair stored for `key`,
     /// if it is present, else `None`.
     ///
@@ -1244,7 +1261,8 @@ where
         }
 
         self.iter()
-            .all(|(key, value)| other.get(key).map_or(false, |v| *value == *v))
+            .zip(other.iter())
+            .all(|((k1, v1), (k2, v2))| k1 == k2 && v1 == v2)
     }
 }
 
@@ -1623,5 +1641,12 @@ mod tests {
         assert!(values.contains(&2));
         assert!(values.contains(&4));
         assert!(values.contains(&6));
+    }
+
+    #[test]
+    fn eq() {
+        let m1: IndexMap<_, _> = vec![(1, 1), (2, 2)].into_iter().collect();
+        let m2: IndexMap<_, _> = vec![(2, 2), (1, 1)].into_iter().collect();
+        assert_ne!(m1, m2);
     }
 }

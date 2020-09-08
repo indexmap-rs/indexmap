@@ -820,7 +820,7 @@ where
     S2: BuildHasher,
 {
     fn eq(&self, other: &IndexSet<T, S2>) -> bool {
-        self.len() == other.len() && self.is_subset(other)
+        self.len() == other.len() && self.iter().zip(other.iter()).all(|(v1, v2)| v1 == v2)
     }
 }
 
@@ -862,6 +862,14 @@ where
         S2: BuildHasher,
     {
         other.is_subset(self)
+    }
+
+    /// Performs an equality comparison without accounting for ordering.
+    pub fn unordered_eq<S2>(&self, other: &IndexSet<T, S2>) -> bool
+    where
+        S2: BuildHasher,
+    {
+        self.len() == other.len() && self.is_subset(other)
     }
 }
 
@@ -1580,9 +1588,9 @@ mod tests {
         assert_eq!(&set_a & &set_b, empty);
         assert_eq!(&set_b & &set_a, empty);
         assert_eq!(&set_a | &set_b, set_c);
-        assert_eq!(&set_b | &set_a, set_c);
+        assert_ne!(&set_b | &set_a, set_c);
         assert_eq!(&set_a ^ &set_b, set_c);
-        assert_eq!(&set_b ^ &set_a, set_c);
+        assert_ne!(&set_b ^ &set_a, set_c);
         assert_eq!(&set_a - &set_b, set_a);
         assert_eq!(&set_b - &set_a, set_b);
 
@@ -1596,11 +1604,11 @@ mod tests {
         assert_eq!(&set_c - &set_a, set_b);
 
         assert_eq!(&set_c & &set_d, set_b);
-        assert_eq!(&set_d & &set_c, set_b);
-        assert_eq!(&set_c | &set_d, &set_a | &set_d);
-        assert_eq!(&set_d | &set_c, &set_a | &set_d);
+        assert_ne!(&set_d & &set_c, set_b);
+        assert_ne!(&set_c | &set_d, &set_a | &set_d);
+        assert_ne!(&set_d | &set_c, &set_a | &set_d);
         assert_eq!(&set_c ^ &set_d, &set_a | &(&set_d - &set_b));
-        assert_eq!(&set_d ^ &set_c, &set_a | &(&set_d - &set_b));
+        assert_ne!(&set_d ^ &set_c, &set_a | &(&set_d - &set_b));
         assert_eq!(&set_c - &set_d, set_a);
         assert_eq!(&set_d - &set_c, &set_d - &set_b);
     }
