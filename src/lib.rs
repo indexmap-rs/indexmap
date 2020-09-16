@@ -95,7 +95,7 @@ use std::vec::{self, Vec};
 mod macros;
 mod equivalent;
 mod mutable_keys;
-#[cfg(feature = "serde-1")]
+#[cfg(feature = "serde")]
 mod serde;
 mod util;
 
