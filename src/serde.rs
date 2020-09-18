@@ -2,7 +2,7 @@ use serde::de::value::{MapDeserializer, SeqDeserializer};
 use serde::de::{
     Deserialize, Deserializer, Error, IntoDeserializer, MapAccess, SeqAccess, Visitor,
 };
-use serde::ser::{Serialize, SerializeMap, SerializeSeq, Serializer};
+use serde::ser::{Serialize, Serializer};
 
 use core::fmt::{self, Formatter};
 use core::hash::{BuildHasher, Hash};
@@ -21,11 +21,7 @@ where
     where
         T: Serializer,
     {
-        let mut map_serializer = serializer.serialize_map(Some(self.len()))?;
-        for (key, value) in self {
-            map_serializer.serialize_entry(key, value)?;
-        }
-        map_serializer.end()
+        serializer.collect_map(self)
     }
 }
 
@@ -99,11 +95,7 @@ where
     where
         Se: Serializer,
     {
-        let mut set_serializer = serializer.serialize_seq(Some(self.len()))?;
-        for value in self {
-            set_serializer.serialize_element(value)?;
-        }
-        set_serializer.end()
+        serializer.collect_seq(self)
     }
 }
 
