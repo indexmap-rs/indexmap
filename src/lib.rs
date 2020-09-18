@@ -96,6 +96,8 @@ mod equivalent;
 mod mutable_keys;
 #[cfg(feature = "serde")]
 mod serde;
+#[cfg(feature = "serde")]
+pub mod serde_seq;
 mod util;
 
 pub mod map;
