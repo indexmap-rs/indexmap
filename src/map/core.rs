@@ -34,6 +34,27 @@ fn get_hash<K, V>(entries: &[Bucket<K, V>]) -> impl Fn(&usize) -> u64 + '_ {
     move |&i| entries[i].hash.get()
 }
 
+#[inline]
+fn equivalent<'a, K, V, Q: ?Sized + Equivalent<K>>(
+    key: &'a Q,
+    entries: &'a [Bucket<K, V>],
+) -> impl Fn(&usize) -> bool + 'a {
+    move |&i| Q::equivalent(key, &entries[i].key)
+}
+
+#[inline]
+fn erase_index(table: &mut RawTable<usize>, hash: HashValue, index: usize) {
+    table.erase_entry(hash.get(), move |&i| i == index);
+}
+
+#[inline]
+fn update_index(table: &mut RawTable<usize>, hash: HashValue, old: usize, new: usize) {
+    let index = table
+        .get_mut(hash.get(), move |&i| i == old)
+        .expect("index not found");
+    *index = new;
+}
+
 impl<K, V> Clone for IndexMapCore<K, V>
 where
     K: Clone,
@@ -160,7 +181,7 @@ impl<K, V> IndexMapCore<K, V> {
     pub(crate) fn pop(&mut self) -> Option<(K, V)> {
         if let Some(entry) = self.entries.pop() {
             let last = self.entries.len();
-            self.erase_index(entry.hash, last);
+            erase_index(&mut self.indices, entry.hash, last);
             Some((entry.key, entry.value))
         } else {
             None
@@ -181,6 +202,15 @@ impl<K, V> IndexMapCore<K, V> {
         i
     }
 
+    /// Return the index in `entries` where an equivalent key can be found
+    pub(crate) fn get_index_of<Q>(&self, hash: HashValue, key: &Q) -> Option<usize>
+    where
+        Q: ?Sized + Equivalent<K>,
+    {
+        let eq = equivalent(key, &self.entries);
+        self.indices.get(hash.get(), eq).copied()
+    }
+
     pub(crate) fn insert_full(&mut self, hash: HashValue, key: K, value: V) -> (usize, Option<V>)
     where
         K: Eq,
@@ -189,6 +219,154 @@ impl<K, V> IndexMapCore<K, V> {
             Some(i) => (i, Some(replace(&mut self.entries[i].value, value))),
             None => (self.push(hash, key, value), None),
         }
+    }
+
+    /// Remove an entry by shifting all entries that follow it
+    pub(crate) fn shift_remove_full<Q>(&mut self, hash: HashValue, key: &Q) -> Option<(usize, K, V)>
+    where
+        Q: ?Sized + Equivalent<K>,
+    {
+        let eq = equivalent(key, &self.entries);
+        match self.indices.remove_entry(hash.get(), eq) {
+            Some(index) => {
+                let (key, value) = self.shift_remove_finish(index);
+                Some((index, key, value))
+            }
+            None => None,
+        }
+    }
+
+    /// Remove an entry by shifting all entries that follow it
+    pub(crate) fn shift_remove_index(&mut self, index: usize) -> Option<(K, V)> {
+        match self.entries.get(index) {
+            Some(entry) => {
+                erase_index(&mut self.indices, entry.hash, index);
+                Some(self.shift_remove_finish(index))
+            }
+            None => None,
+        }
+    }
+
+    /// Remove an entry by shifting all entries that follow it
+    ///
+    /// The index should already be removed from `self.indices`.
+    fn shift_remove_finish(&mut self, index: usize) -> (K, V) {
+        // use Vec::remove, but then we need to update the indices that point
+        // to all of the other entries that have to move
+        let entry = self.entries.remove(index);
+
+        // correct indices that point to the entries that followed the removed entry.
+        // use a heuristic between a full sweep vs. a `find()` for every shifted item.
+        let raw_capacity = self.indices.buckets();
+        let shifted_entries = &self.entries[index..];
+        if shifted_entries.len() > raw_capacity / 2 {
+            // shift all indices greater than `index`
+            for i in self.indices_mut() {
+                if *i > index {
+                    *i -= 1;
+                }
+            }
+        } else {
+            // find each following entry to shift its index
+            for (i, entry) in (index + 1..).zip(shifted_entries) {
+                update_index(&mut self.indices, entry.hash, i, i - 1);
+            }
+        }
+
+        (entry.key, entry.value)
+    }
+
+    /// Remove an entry by swapping it with the last
+    pub(crate) fn swap_remove_full<Q>(&mut self, hash: HashValue, key: &Q) -> Option<(usize, K, V)>
+    where
+        Q: ?Sized + Equivalent<K>,
+    {
+        let eq = equivalent(key, &self.entries);
+        match self.indices.remove_entry(hash.get(), eq) {
+            Some(index) => {
+                let (key, value) = self.swap_remove_finish(index);
+                Some((index, key, value))
+            }
+            None => None,
+        }
+    }
+
+    /// Remove an entry by swapping it with the last
+    pub(crate) fn swap_remove_index(&mut self, index: usize) -> Option<(K, V)> {
+        match self.entries.get(index) {
+            Some(entry) => {
+                erase_index(&mut self.indices, entry.hash, index);
+                Some(self.swap_remove_finish(index))
+            }
+            None => None,
+        }
+    }
+
+    /// Finish removing an entry by swapping it with the last
+    ///
+    /// The index should already be removed from `self.indices`.
+    fn swap_remove_finish(&mut self, index: usize) -> (K, V) {
+        // use swap_remove, but then we need to update the index that points
+        // to the other entry that has to move
+        let entry = self.entries.swap_remove(index);
+
+        // correct index that points to the entry that had to swap places
+        if let Some(entry) = self.entries.get(index) {
+            // was not last element
+            // examine new element in `index` and find it in indices
+            let last = self.entries.len();
+            update_index(&mut self.indices, entry.hash, last, index);
+        }
+
+        (entry.key, entry.value)
+    }
+
+    /// Erase `start..end` from `indices`, and shift `end..` indices down to `start..`
+    ///
+    /// All of these items should still be at their original location in `entries`.
+    /// This is used by `drain`, which will let `Vec::drain` do the work on `entries`.
+    fn erase_indices(&mut self, start: usize, end: usize) {
+        let (init, shifted_entries) = self.entries.split_at(end);
+        let (start_entries, erased_entries) = init.split_at(start);
+
+        let erased = erased_entries.len();
+        let shifted = shifted_entries.len();
+        let half_capacity = self.indices.buckets() / 2;
+
+        // Use a heuristic between different strategies
+        if erased == 0 {
+            // Degenerate case, nothing to do
+        } else if start + shifted < half_capacity && start < erased {
+            // Reinsert everything, as there are few kept indices
+            self.indices.clear();
+
+            // Reinsert stable indices
+            for (i, entry) in enumerate(start_entries) {
+                self.indices.insert_no_grow(entry.hash.get(), i);
+            }
+
+            // Reinsert shifted indices
+            for (i, entry) in (start..).zip(shifted_entries) {
+                self.indices.insert_no_grow(entry.hash.get(), i);
+            }
+        } else if erased + shifted < half_capacity {
+            // Find each affected index, as there are few to adjust
+
+            // Find erased indices
+            for (i, entry) in (start..).zip(erased_entries) {
+                erase_index(&mut self.indices, entry.hash, i);
+            }
+
+            // Find shifted indices
+            for ((new, old), entry) in (start..).zip(end..).zip(shifted_entries) {
+                update_index(&mut self.indices, entry.hash, old, new);
+            }
+        } else {
+            // Sweep the whole table for adjustments
+            self.erase_indices_sweep(start, end);
+        }
+
+        debug_assert_eq!(self.indices.len(), start + shifted);
     }
 
     pub(crate) fn retain_in_order<F>(&mut self, mut keep: F)
@@ -223,6 +401,17 @@ impl<K, V> IndexMapCore<K, V> {
         for (i, entry) in enumerate(&self.entries) {
             // We should never have to reallocate, so there's no need for a real hasher.
             self.indices.insert_no_grow(entry.hash.get(), i);
+        }
+    }
+
+    pub(crate) fn reverse(&mut self) {
+        self.entries.reverse();
+
+        // No need to save hash indices, can easily calculate what they should
+        // be, given that this is an in-place reversal.
+        let len = self.entries.len();
+        for i in self.indices_mut() {
+            *i = len - *i - 1;
         }
     }
 }
