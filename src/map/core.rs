@@ -221,21 +221,6 @@ impl<K, V> IndexMapCore<K, V> {
         }
     }
 
-    // /// Remove an entry by shifting all entries that follow it
-    // pub(crate) fn shift_remove_items_full<Q>(&mut self, hash: HashValue, key: &Q) -> Option<(usize, K, V)>
-    // where
-    //     Q: ?Sized + Equivalent<K>,
-    // {
-    //     let eq = equivalent(key, &self.entries);
-    //     match self.indices.remove_entry(hash.get(), eq) {
-    //         Some(index) => {
-    //             let (key, value) = self.shift_remove_finish(index);
-    //             Some((index, key, value))
-    //         }
-    //         None => None,
-    //     }
-    // }
-
     /// Remove an entry by shifting all entries that follow it
     pub(crate) fn shift_remove_indices(&mut self, indices: &mut [usize]) {
         indices.sort();
