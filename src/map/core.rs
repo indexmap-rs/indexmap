@@ -221,6 +221,67 @@ impl<K, V> IndexMapCore<K, V> {
         }
     }
 
+    // /// Remove an entry by shifting all entries that follow it
+    // pub(crate) fn shift_remove_items_full<Q>(&mut self, hash: HashValue, key: &Q) -> Option<(usize, K, V)>
+    // where
+    //     Q: ?Sized + Equivalent<K>,
+    // {
+    //     let eq = equivalent(key, &self.entries);
+    //     match self.indices.remove_entry(hash.get(), eq) {
+    //         Some(index) => {
+    //             let (key, value) = self.shift_remove_finish(index);
+    //             Some((index, key, value))
+    //         }
+    //         None => None,
+    //     }
+    // }
+
+    /// Remove an entry by shifting all entries that follow it
+    pub(crate) fn shift_remove_indices(&mut self, indices: &mut [usize]) {
+        indices.sort();
+        for index in indices.iter() {
+            let index = *index;
+            match self.entries.get(index) {
+                Some(entry) => {
+                    erase_index(&mut self.indices, entry.hash, index);
+                }
+                None => continue,
+            }
+        }
+        self.shift_remove_indices_finish(&indices);
+
+    }
+
+    /// Remove an entry by shifting all entries that follow it
+    ///
+    /// The index should already be removed from `self.indices`.
+    fn shift_remove_indices_finish(&mut self, indices: &[usize]) {
+        // use Vec::remove, but then we need to update the indices that point
+        // to all of the other entries that have to move
+        let mut offset = 0;
+        for index in indices.iter() {
+            self.entries.remove(*index - offset);
+            offset += 1;
+        }
+
+        let mut gap = 1;
+        let mut start = indices[0];
+        let mut start_index = start;
+        for end in indices[1..].iter() {
+            for (i, entry) in (start + 1..*end).zip(&self.entries[start_index..]) {
+                start_index+=1;
+                update_index(&mut self.indices, entry.hash, i, i - gap);
+            }
+
+            start = *end;
+            gap += 1;
+        }
+
+        for (i, entry) in (start + 1..).zip(&self.entries[start..]) {
+            update_index(&mut self.indices, entry.hash, i, i - (2 * gap - 1));
+        }
+    }
+
     /// Remove an entry by shifting all entries that follow it
     pub(crate) fn shift_remove_full<Q>(&mut self, hash: HashValue, key: &Q) -> Option<(usize, K, V)>
     where

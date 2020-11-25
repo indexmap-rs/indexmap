@@ -718,6 +718,20 @@ impl<K, V, S> IndexMap<K, V, S> {
     pub fn shift_remove_index(&mut self, index: usize) -> Option<(K, V)> {
         self.core.shift_remove_index(index)
     }
+
+    /// Remove the key-value pairs by the provided indices.
+    ///
+    /// Valid indices are *0 <= index < self.len()*
+    ///
+    /// Like `Vec::remove`, the pairs are removed by shifting all of the
+    /// elements that follow, preserving their relative order.
+    /// **This perturbs the index of all of those elements!**
+    ///
+    /// Computes in **O(n)** time (average).
+    pub fn shift_remove_indices(&mut self, indices: &mut [usize]) {
+        self.core.shift_remove_indices(indices)
+    }
+
 }
 
 /// An iterator over the keys of a `IndexMap`.
@@ -1261,6 +1275,21 @@ mod tests {
     use super::*;
     use crate::util::enumerate;
     use std::string::String;
+
+    #[test]
+    fn shift_remove_multiple_elements() {
+        let mut map = IndexMap::new();
+        for i in 0..15 {
+            map.insert(i, ());
+        }
+        let mut second = [4, 8, 12];
+        map.shift_remove_indices(&mut second);
+        assert_eq!(map.len(), 12);
+        let expected = [0, 1, 2, 3, 5, 6, 7, 9, 10, 11, 13, 14];
+        for (e, (key, _)) in expected.iter().zip(map.iter()) {
+            assert!(key == e);
+        }
+    }
 
     #[test]
     fn it_works() {
