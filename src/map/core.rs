@@ -239,16 +239,19 @@ impl<K, V> IndexMapCore<K, V> {
 
     /// Remove an entry by shifting all entries that follow it
     ///
-    /// The index should already be removed from `self.indices`.
+    /// The index should already be removed from `self.indices`, and
+    /// `indices` should be sorted before hand.
     fn shift_remove_indices_finish(&mut self, indices: &[usize]) {
-        // use Vec::remove, but then we need to update the indices that point
-        // to all of the other entries that have to move
-        let mut offset = 0;
-        for index in indices.iter() {
-            self.entries.remove(*index - offset);
-            offset += 1;
-        }
+        // Remove all values at the specified indices.
+        let index_hashset = indices.iter().collect::<IndexSet<_>>();
+        let mut i = 0;
+        self.entries.retain(|_| {
+            let keep = !index_hashset.contains(&i);
+            i += 1;
+            keep
+        });
 
+        // Make sure that we shift the items back by the correct amount.
         let mut gap = 1;
         let mut start = indices[0];
         let mut start_index = start;
@@ -545,6 +548,7 @@ impl<K: fmt::Debug, V: fmt::Debug> fmt::Debug for Entry<'_, K, V> {
 }
 
 pub use self::raw::OccupiedEntry;
+use crate::set::IndexSet;
 
 // Extra methods that don't threaten the unsafe encapsulation.
 impl<K, V> OccupiedEntry<'_, K, V> {
