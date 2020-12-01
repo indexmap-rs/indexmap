@@ -1,13 +1,26 @@
 #![no_std]
 
 use core::hash::BuildHasherDefault;
+use core::hash::Hasher;
+use core::iter::FromIterator;
+
 use indexmap::IndexMap;
 use indexmap::IndexSet;
-use twox_hash::XxHash64;
-type Map<K, V> = IndexMap<K, V, BuildHasherDefault<XxHash64>>;
-type Set<T> = IndexSet<T, BuildHasherDefault<XxHash64>>;
 
-use core::iter::FromIterator;
+#[derive(Default)]
+struct BadHasher(u64);
+
+impl Hasher for BadHasher {
+    fn finish(&self) -> u64 { self.0 }
+    fn write(&mut self, bytes: &[u8]) {
+        for &byte in bytes {
+            self.0 += byte as u64
+        }
+    }
+}
+
+type Map<K, V> = IndexMap<K, V, BuildHasherDefault<BadHasher>>;
+type Set<T> = IndexSet<T, BuildHasherDefault<BadHasher>>;
 
 pub fn test_compile() {
     let mut map = Map::default();
