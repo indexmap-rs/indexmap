@@ -3,11 +3,11 @@ indexmap
 
 |build_status|_ |crates|_ |docs|_ |rustc|_
 
+.. |build_status| image:: https://github.com/bluss/indexmap/workflows/Continuous%20integration/badge.svg?branch=master
+.. _build_status: https://github.com/bluss/indexmap/actions
+
 .. |crates| image:: https://img.shields.io/crates/v/indexmap.svg
 .. _crates: https://crates.io/crates/indexmap
-
-.. |build_status| image:: https://travis-ci.org/bluss/indexmap.svg
-.. _build_status: https://travis-ci.org/bluss/indexmap
 
 .. |docs| image:: https://docs.rs/indexmap/badge.svg
 .. _docs: https://docs.rs/indexmap
