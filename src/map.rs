@@ -717,18 +717,30 @@ impl<K, V, S> IndexMap<K, V, S> {
         self.as_entries_mut().get_mut(index).map(Bucket::muts)
     }
 
+    /// Get the first key-value pair
+    ///
+    /// Computes in **O(1)** time.
     pub fn first(&self) -> Option<(&K, &V)> {
         self.as_entries().first().map(Bucket::refs)
     }
 
+    /// Get the first key-value pair, with mutable access to the value
+    ///
+    /// Computes in **O(1)** time.
     pub fn first_mut(&mut self) -> Option<(&K, &mut V)> {
         self.as_entries_mut().first_mut().map(Bucket::ref_mut)
     }
 
+    /// Get the last key-value pair
+    ///
+    /// Computes in **O(1)** time.
     pub fn last(&self) -> Option<(&K, &V)> {
         self.as_entries().last().map(Bucket::refs)
     }
 
+    /// Get the last key-value pair, with mutable access to the value
+    ///
+    /// Computes in **O(1)** time.
     pub fn last_mut(&mut self) -> Option<(&K, &mut V)> {
         self.as_entries_mut().last_mut().map(Bucket::ref_mut)
     }

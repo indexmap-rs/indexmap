@@ -602,10 +602,16 @@ impl<T, S> IndexSet<T, S> {
         self.as_entries().get(index).map(Bucket::key_ref)
     }
 
+    /// Get the first value
+    ///
+    /// Computes in **O(1)** time.
     pub fn first(&self) -> Option<&T> {
         self.as_entries().first().map(Bucket::key_ref)
     }
 
+    /// Get the last value
+    ///
+    /// Computes in **O(1)** time.
     pub fn last(&self) -> Option<&T> {
         self.as_entries().last().map(Bucket::key_ref)
     }
