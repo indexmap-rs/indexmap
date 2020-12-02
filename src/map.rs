@@ -721,16 +721,16 @@ impl<K, V, S> IndexMap<K, V, S> {
         self.as_entries().first().map(Bucket::refs)
     }
 
-    pub fn first_mut(&mut self) -> Option<(&mut K, &mut V)> {
-        self.as_entries_mut().first_mut().map(Bucket::muts)
+    pub fn first_mut(&mut self) -> Option<(&K, &mut V)> {
+        self.as_entries_mut().first_mut().map(Bucket::ref_mut)
     }
 
     pub fn last(&self) -> Option<(&K, &V)> {
         self.as_entries().last().map(Bucket::refs)
     }
 
-    pub fn last_mut(&mut self) -> Option<(&mut K, &mut V)> {
-        self.as_entries_mut().last_mut().map(Bucket::muts)
+    pub fn last_mut(&mut self) -> Option<(&K, &mut V)> {
+        self.as_entries_mut().last_mut().map(Bucket::ref_mut)
     }
 
     /// Remove the key-value pair by index
