@@ -27,15 +27,9 @@ jobs:
           - rust: beta
             features:
           - rust: nightly
-            bench: 1
+            bench: test build benchmarks
           - rust: nightly
             features: test_low_transition_point
-          - rust: 1.36.0
-            target: thumbv6m-none-eabi
-            features:
-          - rust: stable
-            target: thumbv6m-none-eabi
-            features:
 
     steps:
       - uses: actions/checkout@v2
@@ -44,16 +38,7 @@ jobs:
           profile: minimal
           toolchain: ${{ matrix.rust }}
           override: true
-      - name: Add target
-        run: rustup target add ${{ matrix.target }}
-        if: matrix.target != ''
-      - name: Tests (custom target)
-        if: matrix.target != ''
-        run: |
-          cargo build -vv --target=${{ matrix.target }}
-          cargo build -v -p test-nostd --target=${{ matrix.target }}
       - name: Tests
-        if: matrix.target == ''
         run: |
           cargo build --verbose --features "${{ matrix.features }}"
           cargo doc --verbose --features "${{ matrix.features }}"
@@ -66,6 +51,29 @@ jobs:
       - name: Test run benchmarks
         if: matrix.bench != ''
         run: cargo test -v --benches
+
+  nostd_build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - rust: 1.36.0
+            target: thumbv6m-none-eabi
+          - rust: stable
+            target: thumbv6m-none-eabi
+
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: ${{ matrix.rust }}
+          override: true
+          target: ${{ matrix.target }}
+      - name: Tests
+        run: |
+          cargo build -vv --target=${{ matrix.target }}
+          cargo build -v -p test-nostd --target=${{ matrix.target }}
 
   clippy:
     runs-on: ubuntu-latest
