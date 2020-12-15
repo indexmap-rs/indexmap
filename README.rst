@@ -66,6 +66,18 @@ which is roughly:
 Recent Changes
 ==============
 
+- 1.6.1
+
+  - The new ``serde_seq`` module implements ``IndexMap`` serialization as a
+    sequence to ensure order is preserved, by @cuviper in PR 158_.
+
+  - New methods on maps and sets work like the ``Vec``/slice methods by the same name:
+    ``truncate``, ``split_off``, ``first``, ``first_mut``, ``last``, ``last_mut``, and
+    ``swap_indices``, by @cuviper in PR 160_.
+
+.. _158: https://github.com/bluss/indexmap/pull/158
+.. _160: https://github.com/bluss/indexmap/pull/160
+
 - 1.6.0
 
   - **MSRV**: Rust 1.36 or later is now required.
