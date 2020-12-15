@@ -10,4 +10,5 @@ edition = "2018"
 [dev-dependencies]
 fnv = "1.0"
 indexmap = { path = "..", features = ["serde-1"] }
+serde = { version = "1.0.99", features = ["derive"] }
 serde_test = "1.0.99"
