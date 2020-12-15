@@ -252,6 +252,13 @@ impl<K, V, S> IndexMap<K, V, S> {
         self.core.clear();
     }
 
+    /// Shortens the map, keeping the first `len` elements and dropping the rest.
+    ///
+    /// If `len` is greater than the map's current length, this has no effect.
+    pub fn truncate(&mut self, len: usize) {
+        self.core.truncate(len);
+    }
+
     /// Clears the `IndexMap` in the given index range, returning those
     /// key-value pairs as a drain iterator.
     ///
@@ -271,6 +278,23 @@ impl<K, V, S> IndexMap<K, V, S> {
     {
         Drain {
             iter: self.core.drain(range),
+        }
+    }
+
+    /// Splits the collection into two at the given index.
+    ///
+    /// Returns a newly allocated map containing the elements in the range
+    /// `[at, len)`. After the call, the original map will be left containing
+    /// the elements `[0, at)` with its previous capacity unchanged.
+    ///
+    /// ***Panics*** if `at > len`.
+    pub fn split_off(&mut self, at: usize) -> Self
+    where
+        S: Clone,
+    {
+        Self {
+            core: self.core.split_off(at),
+            hash_builder: self.hash_builder.clone(),
         }
     }
 }
@@ -693,6 +717,34 @@ impl<K, V, S> IndexMap<K, V, S> {
         self.as_entries_mut().get_mut(index).map(Bucket::muts)
     }
 
+    /// Get the first key-value pair
+    ///
+    /// Computes in **O(1)** time.
+    pub fn first(&self) -> Option<(&K, &V)> {
+        self.as_entries().first().map(Bucket::refs)
+    }
+
+    /// Get the first key-value pair, with mutable access to the value
+    ///
+    /// Computes in **O(1)** time.
+    pub fn first_mut(&mut self) -> Option<(&K, &mut V)> {
+        self.as_entries_mut().first_mut().map(Bucket::ref_mut)
+    }
+
+    /// Get the last key-value pair
+    ///
+    /// Computes in **O(1)** time.
+    pub fn last(&self) -> Option<(&K, &V)> {
+        self.as_entries().last().map(Bucket::refs)
+    }
+
+    /// Get the last key-value pair, with mutable access to the value
+    ///
+    /// Computes in **O(1)** time.
+    pub fn last_mut(&mut self) -> Option<(&K, &mut V)> {
+        self.as_entries_mut().last_mut().map(Bucket::ref_mut)
+    }
+
     /// Remove the key-value pair by index
     ///
     /// Valid indices are *0 <= index < self.len()*
@@ -717,6 +769,13 @@ impl<K, V, S> IndexMap<K, V, S> {
     /// Computes in **O(n)** time (average).
     pub fn shift_remove_index(&mut self, index: usize) -> Option<(K, V)> {
         self.core.shift_remove_index(index)
+    }
+
+    /// Swaps the position of two key-value pairs in the map.
+    ///
+    /// ***Panics*** if `a` or `b` are out of bounds.
+    pub fn swap_indices(&mut self, a: usize, b: usize) {
+        self.core.swap_indices(a, b)
     }
 }
 

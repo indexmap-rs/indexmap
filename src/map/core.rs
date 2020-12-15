@@ -150,6 +150,13 @@ impl<K, V> IndexMapCore<K, V> {
         self.entries.clear();
     }
 
+    pub(crate) fn truncate(&mut self, len: usize) {
+        if len < self.len() {
+            self.erase_indices(len, self.entries.len());
+            self.entries.truncate(len);
+        }
+    }
+
     pub(crate) fn drain<R>(&mut self, range: R) -> Drain<'_, Bucket<K, V>>
     where
         R: RangeBounds<usize>,
@@ -157,6 +164,18 @@ impl<K, V> IndexMapCore<K, V> {
         let range = simplify_range(range, self.entries.len());
         self.erase_indices(range.start, range.end);
         self.entries.drain(range)
+    }
+
+    pub(crate) fn split_off(&mut self, at: usize) -> Self {
+        assert!(at <= self.entries.len());
+        self.erase_indices(at, self.entries.len());
+        let entries = self.entries.split_off(at);
+
+        let mut indices = RawTable::with_capacity(entries.len());
+        for (i, entry) in enumerate(&entries) {
+            indices.insert_no_grow(entry.hash.get(), i);
+        }
+        Self { indices, entries }
     }
 
     /// Reserve capacity for `additional` more key-value pairs.
