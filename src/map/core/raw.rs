@@ -113,10 +113,15 @@ impl<'a, K, V> OccupiedEntry<'a, K, V> {
         &self.map.entries[self.index()].key
     }
 
+    /// Gets a reference to the entry's value in the map.
     pub fn get(&self) -> &V {
         &self.map.entries[self.index()].value
     }
 
+    /// Gets a mutable reference to the entry's value in the map.
+    ///
+    /// If you need a reference which may outlive the destruction of the
+    /// `Entry` value, see `into_mut`.
     pub fn get_mut(&mut self) -> &mut V {
         let index = self.index();
         &mut self.map.entries[index].value
@@ -136,6 +141,8 @@ impl<'a, K, V> OccupiedEntry<'a, K, V> {
         unsafe { self.raw_bucket.read() }
     }
 
+    /// Converts into a mutable reference to the entry's value in the map,
+    /// with a lifetime bound to the map itself.
     pub fn into_mut(self) -> &'a mut V {
         let index = self.index();
         &mut self.map.entries[index].value
