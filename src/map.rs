@@ -1649,6 +1649,28 @@ mod tests {
     }
 
     #[test]
+    fn occupied_entry_key() {
+        // These keys match hash and equality, but their addresses are distinct.
+        let (k1, k2) = (&mut 1, &mut 1);
+        let k1_ptr = k1 as *const i32;
+        let k2_ptr = k2 as *const i32;
+        assert_ne!(k1_ptr, k2_ptr);
+
+        let mut map = IndexMap::new();
+        map.insert(k1, "value");
+        match map.entry(k2) {
+            Entry::Occupied(ref e) => {
+                // `OccupiedEntry::key` should reference the key in the map,
+                // not the key that was used to find the entry.
+                let ptr = *e.key() as *const i32;
+                assert_eq!(ptr, k1_ptr);
+                assert_ne!(ptr, k2_ptr);
+            },
+            Entry::Vacant(_) => panic!(),
+        }
+    }
+
+    #[test]
     fn keys() {
         let vec = vec![(1, 'a'), (2, 'b'), (3, 'c')];
         let map: IndexMap<_, _> = vec.into_iter().collect();

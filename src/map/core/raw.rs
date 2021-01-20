@@ -104,8 +104,13 @@ unsafe impl<K: Sync, V: Sync> Sync for OccupiedEntry<'_, K, V> {}
 
 // The parent module also adds methods that don't threaten the unsafe encapsulation.
 impl<'a, K, V> OccupiedEntry<'a, K, V> {
+    /// Gets a reference to the entry's key in the map.
+    ///
+    /// Note that this is not the key that was used to find the entry. There may be an observable
+    /// difference if the key type has any distinguishing features outside of `Hash` and `Eq`, like
+    /// extra fields or the memory address of an allocation.
     pub fn key(&self) -> &K {
-        &self.key
+        &self.map.entries[self.index()].key
     }
 
     pub fn get(&self) -> &V {

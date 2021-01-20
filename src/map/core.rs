@@ -464,6 +464,8 @@ impl<'a, K, V> Entry<'a, K, V> {
         }
     }
 
+    /// Gets a reference to the entry's key, either within the map if occupied,
+    /// or else the new key that was used to find the entry.
     pub fn key(&self) -> &K {
         match *self {
             Entry::Occupied(ref entry) => entry.key(),
@@ -583,6 +585,7 @@ pub struct VacantEntry<'a, K, V> {
 }
 
 impl<'a, K, V> VacantEntry<'a, K, V> {
+    /// Gets a reference to the key that was used to find the entry.
     pub fn key(&self) -> &K {
         &self.key
     }
