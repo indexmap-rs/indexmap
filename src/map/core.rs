@@ -470,6 +470,24 @@ impl<'a, K, V> Entry<'a, K, V> {
         }
     }
 
+    /// Inserts the result of the `call` function with a reference to the entry's key if it is
+    /// vacant, and returns a mutable reference to the new value. Otherwise a mutable reference to
+    /// an already existent value is returned.
+    ///
+    /// Computes in **O(1)** time (amortized average).
+    pub fn or_insert_with_key<F>(self, call: F) -> &'a mut V
+    where
+        F: FnOnce(&K) -> V,
+    {
+        match self {
+            Entry::Occupied(entry) => entry.into_mut(),
+            Entry::Vacant(entry) => {
+                let value = call(&entry.key);
+                entry.insert(value)
+            }
+        }
+    }
+
     /// Gets a reference to the entry's key, either within the map if occupied,
     /// or else the new key that was used to find the entry.
     pub fn key(&self) -> &K {
