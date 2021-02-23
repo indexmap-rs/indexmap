@@ -445,6 +445,9 @@ pub enum Entry<'a, K, V> {
 }
 
 impl<'a, K, V> Entry<'a, K, V> {
+    /// Inserts the given default value in the entry if it is vacant and returns a mutable
+    /// reference to it. Otherwise a mutable reference to an already existent value is returned.
+    ///
     /// Computes in **O(1)** time (amortized average).
     pub fn or_insert(self, default: V) -> &'a mut V {
         match self {
@@ -453,6 +456,9 @@ impl<'a, K, V> Entry<'a, K, V> {
         }
     }
 
+    /// Inserts the result of the `call` function in the entry if it is vacant and returns a mutable
+    /// reference to it. Otherwise a mutable reference to an already existent value is returned.
+    ///
     /// Computes in **O(1)** time (amortized average).
     pub fn or_insert_with<F>(self, call: F) -> &'a mut V
     where
@@ -464,6 +470,8 @@ impl<'a, K, V> Entry<'a, K, V> {
         }
     }
 
+    /// Gets a reference to the entry's key, either within the map if occupied,
+    /// or else the new key that was used to find the entry.
     pub fn key(&self) -> &K {
         match *self {
             Entry::Occupied(ref entry) => entry.key(),
@@ -583,10 +591,12 @@ pub struct VacantEntry<'a, K, V> {
 }
 
 impl<'a, K, V> VacantEntry<'a, K, V> {
+    /// Gets a reference to the key that was used to find the entry.
     pub fn key(&self) -> &K {
         &self.key
     }
 
+    /// Takes ownership of the key, leaving the entry vacant.
     pub fn into_key(self) -> K {
         self.key
     }
@@ -596,6 +606,8 @@ impl<'a, K, V> VacantEntry<'a, K, V> {
         self.map.len()
     }
 
+    /// Inserts the entry's key and the given value into the map, and returns a mutable reference
+    /// to the value.
     pub fn insert(self, value: V) -> &'a mut V {
         let i = self.map.push(self.hash, self.key, value);
         &mut self.map.entries[i].value
