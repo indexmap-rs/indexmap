@@ -15,6 +15,7 @@ use core::fmt;
 use core::hash::{BuildHasher, Hash};
 use core::ops::RangeBounds;
 
+use crate::set::Slice;
 use crate::Entries;
 use crate::IndexSet;
 
@@ -74,6 +75,21 @@ where
     fn into_par_iter(self) -> Self::Iter {
         ParIter {
             entries: self.as_entries(),
+        }
+    }
+}
+
+/// Requires crate feature `"rayon"`.
+impl<'a, T> IntoParallelIterator for &'a Slice<T>
+where
+    T: Sync,
+{
+    type Item = &'a T;
+    type Iter = ParIter<'a, T>;
+
+    fn into_par_iter(self) -> Self::Iter {
+        ParIter {
+            entries: &self.entries,
         }
     }
 }
