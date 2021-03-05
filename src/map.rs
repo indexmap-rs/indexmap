@@ -1665,7 +1665,7 @@ mod tests {
                 let ptr = *e.key() as *const i32;
                 assert_eq!(ptr, k1_ptr);
                 assert_ne!(ptr, k2_ptr);
-            },
+            }
             Entry::Vacant(_) => panic!(),
         }
     }
