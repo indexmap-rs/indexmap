@@ -66,6 +66,17 @@ which is roughly:
 Recent Changes
 ==============
 
+- 1.6.2
+
+  - Fixed to match ``std`` behavior, ``OccupiedEntry::key`` now references the
+    existing key in the map instead of the lookup key, by @cuviper in PR 170_.
+
+  - The new ``Entry::or_insert_with_key`` matches Rust 1.50's ``Entry`` method,
+    passing ``&K`` to the callback to create a value, by @cuviper in PR 175_.
+
+.. _170: https://github.com/bluss/indexmap/pull/170
+.. _175: https://github.com/bluss/indexmap/pull/175
+
 - 1.6.1
 
   - The new ``serde_seq`` module implements ``IndexMap`` serialization as a

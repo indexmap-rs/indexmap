@@ -11,7 +11,9 @@ use indexmap::IndexSet;
 struct BadHasher(u64);
 
 impl Hasher for BadHasher {
-    fn finish(&self) -> u64 { self.0 }
+    fn finish(&self) -> u64 {
+        self.0
+    }
     fn write(&mut self, bytes: &[u8]) {
         for &byte in bytes {
             self.0 += byte as u64
