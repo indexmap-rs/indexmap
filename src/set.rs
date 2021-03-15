@@ -840,7 +840,7 @@ where
     S: BuildHasher,
 {
     fn extend<I: IntoIterator<Item = &'a T>>(&mut self, iterable: I) {
-        let iter = iterable.into_iter().cloned(); // FIXME: use `copied` in Rust 1.36
+        let iter = iterable.into_iter().copied();
         self.extend(iter);
     }
 }
@@ -1560,7 +1560,7 @@ mod tests {
             I1: Iterator<Item = &'a i32>,
             I2: Iterator<Item = i32>,
         {
-            assert!(iter1.cloned().eq(iter2));
+            assert!(iter1.copied().eq(iter2));
         }
 
         let set_a: IndexSet<_> = (0..3).collect();
