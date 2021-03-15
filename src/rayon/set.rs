@@ -622,7 +622,7 @@ mod tests {
             I1: ParallelIterator<Item = &'a i32>,
             I2: Iterator<Item = i32>,
         {
-            let v1: Vec<_> = iter1.cloned().collect();
+            let v1: Vec<_> = iter1.copied().collect();
             let v2: Vec<_> = iter2.collect();
             assert_eq!(v1, v2);
         }

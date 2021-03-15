@@ -30,7 +30,7 @@ where
     I: IntoIterator<Item = &'a T>,
     T: Copy + Hash + Eq,
 {
-    iter.into_iter().cloned().collect()
+    iter.into_iter().copied().collect()
 }
 
 fn indexmap<'a, T: 'a, I>(iter: I) -> IndexMap<T, ()>
@@ -38,7 +38,7 @@ where
     I: IntoIterator<Item = &'a T>,
     T: Copy + Hash + Eq,
 {
-    IndexMap::from_iter(iter.into_iter().cloned().map(|k| (k, ())))
+    IndexMap::from_iter(iter.into_iter().copied().map(|k| (k, ())))
 }
 
 quickcheck! {
@@ -123,7 +123,7 @@ quickcheck! {
 
         // First see if `Vec::drain` is happy with this range.
         let result = std::panic::catch_unwind(|| {
-            let mut keys: Vec<u8> = map.keys().cloned().collect();
+            let mut keys: Vec<u8> = map.keys().copied().collect();
             keys.drain(range);
             keys
         });
@@ -155,7 +155,7 @@ quickcheck! {
         let mut iter = map.keys();
         for &key in insert.iter().unique() {
             if elements.contains(&key) {
-                assert_eq!(Some(key), iter.next().cloned());
+                assert_eq!(Some(&key), iter.next());
             }
         }
 
@@ -165,7 +165,7 @@ quickcheck! {
 
     fn indexing(insert: Vec<u8>) -> bool {
         let mut map: IndexMap<_, _> = insert.into_iter().map(|x| (x, x)).collect();
-        let set: IndexSet<_> = map.keys().cloned().collect();
+        let set: IndexSet<_> = map.keys().copied().collect();
         assert_eq!(map.len(), set.len());
 
         for (i, &key) in set.iter().enumerate() {
@@ -295,7 +295,7 @@ quickcheck! {
         let mut reference = HashMap::new();
         do_ops(&ops, &mut map, &mut reference);
         let mut visit = IndexMap::new();
-        let keys = Vec::from_iter(map.keys().cloned());
+        let keys = Vec::from_iter(map.keys().copied());
         for (k, v) in keys.iter().zip(map.values_mut()) {
             assert_eq!(&reference[k], v);
             assert!(!visit.contains_key(k));

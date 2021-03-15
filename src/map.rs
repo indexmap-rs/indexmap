@@ -1674,7 +1674,7 @@ mod tests {
     fn keys() {
         let vec = vec![(1, 'a'), (2, 'b'), (3, 'c')];
         let map: IndexMap<_, _> = vec.into_iter().collect();
-        let keys: Vec<_> = map.keys().cloned().collect();
+        let keys: Vec<_> = map.keys().copied().collect();
         assert_eq!(keys.len(), 3);
         assert!(keys.contains(&1));
         assert!(keys.contains(&2));
@@ -1685,7 +1685,7 @@ mod tests {
     fn values() {
         let vec = vec![(1, 'a'), (2, 'b'), (3, 'c')];
         let map: IndexMap<_, _> = vec.into_iter().collect();
-        let values: Vec<_> = map.values().cloned().collect();
+        let values: Vec<_> = map.values().copied().collect();
         assert_eq!(values.len(), 3);
         assert!(values.contains(&'a'));
         assert!(values.contains(&'b'));
@@ -1699,7 +1699,7 @@ mod tests {
         for value in map.values_mut() {
             *value *= 2
         }
-        let values: Vec<_> = map.values().cloned().collect();
+        let values: Vec<_> = map.values().copied().collect();
         assert_eq!(values.len(), 3);
         assert!(values.contains(&2));
         assert!(values.contains(&4));
