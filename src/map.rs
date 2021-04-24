@@ -237,7 +237,7 @@ impl<K, V, S> IndexMap<K, V, S> {
         }
     }
 
-    /// Return an iterator over mutable references to the the values of the map,
+    /// Return an iterator over mutable references to the values of the map,
     /// in their order
     pub fn values_mut(&mut self) -> ValuesMut<'_, K, V> {
         ValuesMut {

@@ -275,7 +275,7 @@ where
     K: Send,
     V: Send,
 {
-    /// Return a parallel iterator over mutable references to the the values of the map
+    /// Return a parallel iterator over mutable references to the values of the map
     ///
     /// While parallel iterators can process items in any order, their relative order
     /// in the map is still preserved for operations like `reduce` and `collect`.
