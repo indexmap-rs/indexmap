@@ -424,6 +424,8 @@ where
     }
 
     /// Return item index, if it exists in the map
+    ///
+    /// Computes in **O(1)** time (average).
     pub fn get_index_of<Q: ?Sized>(&self, key: &Q) -> Option<usize>
     where
         Q: Hash + Equivalent<K>,
