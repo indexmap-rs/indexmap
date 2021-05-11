@@ -77,18 +77,13 @@
 //!
 //! [def]: map/struct.IndexMap.html#impl-Default
 
-#[cfg(not(has_std))]
 extern crate alloc;
 
 #[cfg(has_std)]
 #[macro_use]
 extern crate std;
 
-#[cfg(not(has_std))]
 use alloc::vec::{self, Vec};
-
-#[cfg(has_std)]
-use std::vec::{self, Vec};
 
 #[macro_use]
 mod macros;
