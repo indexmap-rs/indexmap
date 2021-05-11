@@ -1,10 +1,6 @@
 use rayon::prelude::*;
 
-#[cfg(not(has_std))]
 use alloc::collections::LinkedList;
-
-#[cfg(has_std)]
-use std::collections::LinkedList;
 
 use crate::vec::Vec;
 
