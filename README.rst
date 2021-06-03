@@ -12,8 +12,8 @@ indexmap
 .. |docs| image:: https://docs.rs/indexmap/badge.svg
 .. _docs: https://docs.rs/indexmap
 
-.. |rustc| image:: https://img.shields.io/badge/rust-1.36%2B-orange.svg
-.. _rustc: https://img.shields.io/badge/rust-1.36%2B-orange.svg
+.. |rustc| image:: https://img.shields.io/badge/rust-1.49%2B-orange.svg
+.. _rustc: https://img.shields.io/badge/rust-1.49%2B-orange.svg
 
 A pure-Rust hash table which preserves (in a limited sense) insertion order.
 
@@ -65,6 +65,12 @@ which is roughly:
 
 Recent Changes
 ==============
+
+- 1.7.0
+
+  - **MSRV**: Rust 1.49 or later is now required.
+
+  - The ``hashbrown`` dependency has been updated to version 0.11.
 
 - 1.6.2
 
