@@ -66,6 +66,12 @@ which is roughly:
 Recent Changes
 ==============
 
+- 1.6.3
+
+  - Updated hashbrown and rayon depjndencies PR 190_.
+
+.. _190: https://github.com/bluss/indexmap/pull/190
+
 - 1.6.2
 
   - Fixed to match ``std`` behavior, ``OccupiedEntry::key`` now references the
