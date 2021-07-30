@@ -12,7 +12,7 @@ use crate::vec::{self, Vec};
 use ::core::cmp::Ordering;
 use ::core::fmt;
 use ::core::hash::{BuildHasher, Hash, Hasher};
-use ::core::iter::FromIterator;
+use ::core::iter::{FromIterator, FusedIterator};
 use ::core::ops::{Index, IndexMut, RangeBounds};
 use ::core::slice::{Iter as SliceIter, IterMut as SliceIterMut};
 
@@ -822,6 +822,8 @@ impl<K, V> ExactSizeIterator for Keys<'_, K, V> {
     }
 }
 
+impl<K, V> FusedIterator for Keys<'_, K, V> {}
+
 // FIXME(#26925) Remove in favor of `#[derive(Clone)]`
 impl<K, V> Clone for Keys<'_, K, V> {
     fn clone(&self) -> Self {
@@ -864,6 +866,8 @@ impl<K, V> ExactSizeIterator for IntoKeys<K, V> {
     }
 }
 
+impl<K, V> FusedIterator for IntoKeys<K, V> {}
+
 impl<K: fmt::Debug, V> fmt::Debug for IntoKeys<K, V> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let iter = self.iter.as_slice().iter().map(Bucket::key_ref);
@@ -897,6 +901,8 @@ impl<K, V> ExactSizeIterator for Values<'_, K, V> {
         self.iter.len()
     }
 }
+
+impl<K, V> FusedIterator for Values<'_, K, V> {}
 
 // FIXME(#26925) Remove in favor of `#[derive(Clone)]`
 impl<K, V> Clone for Values<'_, K, V> {
@@ -940,6 +946,8 @@ impl<K, V> ExactSizeIterator for ValuesMut<'_, K, V> {
     }
 }
 
+impl<K, V> FusedIterator for ValuesMut<'_, K, V> {}
+
 /// An owning iterator over the values of a `IndexMap`.
 ///
 /// This `struct` is created by the [`into_values`] method on [`IndexMap`].
@@ -966,6 +974,8 @@ impl<K, V> ExactSizeIterator for IntoValues<K, V> {
         self.iter.len()
     }
 }
+
+impl<K, V> FusedIterator for IntoValues<K, V> {}
 
 impl<K, V: fmt::Debug> fmt::Debug for IntoValues<K, V> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -1000,6 +1010,8 @@ impl<K, V> ExactSizeIterator for Iter<'_, K, V> {
         self.iter.len()
     }
 }
+
+impl<K, V> FusedIterator for Iter<'_, K, V> {}
 
 // FIXME(#26925) Remove in favor of `#[derive(Clone)]`
 impl<K, V> Clone for Iter<'_, K, V> {
@@ -1043,6 +1055,8 @@ impl<K, V> ExactSizeIterator for IterMut<'_, K, V> {
     }
 }
 
+impl<K, V> FusedIterator for IterMut<'_, K, V> {}
+
 /// An owning iterator over the entries of a `IndexMap`.
 ///
 /// This `struct` is created by the [`into_iter`] method on [`IndexMap`]
@@ -1069,6 +1083,8 @@ impl<K, V> ExactSizeIterator for IntoIter<K, V> {
         self.iter.len()
     }
 }
+
+impl<K, V> FusedIterator for IntoIter<K, V> {}
 
 impl<K: fmt::Debug, V: fmt::Debug> fmt::Debug for IntoIter<K, V> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -1103,6 +1119,8 @@ impl<K, V> ExactSizeIterator for Drain<'_, K, V> {
         self.iter.len()
     }
 }
+
+impl<K, V> FusedIterator for Drain<'_, K, V> {}
 
 impl<'a, K, V, S> IntoIterator for &'a IndexMap<K, V, S> {
     type Item = (&'a K, &'a V);
