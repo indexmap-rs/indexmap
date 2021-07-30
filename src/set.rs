@@ -1083,6 +1083,13 @@ where
     fn next_back(&mut self) -> Option<Self::Item> {
         self.iter.next_back()
     }
+
+    fn rfold<B, F>(self, init: B, f: F) -> B
+    where
+        F: FnMut(B, Self::Item) -> B,
+    {
+        self.iter.rfold(init, f)
+    }
 }
 
 impl<T, S1, S2> Clone for SymmetricDifference<'_, T, S1, S2> {
@@ -1145,6 +1152,13 @@ where
 {
     fn next_back(&mut self) -> Option<Self::Item> {
         self.iter.next_back()
+    }
+
+    fn rfold<B, F>(self, init: B, f: F) -> B
+    where
+        F: FnMut(B, Self::Item) -> B,
+    {
+        self.iter.rfold(init, f)
     }
 }
 
