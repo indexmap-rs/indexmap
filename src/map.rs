@@ -1057,6 +1057,8 @@ impl<K, V> ExactSizeIterator for IterMut<'_, K, V> {
 
 impl<K, V> FusedIterator for IterMut<'_, K, V> {}
 
+// TODO: `impl Debug for IterMut` once we have MSRV 1.53 for `slice::IterMut::as_slice`
+
 /// An owning iterator over the entries of a `IndexMap`.
 ///
 /// This `struct` is created by the [`into_iter`] method on [`IndexMap`]

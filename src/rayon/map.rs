@@ -139,6 +139,13 @@ pub struct ParIterMut<'a, K, V> {
     entries: &'a mut [Bucket<K, V>],
 }
 
+impl<K: fmt::Debug, V: fmt::Debug> fmt::Debug for ParIterMut<'_, K, V> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let iter = self.entries.iter().map(Bucket::refs);
+        f.debug_list().entries(iter).finish()
+    }
+}
+
 impl<'a, K: Sync + Send, V: Send> ParallelIterator for ParIterMut<'a, K, V> {
     type Item = (&'a K, &'a mut V);
 
