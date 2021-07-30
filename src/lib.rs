@@ -162,6 +162,9 @@ impl<K, V> Bucket<K, V> {
     fn key(self) -> K {
         self.key
     }
+    fn value(self) -> V {
+        self.value
+    }
     fn key_value(self) -> (K, V) {
         (self.key, self.value)
     }

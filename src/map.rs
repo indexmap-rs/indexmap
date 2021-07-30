@@ -230,6 +230,13 @@ impl<K, V, S> IndexMap<K, V, S> {
         }
     }
 
+    /// Return an owning iterator over the keys of the map, in their order
+    pub fn into_keys(self) -> IntoKeys<K, V> {
+        IntoKeys {
+            iter: self.into_entries().into_iter(),
+        }
+    }
+
     /// Return an iterator over the values of the map, in their order
     pub fn values(&self) -> Values<'_, K, V> {
         Values {
@@ -242,6 +249,13 @@ impl<K, V, S> IndexMap<K, V, S> {
     pub fn values_mut(&mut self) -> ValuesMut<'_, K, V> {
         ValuesMut {
             iter: self.as_entries_mut().iter_mut(),
+        }
+    }
+
+    /// Return an owning iterator over the values of the map, in their order
+    pub fn into_values(self) -> IntoValues<K, V> {
+        IntoValues {
+            iter: self.into_entries().into_iter(),
         }
     }
 
@@ -825,6 +839,42 @@ impl<K: fmt::Debug, V> fmt::Debug for Keys<'_, K, V> {
     }
 }
 
+/// An owning iterator over the keys of a `IndexMap`.
+///
+/// This `struct` is created by the [`into_keys`] method on [`IndexMap`].
+/// See its documentation for more.
+///
+/// [`IndexMap`]: struct.IndexMap.html
+/// [`into_keys`]: struct.IndexMap.html#method.into_keys
+pub struct IntoKeys<K, V> {
+    iter: vec::IntoIter<Bucket<K, V>>,
+}
+
+impl<K, V> Iterator for IntoKeys<K, V> {
+    type Item = K;
+
+    iterator_methods!(Bucket::key);
+}
+
+impl<K, V> DoubleEndedIterator for IntoKeys<K, V> {
+    fn next_back(&mut self) -> Option<Self::Item> {
+        self.iter.next_back().map(Bucket::key)
+    }
+}
+
+impl<K, V> ExactSizeIterator for IntoKeys<K, V> {
+    fn len(&self) -> usize {
+        self.iter.len()
+    }
+}
+
+impl<K: fmt::Debug, V> fmt::Debug for IntoKeys<K, V> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let iter = self.iter.as_slice().iter().map(Bucket::key_ref);
+        f.debug_list().entries(iter).finish()
+    }
+}
+
 /// An iterator over the values of a `IndexMap`.
 ///
 /// This `struct` is created by the [`values`] method on [`IndexMap`]. See its
@@ -895,6 +945,42 @@ impl<K, V> DoubleEndedIterator for ValuesMut<'_, K, V> {
 impl<K, V> ExactSizeIterator for ValuesMut<'_, K, V> {
     fn len(&self) -> usize {
         self.iter.len()
+    }
+}
+
+/// An owning iterator over the values of a `IndexMap`.
+///
+/// This `struct` is created by the [`into_values`] method on [`IndexMap`].
+/// See its documentation for more.
+///
+/// [`IndexMap`]: struct.IndexMap.html
+/// [`into_values`]: struct.IndexMap.html#method.into_values
+pub struct IntoValues<K, V> {
+    iter: vec::IntoIter<Bucket<K, V>>,
+}
+
+impl<K, V> Iterator for IntoValues<K, V> {
+    type Item = V;
+
+    iterator_methods!(Bucket::value);
+}
+
+impl<K, V> DoubleEndedIterator for IntoValues<K, V> {
+    fn next_back(&mut self) -> Option<Self::Item> {
+        self.iter.next_back().map(Bucket::value)
+    }
+}
+
+impl<K, V> ExactSizeIterator for IntoValues<K, V> {
+    fn len(&self) -> usize {
+        self.iter.len()
+    }
+}
+
+impl<K, V: fmt::Debug> fmt::Debug for IntoValues<K, V> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let iter = self.iter.as_slice().iter().map(Bucket::value_ref);
+        f.debug_list().entries(iter).finish()
     }
 }
 
@@ -1684,6 +1770,17 @@ mod tests {
     }
 
     #[test]
+    fn into_keys() {
+        let vec = vec![(1, 'a'), (2, 'b'), (3, 'c')];
+        let map: IndexMap<_, _> = vec.into_iter().collect();
+        let keys: Vec<i32> = map.into_keys().collect();
+        assert_eq!(keys.len(), 3);
+        assert!(keys.contains(&1));
+        assert!(keys.contains(&2));
+        assert!(keys.contains(&3));
+    }
+
+    #[test]
     fn values() {
         let vec = vec![(1, 'a'), (2, 'b'), (3, 'c')];
         let map: IndexMap<_, _> = vec.into_iter().collect();
@@ -1706,5 +1803,16 @@ mod tests {
         assert!(values.contains(&2));
         assert!(values.contains(&4));
         assert!(values.contains(&6));
+    }
+
+    #[test]
+    fn into_values() {
+        let vec = vec![(1, 'a'), (2, 'b'), (3, 'c')];
+        let map: IndexMap<_, _> = vec.into_iter().collect();
+        let values: Vec<char> = map.into_values().collect();
+        assert_eq!(values.len(), 3);
+        assert!(values.contains(&'a'));
+        assert!(values.contains(&'b'));
+        assert!(values.contains(&'c'));
     }
 }
