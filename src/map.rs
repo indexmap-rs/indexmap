@@ -813,9 +813,7 @@ impl<'a, K, V> Iterator for Keys<'a, K, V> {
 }
 
 impl<K, V> DoubleEndedIterator for Keys<'_, K, V> {
-    fn next_back(&mut self) -> Option<Self::Item> {
-        self.iter.next_back().map(Bucket::key_ref)
-    }
+    double_ended_iterator_methods!(Bucket::key_ref);
 }
 
 impl<K, V> ExactSizeIterator for Keys<'_, K, V> {
@@ -857,9 +855,7 @@ impl<K, V> Iterator for IntoKeys<K, V> {
 }
 
 impl<K, V> DoubleEndedIterator for IntoKeys<K, V> {
-    fn next_back(&mut self) -> Option<Self::Item> {
-        self.iter.next_back().map(Bucket::key)
-    }
+    double_ended_iterator_methods!(Bucket::key);
 }
 
 impl<K, V> ExactSizeIterator for IntoKeys<K, V> {
@@ -893,9 +889,7 @@ impl<'a, K, V> Iterator for Values<'a, K, V> {
 }
 
 impl<K, V> DoubleEndedIterator for Values<'_, K, V> {
-    fn next_back(&mut self) -> Option<Self::Item> {
-        self.iter.next_back().map(Bucket::value_ref)
-    }
+    double_ended_iterator_methods!(Bucket::value_ref);
 }
 
 impl<K, V> ExactSizeIterator for Values<'_, K, V> {
@@ -937,9 +931,7 @@ impl<'a, K, V> Iterator for ValuesMut<'a, K, V> {
 }
 
 impl<K, V> DoubleEndedIterator for ValuesMut<'_, K, V> {
-    fn next_back(&mut self) -> Option<Self::Item> {
-        self.iter.next_back().map(Bucket::value_mut)
-    }
+    double_ended_iterator_methods!(Bucket::value_mut);
 }
 
 impl<K, V> ExactSizeIterator for ValuesMut<'_, K, V> {
@@ -966,9 +958,7 @@ impl<K, V> Iterator for IntoValues<K, V> {
 }
 
 impl<K, V> DoubleEndedIterator for IntoValues<K, V> {
-    fn next_back(&mut self) -> Option<Self::Item> {
-        self.iter.next_back().map(Bucket::value)
-    }
+    double_ended_iterator_methods!(Bucket::value);
 }
 
 impl<K, V> ExactSizeIterator for IntoValues<K, V> {
@@ -1002,9 +992,7 @@ impl<'a, K, V> Iterator for Iter<'a, K, V> {
 }
 
 impl<K, V> DoubleEndedIterator for Iter<'_, K, V> {
-    fn next_back(&mut self) -> Option<Self::Item> {
-        self.iter.next_back().map(Bucket::refs)
-    }
+    double_ended_iterator_methods!(Bucket::refs);
 }
 
 impl<K, V> ExactSizeIterator for Iter<'_, K, V> {
@@ -1046,9 +1034,7 @@ impl<'a, K, V> Iterator for IterMut<'a, K, V> {
 }
 
 impl<K, V> DoubleEndedIterator for IterMut<'_, K, V> {
-    fn next_back(&mut self) -> Option<Self::Item> {
-        self.iter.next_back().map(Bucket::ref_mut)
-    }
+    double_ended_iterator_methods!(Bucket::ref_mut);
 }
 
 impl<K, V> ExactSizeIterator for IterMut<'_, K, V> {
@@ -1075,9 +1061,7 @@ impl<K, V> Iterator for IntoIter<K, V> {
 }
 
 impl<K, V> DoubleEndedIterator for IntoIter<K, V> {
-    fn next_back(&mut self) -> Option<Self::Item> {
-        self.iter.next_back().map(Bucket::key_value)
-    }
+    double_ended_iterator_methods!(Bucket::key_value);
 }
 
 impl<K, V> ExactSizeIterator for IntoIter<K, V> {

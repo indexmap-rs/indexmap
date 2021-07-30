@@ -708,9 +708,7 @@ impl<T> Iterator for IntoIter<T> {
 }
 
 impl<T> DoubleEndedIterator for IntoIter<T> {
-    fn next_back(&mut self) -> Option<Self::Item> {
-        self.iter.next_back().map(Bucket::key)
-    }
+    double_ended_iterator_methods!(Bucket::key);
 }
 
 impl<T> ExactSizeIterator for IntoIter<T> {
@@ -744,9 +742,7 @@ impl<'a, T> Iterator for Iter<'a, T> {
 }
 
 impl<T> DoubleEndedIterator for Iter<'_, T> {
-    fn next_back(&mut self) -> Option<Self::Item> {
-        self.iter.next_back().map(Bucket::key_ref)
-    }
+    double_ended_iterator_methods!(Bucket::key_ref);
 }
 
 impl<T> ExactSizeIterator for Iter<'_, T> {
