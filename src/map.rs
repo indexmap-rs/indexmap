@@ -1098,6 +1098,12 @@ impl<K, V> DoubleEndedIterator for Drain<'_, K, V> {
     double_ended_iterator_methods!(Bucket::key_value);
 }
 
+impl<K, V> ExactSizeIterator for Drain<'_, K, V> {
+    fn len(&self) -> usize {
+        self.iter.len()
+    }
+}
+
 impl<'a, K, V, S> IntoIterator for &'a IndexMap<K, V, S> {
     type Item = (&'a K, &'a V);
     type IntoIter = Iter<'a, K, V>;

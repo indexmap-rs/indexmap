@@ -786,6 +786,12 @@ impl<T> DoubleEndedIterator for Drain<'_, T> {
     double_ended_iterator_methods!(Bucket::key);
 }
 
+impl<T> ExactSizeIterator for Drain<'_, T> {
+    fn len(&self) -> usize {
+        self.iter.len()
+    }
+}
+
 impl<'a, T, S> IntoIterator for &'a IndexSet<T, S> {
     type Item = &'a T;
     type IntoIter = Iter<'a, T>;
