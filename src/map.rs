@@ -1122,6 +1122,13 @@ impl<K, V> ExactSizeIterator for Drain<'_, K, V> {
 
 impl<K, V> FusedIterator for Drain<'_, K, V> {}
 
+impl<K: fmt::Debug, V: fmt::Debug> fmt::Debug for Drain<'_, K, V> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let iter = self.iter.as_slice().iter().map(Bucket::refs);
+        f.debug_list().entries(iter).finish()
+    }
+}
+
 impl<'a, K, V, S> IntoIterator for &'a IndexMap<K, V, S> {
     type Item = (&'a K, &'a V);
     type IntoIter = Iter<'a, K, V>;

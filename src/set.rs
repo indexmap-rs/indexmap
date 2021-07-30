@@ -798,6 +798,13 @@ impl<T> ExactSizeIterator for Drain<'_, T> {
 
 impl<T> FusedIterator for Drain<'_, T> {}
 
+impl<T: fmt::Debug> fmt::Debug for Drain<'_, T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let iter = self.iter.as_slice().iter().map(Bucket::key_ref);
+        f.debug_list().entries(iter).finish()
+    }
+}
+
 impl<'a, T, S> IntoIterator for &'a IndexSet<T, S> {
     type Item = &'a T;
     type IntoIter = Iter<'a, T>;
