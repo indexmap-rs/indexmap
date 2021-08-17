@@ -10,7 +10,7 @@ use crate::vec::{self, Vec};
 use core::cmp::Ordering;
 use core::fmt;
 use core::hash::{BuildHasher, Hash};
-use core::iter::{Chain, FromIterator};
+use core::iter::{Chain, FromIterator, FusedIterator};
 use core::ops::{BitAnd, BitOr, BitXor, Index, RangeBounds, Sub};
 use core::slice;
 
@@ -708,9 +708,7 @@ impl<T> Iterator for IntoIter<T> {
 }
 
 impl<T> DoubleEndedIterator for IntoIter<T> {
-    fn next_back(&mut self) -> Option<Self::Item> {
-        self.iter.next_back().map(Bucket::key)
-    }
+    double_ended_iterator_methods!(Bucket::key);
 }
 
 impl<T> ExactSizeIterator for IntoIter<T> {
@@ -718,6 +716,8 @@ impl<T> ExactSizeIterator for IntoIter<T> {
         self.iter.len()
     }
 }
+
+impl<T> FusedIterator for IntoIter<T> {}
 
 impl<T: fmt::Debug> fmt::Debug for IntoIter<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -744,9 +744,7 @@ impl<'a, T> Iterator for Iter<'a, T> {
 }
 
 impl<T> DoubleEndedIterator for Iter<'_, T> {
-    fn next_back(&mut self) -> Option<Self::Item> {
-        self.iter.next_back().map(Bucket::key_ref)
-    }
+    double_ended_iterator_methods!(Bucket::key_ref);
 }
 
 impl<T> ExactSizeIterator for Iter<'_, T> {
@@ -754,6 +752,8 @@ impl<T> ExactSizeIterator for Iter<'_, T> {
         self.iter.len()
     }
 }
+
+impl<T> FusedIterator for Iter<'_, T> {}
 
 impl<T> Clone for Iter<'_, T> {
     fn clone(&self) -> Self {
@@ -788,6 +788,21 @@ impl<T> Iterator for Drain<'_, T> {
 
 impl<T> DoubleEndedIterator for Drain<'_, T> {
     double_ended_iterator_methods!(Bucket::key);
+}
+
+impl<T> ExactSizeIterator for Drain<'_, T> {
+    fn len(&self) -> usize {
+        self.iter.len()
+    }
+}
+
+impl<T> FusedIterator for Drain<'_, T> {}
+
+impl<T: fmt::Debug> fmt::Debug for Drain<'_, T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let iter = self.iter.as_slice().iter().map(Bucket::key_ref);
+        f.debug_list().entries(iter).finish()
+    }
 }
 
 impl<'a, T, S> IntoIterator for &'a IndexSet<T, S> {
@@ -957,6 +972,13 @@ where
     }
 }
 
+impl<T, S> FusedIterator for Difference<'_, T, S>
+where
+    T: Eq + Hash,
+    S: BuildHasher,
+{
+}
+
 impl<T, S> Clone for Difference<'_, T, S> {
     fn clone(&self) -> Self {
         Difference {
@@ -1024,6 +1046,13 @@ where
     }
 }
 
+impl<T, S> FusedIterator for Intersection<'_, T, S>
+where
+    T: Eq + Hash,
+    S: BuildHasher,
+{
+}
+
 impl<T, S> Clone for Intersection<'_, T, S> {
     fn clone(&self) -> Self {
         Intersection {
@@ -1087,6 +1116,21 @@ where
     fn next_back(&mut self) -> Option<Self::Item> {
         self.iter.next_back()
     }
+
+    fn rfold<B, F>(self, init: B, f: F) -> B
+    where
+        F: FnMut(B, Self::Item) -> B,
+    {
+        self.iter.rfold(init, f)
+    }
+}
+
+impl<T, S1, S2> FusedIterator for SymmetricDifference<'_, T, S1, S2>
+where
+    T: Eq + Hash,
+    S1: BuildHasher,
+    S2: BuildHasher,
+{
 }
 
 impl<T, S1, S2> Clone for SymmetricDifference<'_, T, S1, S2> {
@@ -1150,6 +1194,20 @@ where
     fn next_back(&mut self) -> Option<Self::Item> {
         self.iter.next_back()
     }
+
+    fn rfold<B, F>(self, init: B, f: F) -> B
+    where
+        F: FnMut(B, Self::Item) -> B,
+    {
+        self.iter.rfold(init, f)
+    }
+}
+
+impl<T, S> FusedIterator for Union<'_, T, S>
+where
+    T: Eq + Hash,
+    S: BuildHasher,
+{
 }
 
 impl<T, S> Clone for Union<'_, T, S> {
