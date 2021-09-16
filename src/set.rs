@@ -156,7 +156,7 @@ impl<T, S> IndexSet<T, S> {
     }
 
     /// Create a new set with `hash_builder`
-    pub fn with_hasher(hash_builder: S) -> Self {
+    pub const fn with_hasher(hash_builder: S) -> Self {
         IndexSet {
             map: IndexMap::with_hasher(hash_builder),
         }
