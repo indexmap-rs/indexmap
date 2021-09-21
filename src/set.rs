@@ -159,8 +159,6 @@ impl<T, S> IndexSet<T, S> {
     ///
     /// This function is `const`, so it
     /// can be called in `static` contexts.
-    /// If you need `hash_builder` that can be made in the static context,
-    /// consider [`ahash`](https://docs.rs/ahash/0.7.4/ahash/struct.RandomState.html#method.with_seeds).
     pub const fn with_hasher(hash_builder: S) -> Self {
         IndexSet {
             map: IndexMap::with_hasher(hash_builder),
