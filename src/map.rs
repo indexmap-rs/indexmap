@@ -1345,6 +1345,25 @@ where
     }
 }
 
+#[cfg(has_std)]
+impl<K, V, const N: usize> From<[(K, V); N]> for IndexMap<K, V, RandomState>
+where
+    K: Hash + Eq,
+{
+    /// # Examples
+    ///
+    /// ```
+    /// use indexmap::IndexMap;
+    ///
+    /// let map1 = IndexMap::from([(1, 2), (3, 4)]);
+    /// let map2: IndexMap<_, _> = [(1, 2), (3, 4)].into();
+    /// assert_eq!(map1, map2);
+    /// ```
+    fn from(arr: [(K, V); N]) -> Self {
+        std::array::IntoIter::new(arr).collect()
+    }
+}
+
 impl<K, V, S> Extend<(K, V)> for IndexMap<K, V, S>
 where
     K: Hash + Eq,
@@ -1838,5 +1857,15 @@ mod tests {
         assert!(values.contains(&'a'));
         assert!(values.contains(&'b'));
         assert!(values.contains(&'c'));
+    }
+
+    #[test]
+    fn from_array() {
+        let map = IndexMap::from([(1, 2), (3, 4)]);
+        let mut expected = IndexMap::new();
+        expected.insert(1, 2);
+        expected.insert(3, 4);
+
+        assert_eq!(map, expected)
     }
 }
