@@ -843,7 +843,7 @@ where
     }
 }
 
-#[cfg(has_std)]
+#[cfg(all(has_std, rustc_1_51))]
 impl<T, const N: usize> From<[T; N]> for IndexSet<T, RandomState>
 where
     T: Eq + Hash,
@@ -1731,6 +1731,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(all(has_std, rustc_1_51))]
     fn from_array() {
         let set1 = IndexSet::from([1, 2, 3, 4]);
         let set2: IndexSet<_> = [1, 2, 3, 4].into();

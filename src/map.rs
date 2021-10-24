@@ -1345,7 +1345,7 @@ where
     }
 }
 
-#[cfg(has_std)]
+#[cfg(all(has_std, rustc_1_51))]
 impl<K, V, const N: usize> From<[(K, V); N]> for IndexMap<K, V, RandomState>
 where
     K: Hash + Eq,
@@ -1860,6 +1860,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(all(has_std, rustc_1_51))]
     fn from_array() {
         let map = IndexMap::from([(1, 2), (3, 4)]);
         let mut expected = IndexMap::new();
