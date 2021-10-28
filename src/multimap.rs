@@ -6,7 +6,7 @@ use indexmap::map::Entry;
 use indexmap::IndexMap;
 use indexmap::IndexSet;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 pub struct IndexMultimap<K, V, S = RandomState> {
     inner: IndexMap<K, IndexSet<V, S>, S>,
     len: usize,
