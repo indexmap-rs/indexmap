@@ -1,6 +1,7 @@
 use std::collections::hash_map::RandomState;
 use std::hash::BuildHasher;
 use std::hash::Hash;
+use std::iter::repeat;
 
 use indexmap::map::Entry;
 use indexmap::IndexMap;
@@ -54,6 +55,10 @@ impl<K, V, S> IndexMultimap<K, V, S> {
 
     pub fn get_index(&self, index: usize) -> Option<(&K, &IndexSet<V, S>)> {
         self.inner.get_index(index)
+    }
+
+    pub fn iter(&self) -> impl Iterator<Item = (&K, &V)> {
+        self.inner.iter().flat_map(|(k, v)| repeat(k).zip(v.iter()))
     }
 }
 
