@@ -1,3 +1,4 @@
+use std::borrow::Borrow;
 use std::collections::hash_map::RandomState;
 use std::hash::BuildHasher;
 use std::hash::Hash;
@@ -153,7 +154,7 @@ where
 
     /// Return `true` if an equivalent `key` and `value` combination exists in
     /// the multimap.
-    pub fn contains_entry<Q: ?Sized, R: ?Sized>(&self, key: &Q, value: &R) -> bool
+    pub fn contains<Q: ?Sized, R: ?Sized>(&self, key: &Q, value: &R) -> bool
     where
         Q: Hash + Equivalent<K>,
         R: Hash + Equivalent<V>,
@@ -218,6 +219,43 @@ where
     }
 }
 
+impl<K, V, S> From<IndexMap<K, IndexSet<V, S>, S>> for IndexMultimap<K, V, S>
+where
+    K: Hash + Eq + Copy,
+    V: Hash + Eq + Copy,
+    S: BuildHasher + Default,
+{
+    fn from(mut map: IndexMap<K, IndexSet<V, S>, S>) -> Self {
+        map.retain(|_k, v| !v.is_empty());
+        let len = map.iter().map(|(_k, v)| v.len()).sum();
+        IndexMultimap { inner: map, len }
+    }
+}
+
+impl<K, V1, S1, V2, S2> PartialEq<IndexMultimap<K, V2, S2>> for IndexMultimap<K, V1, S1>
+where
+    K: Hash + Eq,
+    V1: Hash + Eq + PartialEq<V2> + Borrow<V2>,
+    V2: Hash + Eq + PartialEq<V1> + Borrow<V1>,
+    S1: BuildHasher + Default,
+    S2: BuildHasher + Default,
+{
+    fn eq(&self, other: &IndexMultimap<K, V2, S2>) -> bool {
+        if self.len() != other.len() {
+            return false;
+        }
+        self.iter().all(|(key, value)| other.contains(key, value))
+    }
+}
+
+impl<K, V, S> Eq for IndexMultimap<K, V, S>
+where
+    K: Eq + Hash,
+    V: Eq + Hash,
+    S: BuildHasher + Default,
+{
+}
+
 #[cfg(test)]
 mod test {
     use indexmap::indexset;
@@ -239,11 +277,11 @@ mod test {
 
         assert!(map.insert(0, "A".to_string()));
         assert_eq!(1, map.len());
-        assert!(map.contains_entry(&0, &"A".to_string()));
+        assert!(map.contains(&0, &"A".to_string()));
 
         assert!(!map.insert(0, "A".to_string()));
         assert_eq!(1, map.len());
-        assert!(map.contains_entry(&0, &"A".to_string()));
+        assert!(map.contains(&0, &"A".to_string()));
     }
 
     #[test]
@@ -255,14 +293,14 @@ mod test {
         assert!(!map.is_empty());
 
         assert!(map.remove(&0, &"A2".to_string()));
-        assert!(!map.contains_entry(&0, &"A2".to_string()));
+        assert!(!map.contains(&0, &"A2".to_string()));
         assert_eq!(1, map.len());
         assert_eq!(1, map.keys_len());
         assert!(!map.is_empty());
         assert_eq!(Some(&indexset! {"A1".to_string()}), map.get(&0));
 
         assert!(map.remove(&0, &"A1".to_string()));
-        assert!(!map.contains_entry(&0, &"A1".to_string()));
+        assert!(!map.contains(&0, &"A1".to_string()));
         assert_eq!(0, map.len());
         assert_eq!(0, map.keys_len());
         assert!(map.is_empty());
