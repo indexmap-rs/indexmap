@@ -76,7 +76,7 @@ where
     /// Insert the value into the multimap.
     ///
     /// If an equivalent entry already exists in the multimap, it returns
-    /// `false` leaving the original value in the set and without  altering its
+    /// `false` leaving the original value in the set and without altering its
     /// insertion order. Otherwise, it inserts the new entry and returns `true`.
     pub fn insert(&mut self, key: K, value: V) -> bool {
         if self
@@ -108,16 +108,15 @@ where
     /// Remove the entry from the multimap, and return `true` if it was present.
     pub fn remove(&mut self, key: &K, value: &V) -> bool {
         if let Some(set) = self.inner.get_mut(key) {
-            let present = if set.remove(value) {
+            if set.remove(value) {
+                if set.is_empty() {
+                    self.inner.remove(key);
+                }
                 self.len -= 1;
                 true
             } else {
                 false
-            };
-            if set.is_empty() {
-                self.inner.remove(key);
             }
-            present
         } else {
             false
         }
