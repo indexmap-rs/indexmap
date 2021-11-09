@@ -8,6 +8,9 @@ use indexmap::Equivalent;
 use indexmap::IndexMap;
 use indexmap::IndexSet;
 
+/// Index map with multiple (unique) values per key.
+///
+/// Convenience wrapper for `IndexMap<K, IndexSet<V>>`.
 #[derive(Clone, Debug, Default)]
 pub struct IndexMultimap<K, V, S = RandomState> {
     inner: IndexMap<K, IndexSet<V, S>, S>,
