@@ -310,7 +310,7 @@ mod test {
     }
 
     #[test]
-    fn remove_key_returns_entires_value_set_when_present() {
+    fn remove_key_returns_entire_value_set_when_present() {
         let mut map = vec![(0, "A1".to_string()), (0, "A2".to_string())]
             .into_iter()
             .collect::<IndexMultimap<_, _>>();
