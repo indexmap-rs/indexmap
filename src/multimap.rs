@@ -262,6 +262,8 @@ where
 mod test {
     use indexmap::indexset;
 
+    use crate::fastindexmap;
+    use crate::fastindexset;
     use crate::IndexMultimap;
 
     #[test]
@@ -356,5 +358,33 @@ mod test {
         let map = data.into_iter().collect::<IndexMultimap<_, _>>();
         assert_eq!(7, map.len());
         assert_eq!(5, map.keys_len());
+    }
+
+    #[test]
+    fn equality_test_fails_on_different_len() {
+        let a = IndexMultimap::from(fastindexmap! {0 => fastindexset!{ 0 }});
+        let b =
+            IndexMultimap::from(fastindexmap! {0 => fastindexset!{ 0 }, 1 => fastindexset!{ 1 }});
+        assert!(!a.eq(&b))
+    }
+
+    #[test]
+    fn equality_test_fails_on_same_len_but_distinct_elem_count() {
+        let a = IndexMultimap::from(fastindexmap! {0 => fastindexset!{ 0 }});
+        let b = IndexMultimap::from(fastindexmap! {0 => fastindexset!{ 0, 1 }});
+        assert!(!a.eq(&b))
+    }
+
+    #[test]
+    fn equality_test_succeeds_on_inversely_ordered_sets() {
+        let a = IndexMultimap::from(fastindexmap! {
+            0 => fastindexset!{ 1, 0 },
+            1 => fastindexset!{ 2, 3 },
+        });
+        let b = IndexMultimap::from(fastindexmap! {
+            1 => fastindexset!{ 3, 2 },
+            0 => fastindexset!{ 0, 1 },
+        });
+        assert!(a.eq(&b))
     }
 }
