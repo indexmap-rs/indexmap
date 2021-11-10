@@ -387,4 +387,91 @@ mod test {
         });
         assert!(a.eq(&b))
     }
+
+    #[test]
+    fn get_index_returns_correct_value() {
+        let map = IndexMultimap::from(fastindexmap! {
+            0 => fastindexset!{ 1, 2, 3 },
+            2 => fastindexset!{ 2, 3 },
+            1 => fastindexset!{ 3 },
+        });
+
+        assert_eq!(map.get_index(0), Some((&0, &fastindexset! {1,2,3})));
+        assert_eq!(map.get_index(1), Some((&2, &fastindexset! {2,3})));
+        assert_eq!(map.get_index(2), Some((&1, &fastindexset! {3})));
+        assert_eq!(map.get_index(3), None);
+    }
+
+    #[test]
+    fn contains_key_returns_correct_value() {
+        let map = IndexMultimap::from(fastindexmap! {
+            0 => fastindexset!{ 1, 2, 3 },
+            9 => fastindexset!{ 2, 3 },
+            333 => fastindexset!{ 3 },
+        });
+
+        assert!(map.contains_key(&0));
+        assert!(map.contains_key(&9));
+        assert!(map.contains_key(&333));
+
+        assert!(!map.contains_key(&1));
+        assert!(!map.contains_key(&456));
+        assert!(!map.contains_key(&7));
+    }
+
+    #[test]
+    fn extend_works_with_empty_multimap() {
+        let mut actual = IndexMultimap::from(fastindexmap! {});
+        actual.extend(vec![(0, 1), (2, 3)]);
+
+        let expected = IndexMultimap::from(fastindexmap! {
+            0 => fastindexset!{ 1 },
+            2 => fastindexset!{ 3 },
+        });
+        assert_eq!(expected, actual);
+    }
+
+    #[test]
+    fn extend_works_with_non_empty_multimap() {
+        let mut actual = IndexMultimap::from(fastindexmap! {
+            0 => fastindexset!{ 1 },
+            2 => fastindexset!{ 3 },
+        });
+        actual.extend(vec![(0, 2), (2, 3), (4, 5)]);
+        let expected = IndexMultimap::from(fastindexmap! {
+            0 => fastindexset!{ 1, 2 },
+            2 => fastindexset!{ 3 },
+            4 => fastindexset!{ 5 },
+        });
+        assert_eq!(expected, actual);
+    }
+
+    #[test]
+    fn extend_works_with_copy_iter() {
+        let mut actual = IndexMultimap::from(fastindexmap! {});
+        // these values get copied
+        actual.extend(vec![(&0, &1), (&2, &3)]);
+        let expected = IndexMultimap::from(fastindexmap! {
+            0 => fastindexset!{ 1 },
+            2 => fastindexset!{ 3 },
+        });
+        assert_eq!(expected, actual);
+    }
+
+    #[test]
+    fn from_ignores_empty_sets() {
+        let map = IndexMultimap::from(fastindexmap! {
+            0 => fastindexset!{ 1, 2, 3 },
+            9 => fastindexset!{ },
+            333 => fastindexset!{ 3 },
+        });
+
+        assert_eq!(2, map.keys_len());
+        assert_eq!(4, map.len());
+        assert!(!map.contains_key(&9));
+
+        let actual = map.iter().collect::<Vec<_>>();
+        let expected = vec![(&0, &1), (&0, &2), (&0, &3), (&333, &3)];
+        assert_eq!(expected, actual);
+    }
 }
