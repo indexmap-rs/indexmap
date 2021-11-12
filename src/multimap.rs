@@ -1,12 +1,13 @@
+use core::iter::FromIterator;
 use std::borrow::Borrow;
 use std::collections::hash_map::RandomState;
 use std::hash::BuildHasher;
 use std::hash::Hash;
 use std::iter::repeat;
 
-use indexmap::Equivalent;
-use indexmap::IndexMap;
-use indexmap::IndexSet;
+use crate::equivalent::Equivalent;
+use crate::IndexMap;
+use crate::IndexSet;
 
 /// Index map with multiple (unique) values per key.
 ///
@@ -259,12 +260,13 @@ where
 }
 
 #[cfg(test)]
-mod test {
-    use indexmap::indexset;
+mod tests {
+    use alloc::string::ToString;
+    use alloc::vec::Vec;
 
-    use crate::fastindexmap;
-    use crate::fastindexset;
-    use crate::IndexMultimap;
+    use super::*;
+    use crate::indexmap;
+    use crate::indexset;
 
     #[test]
     fn with_capacity_constructs_instance_with_correct_capacity() {
@@ -362,52 +364,51 @@ mod test {
 
     #[test]
     fn equality_test_fails_on_different_len() {
-        let a = IndexMultimap::from(fastindexmap! {0 => fastindexset!{ 0 }});
-        let b =
-            IndexMultimap::from(fastindexmap! {0 => fastindexset!{ 0 }, 1 => fastindexset!{ 1 }});
+        let a = IndexMultimap::from(indexmap! {0 => indexset!{ 0 }});
+        let b = IndexMultimap::from(indexmap! {0 => indexset!{ 0 }, 1 => indexset!{ 1 }});
         assert!(!a.eq(&b))
     }
 
     #[test]
     fn equality_test_fails_on_same_len_but_distinct_elem_count() {
-        let a = IndexMultimap::from(fastindexmap! {0 => fastindexset!{ 0 }});
-        let b = IndexMultimap::from(fastindexmap! {0 => fastindexset!{ 0, 1 }});
+        let a = IndexMultimap::from(indexmap! {0 => indexset!{ 0 }});
+        let b = IndexMultimap::from(indexmap! {0 => indexset!{ 0, 1 }});
         assert!(!a.eq(&b))
     }
 
     #[test]
     fn equality_test_succeeds_on_inversely_ordered_sets() {
-        let a = IndexMultimap::from(fastindexmap! {
-            0 => fastindexset!{ 1, 0 },
-            1 => fastindexset!{ 2, 3 },
+        let a = IndexMultimap::from(indexmap! {
+            0 => indexset!{ 1, 0 },
+            1 => indexset!{ 2, 3 },
         });
-        let b = IndexMultimap::from(fastindexmap! {
-            1 => fastindexset!{ 3, 2 },
-            0 => fastindexset!{ 0, 1 },
+        let b = IndexMultimap::from(indexmap! {
+            1 => indexset!{ 3, 2 },
+            0 => indexset!{ 0, 1 },
         });
         assert!(a.eq(&b))
     }
 
     #[test]
     fn get_index_returns_correct_value() {
-        let map = IndexMultimap::from(fastindexmap! {
-            0 => fastindexset!{ 1, 2, 3 },
-            2 => fastindexset!{ 2, 3 },
-            1 => fastindexset!{ 3 },
+        let map = IndexMultimap::from(indexmap! {
+            0 => indexset!{ 1, 2, 3 },
+            2 => indexset!{ 2, 3 },
+            1 => indexset!{ 3 },
         });
 
-        assert_eq!(map.get_index(0), Some((&0, &fastindexset! {1,2,3})));
-        assert_eq!(map.get_index(1), Some((&2, &fastindexset! {2,3})));
-        assert_eq!(map.get_index(2), Some((&1, &fastindexset! {3})));
+        assert_eq!(map.get_index(0), Some((&0, &indexset! {1,2,3})));
+        assert_eq!(map.get_index(1), Some((&2, &indexset! {2,3})));
+        assert_eq!(map.get_index(2), Some((&1, &indexset! {3})));
         assert_eq!(map.get_index(3), None);
     }
 
     #[test]
     fn contains_key_returns_correct_value() {
-        let map = IndexMultimap::from(fastindexmap! {
-            0 => fastindexset!{ 1, 2, 3 },
-            9 => fastindexset!{ 2, 3 },
-            333 => fastindexset!{ 3 },
+        let map = IndexMultimap::from(indexmap! {
+            0 => indexset!{ 1, 2, 3 },
+            9 => indexset!{ 2, 3 },
+            333 => indexset!{ 3 },
         });
 
         assert!(map.contains_key(&0));
@@ -421,49 +422,49 @@ mod test {
 
     #[test]
     fn extend_works_with_empty_multimap() {
-        let mut actual = IndexMultimap::from(fastindexmap! {});
+        let mut actual = IndexMultimap::from(indexmap! {});
         actual.extend(vec![(0, 1), (2, 3)]);
 
-        let expected = IndexMultimap::from(fastindexmap! {
-            0 => fastindexset!{ 1 },
-            2 => fastindexset!{ 3 },
+        let expected = IndexMultimap::from(indexmap! {
+            0 => indexset!{ 1 },
+            2 => indexset!{ 3 },
         });
         assert_eq!(expected, actual);
     }
 
     #[test]
     fn extend_works_with_non_empty_multimap() {
-        let mut actual = IndexMultimap::from(fastindexmap! {
-            0 => fastindexset!{ 1 },
-            2 => fastindexset!{ 3 },
+        let mut actual = IndexMultimap::from(indexmap! {
+            0 => indexset!{ 1 },
+            2 => indexset!{ 3 },
         });
         actual.extend(vec![(0, 2), (2, 3), (4, 5)]);
-        let expected = IndexMultimap::from(fastindexmap! {
-            0 => fastindexset!{ 1, 2 },
-            2 => fastindexset!{ 3 },
-            4 => fastindexset!{ 5 },
+        let expected = IndexMultimap::from(indexmap! {
+            0 => indexset!{ 1, 2 },
+            2 => indexset!{ 3 },
+            4 => indexset!{ 5 },
         });
         assert_eq!(expected, actual);
     }
 
     #[test]
     fn extend_works_with_copy_iter() {
-        let mut actual = IndexMultimap::from(fastindexmap! {});
+        let mut actual = IndexMultimap::from(indexmap! {});
         // these values get copied
         actual.extend(vec![(&0, &1), (&2, &3)]);
-        let expected = IndexMultimap::from(fastindexmap! {
-            0 => fastindexset!{ 1 },
-            2 => fastindexset!{ 3 },
+        let expected = IndexMultimap::from(indexmap! {
+            0 => indexset!{ 1 },
+            2 => indexset!{ 3 },
         });
         assert_eq!(expected, actual);
     }
 
     #[test]
     fn from_ignores_empty_sets() {
-        let map = IndexMultimap::from(fastindexmap! {
-            0 => fastindexset!{ 1, 2, 3 },
-            9 => fastindexset!{ },
-            333 => fastindexset!{ 3 },
+        let map = IndexMultimap::from(indexmap! {
+            0 => indexset!{ 1, 2, 3 },
+            9 => indexset!{ },
+            333 => indexset!{ 3 },
         });
 
         assert_eq!(2, map.keys_len());

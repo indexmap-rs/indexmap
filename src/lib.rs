@@ -96,6 +96,7 @@ pub mod serde_seq;
 mod util;
 
 pub mod map;
+pub mod multimap;
 pub mod set;
 
 // Placed after `map` and `set` so new `rayon` methods on the types
