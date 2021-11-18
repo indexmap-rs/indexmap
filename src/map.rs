@@ -18,6 +18,8 @@ use ::core::slice::{Iter as SliceIter, IterMut as SliceIterMut};
 
 #[cfg(has_std)]
 use std::collections::hash_map::RandomState;
+#[cfg(not(has_std))]
+use hashbrown::hash_map::DefaultHashBuilder;
 
 use self::core::IndexMapCore;
 use crate::equivalent::Equivalent;
@@ -73,7 +75,7 @@ pub struct IndexMap<K, V, S = RandomState> {
     hash_builder: S,
 }
 #[cfg(not(has_std))]
-pub struct IndexMap<K, V, S> {
+pub struct IndexMap<K, V, S = DefaultHashBuilder> {
     core: IndexMapCore<K, V>,
     hash_builder: S,
 }
@@ -140,7 +142,6 @@ where
     }
 }
 
-#[cfg(has_std)]
 impl<K, V> IndexMap<K, V> {
     /// Create a new map. (Does not allocate.)
     #[inline]

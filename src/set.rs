@@ -5,6 +5,8 @@ pub use crate::rayon::set as rayon;
 
 #[cfg(has_std)]
 use std::collections::hash_map::RandomState;
+#[cfg(not(has_std))]
+use hashbrown::hash_map::DefaultHashBuilder;
 
 use crate::vec::{self, Vec};
 use core::cmp::Ordering;
@@ -64,7 +66,7 @@ pub struct IndexSet<T, S = RandomState> {
     map: IndexMap<T, (), S>,
 }
 #[cfg(not(has_std))]
-pub struct IndexSet<T, S> {
+pub struct IndexSet<T, S = DefaultHashBuilder> {
     map: IndexMap<T, (), S>,
 }
 
@@ -124,7 +126,6 @@ where
     }
 }
 
-#[cfg(has_std)]
 impl<T> IndexSet<T> {
     /// Create a new set. (Does not allocate.)
     pub fn new() -> Self {

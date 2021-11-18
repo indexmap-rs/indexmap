@@ -67,11 +67,13 @@
 //! trigger this. It can be tested by building for a std-less target.
 //!
 //! - Creating maps and sets using [`new`][IndexMap::new] and
-//! [`with_capacity`][IndexMap::with_capacity] is unavailable without `std`.  
-//!   Use methods [`IndexMap::default`][def],
+//!   [`with_capacity`][IndexMap::with_capacity] are available without `std`;
+//!   they use [`hashbrown::hash_map::DefaultHashBuilder`] as their default 
+//!   hash builder.
+//!   You can also use methods [`IndexMap::default`][def],
 //!   [`with_hasher`][IndexMap::with_hasher],
-//!   [`with_capacity_and_hasher`][IndexMap::with_capacity_and_hasher] instead.
-//!   A no-std compatible hasher will be needed as well, for example
+//!   [`with_capacity_and_hasher`][IndexMap::with_capacity_and_hasher],
+//!   optionally with other no_std-compatible hashers, for example
 //!   from the crate `twox-hash`.
 //! - Macros [`indexmap!`] and [`indexset!`] are unavailable without `std`.
 //!
