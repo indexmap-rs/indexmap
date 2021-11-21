@@ -532,6 +532,8 @@ where
 
     /// Remove the last value
     ///
+    /// This preserves the order of the remaining elements.
+    ///
     /// Computes in **O(1)** time (average).
     pub fn pop(&mut self) -> Option<T> {
         self.map.pop().map(|(x, ())| x)
