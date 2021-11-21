@@ -636,6 +636,8 @@ where
 
     /// Remove the last key-value pair
     ///
+    /// This preserves the order of the remaining elements.
+    ///
     /// Computes in **O(1)** time (average).
     pub fn pop(&mut self) -> Option<(K, V)> {
         self.core.pop()
