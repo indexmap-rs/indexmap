@@ -553,7 +553,7 @@ where
 
     /// Sort the set’s values by their default ordering.
     ///
-    /// See `sort_by` for details.
+    /// See [`sort_by`](Self::sort_by) for details.
     pub fn sort(&mut self)
     where
         T: Ord,
@@ -561,17 +561,17 @@ where
         self.map.sort_keys()
     }
 
-    /// Sort the set’s values in place using the comparison function `compare`.
+    /// Sort the set’s values in place using the comparison function `cmp`.
     ///
     /// Computes in **O(n log n)** time and **O(n)** space. The sort is stable.
-    pub fn sort_by<F>(&mut self, mut compare: F)
+    pub fn sort_by<F>(&mut self, mut cmp: F)
     where
         F: FnMut(&T, &T) -> Ordering,
     {
-        self.map.sort_by(move |a, _, b, _| compare(a, b));
+        self.map.sort_by(move |a, _, b, _| cmp(a, b));
     }
 
-    /// Sort the values of the set and return a by value iterator of
+    /// Sort the values of the set and return a by-value iterator of
     /// the values with the result.
     ///
     /// The sort is stable.
@@ -580,7 +580,41 @@ where
         F: FnMut(&T, &T) -> Ordering,
     {
         IntoIter {
-            iter: self.map.sorted_by(move |a, &(), b, &()| cmp(a, b)).iter,
+            iter: self.map.sorted_by(move |a, _, b, _| cmp(a, b)).iter,
+        }
+    }
+
+    /// Sort the set's values by their default ordering.
+    ///
+    /// See [`sort_unstable_by`](Self::sort_unstable_by) for details.
+    pub fn sort_unstable(&mut self)
+    where
+        T: Ord,
+    {
+        self.map.sort_unstable_keys()
+    }
+
+    /// Sort the set's values in place using the comparison funtion `cmp`.
+    ///
+    /// Computes in **O(n log n)** time and **O(n)** space. The sort is unstable.
+    pub fn sort_unstable_by<F>(&mut self, mut cmp: F)
+    where
+        F: FnMut(&T, &T) -> Ordering,
+    {
+        self.map.sort_unstable_by(move |a, _, b, _| cmp(a, b))
+    }
+
+    /// Sort the values of the set and return a by-value iterator of
+    /// the values with the result.
+    pub fn sorted_unstable_by<F>(self, mut cmp: F) -> IntoIter<T>
+    where
+        F: FnMut(&T, &T) -> Ordering,
+    {
+        IntoIter {
+            iter: self
+                .map
+                .sorted_unstable_by(move |a, _, b, _| cmp(a, b))
+                .iter,
         }
     }
 

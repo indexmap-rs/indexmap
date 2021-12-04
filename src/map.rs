@@ -664,18 +664,18 @@ where
 
     /// Sort the map’s key-value pairs by the default ordering of the keys.
     ///
-    /// See `sort_by` for details.
+    /// See [`sort_by`](Self::sort_by) for details.
     pub fn sort_keys(&mut self)
     where
         K: Ord,
     {
-        self.with_entries(|entries| {
-            entries.sort_by(|a, b| Ord::cmp(&a.key, &b.key));
+        self.with_entries(move |entries| {
+            entries.sort_by(move |a, b| K::cmp(&a.key, &b.key));
         });
     }
 
     /// Sort the map’s key-value pairs in place using the comparison
-    /// function `compare`.
+    /// function `cmp`.
     ///
     /// The comparison function receives two key and value pairs to compare (you
     /// can sort by keys or values or their combination as needed).
@@ -691,7 +691,7 @@ where
         });
     }
 
-    /// Sort the key-value pairs of the map and return a by value iterator of
+    /// Sort the key-value pairs of the map and return a by-value iterator of
     /// the key-value pairs with the result.
     ///
     /// The sort is stable.
@@ -701,6 +701,52 @@ where
     {
         let mut entries = self.into_entries();
         entries.sort_by(move |a, b| cmp(&a.key, &a.value, &b.key, &b.value));
+        IntoIter {
+            iter: entries.into_iter(),
+        }
+    }
+
+    /// Sort the map's key-value pairs by the default ordering of the keys, but
+    /// may not preserve the order of equal elements.
+    ///
+    /// See [`sort_unstable_by`](Self::sort_unstable_by) for details.
+    pub fn sort_unstable_keys(&mut self)
+    where
+        K: Ord,
+    {
+        self.with_entries(move |entries| {
+            entries.sort_unstable_by(move |a, b| K::cmp(&a.key, &b.key));
+        });
+    }
+
+    /// Sort the map's key-value pairs in place using the comparison function `cmp`, but
+    /// may not preserve the order of equal elements.
+    ///
+    /// The comparison function receives two key and value pairs to compare (you
+    /// can sort by keys or values or their combination as needed).
+    ///
+    /// Computes in **O(n log n + c)** time and **O(n)** space where *n* is
+    /// the length of the map and *c* is the capacity. The sort is unstable.
+    pub fn sort_unstable_by<F>(&mut self, mut cmp: F)
+    where
+        F: FnMut(&K, &V, &K, &V) -> Ordering,
+    {
+        self.with_entries(move |entries| {
+            entries.sort_unstable_by(move |a, b| cmp(&a.key, &a.value, &b.key, &b.value));
+        });
+    }
+
+    /// Sort the key-value pairs of the map and return a by-value iterator of
+    /// the key-value pairs with the result.
+    ///
+    /// The sort is unstable.
+    #[inline]
+    pub fn sorted_unstable_by<F>(self, mut cmp: F) -> IntoIter<K, V>
+    where
+        F: FnMut(&K, &V, &K, &V) -> Ordering,
+    {
+        let mut entries = self.into_entries();
+        entries.sort_unstable_by(move |a, b| cmp(&a.key, &a.value, &b.key, &b.value));
         IntoIter {
             iter: entries.into_iter(),
         }
