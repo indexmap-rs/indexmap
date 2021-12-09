@@ -103,6 +103,9 @@ pub mod set;
 #[cfg(feature = "rayon")]
 mod rayon;
 
+#[cfg(feature = "rustc-rayon")]
+mod rustc;
+
 pub use crate::equivalent::Equivalent;
 pub use crate::map::IndexMap;
 pub use crate::set::IndexSet;
