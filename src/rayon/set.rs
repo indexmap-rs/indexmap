@@ -452,7 +452,7 @@ where
         });
     }
 
-    /// Sort the set’s values in place and in parallel, using the comparison function `compare`.
+    /// Sort the set’s values in place and in parallel, using the comparison function `cmp`.
     pub fn par_sort_by<F>(&mut self, cmp: F)
     where
         F: Fn(&T, &T) -> Ordering + Sync,
@@ -462,7 +462,7 @@ where
         });
     }
 
-    /// Sort the values of the set in parallel and return a by value parallel iterator of
+    /// Sort the values of the set in parallel and return a by-value parallel iterator of
     /// the values with the result.
     pub fn par_sorted_by<F>(self, cmp: F) -> IntoParIter<T>
     where
@@ -470,6 +470,37 @@ where
     {
         let mut entries = self.into_entries();
         entries.par_sort_by(move |a, b| cmp(&a.key, &b.key));
+        IntoParIter { entries }
+    }
+
+    /// Sort the set's values in parallel by their default ordering.
+    pub fn par_sort_unstable(&mut self)
+    where
+        T: Ord,
+    {
+        self.with_entries(|entries| {
+            entries.par_sort_unstable_by(|a, b| T::cmp(&a.key, &b.key));
+        });
+    }
+
+    /// Sort the set’s values in place and in parallel, using the comparison function `cmp`.
+    pub fn par_sort_unstable_by<F>(&mut self, cmp: F)
+    where
+        F: Fn(&T, &T) -> Ordering + Sync,
+    {
+        self.with_entries(|entries| {
+            entries.par_sort_unstable_by(move |a, b| cmp(&a.key, &b.key));
+        });
+    }
+
+    /// Sort the values of the set in parallel and return a by-value parallel iterator of
+    /// the values with the result.
+    pub fn par_sorted_unstable_by<F>(self, cmp: F) -> IntoParIter<T>
+    where
+        F: Fn(&T, &T) -> Ordering + Sync,
+    {
+        let mut entries = self.into_entries();
+        entries.par_sort_unstable_by(move |a, b| cmp(&a.key, &b.key));
         IntoParIter { entries }
     }
 }
