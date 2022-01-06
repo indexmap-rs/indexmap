@@ -1,4 +1,4 @@
-- 1.7.1
+- 1.8.0
 
   - The new ``IndexMap::into_keys`` and ``IndexMap::into_values`` will consume
     the map into keys or values, respectively, matching Rust 1.54's ``HashMap``
