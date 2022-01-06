@@ -373,6 +373,30 @@ where
         self.core.insert_full(hash, key, value)
     }
 
+    /// Insert a key-value pair into the map without checking
+    /// if the key already exists in the map.
+    ///
+    /// Returns a reference to the key and value just inserted.
+    ///
+    /// This operation is memory-safe.
+    ///
+    /// However, **if a key exists in the map already, the behavior is unspecified**:
+    /// this operation may panic, loop forever, or any following operation with the map
+    /// may panic, loop forever or return arbitrary result. But it won't violate memory safety.
+    ///
+    /// This operation is faster than regular insert because it does not perform
+    /// lookup before insertion.
+    ///
+    /// This operation is useful during initial population of the map.
+    /// For example, when constructing a map from another map, we know
+    /// that keys are unique.
+    pub fn insert_unique_unchecked(&mut self, key: K, value: V) -> (&K, &mut V) {
+        let hash = self.hash(&key);
+        let index = self.core.push(hash, key, value);
+        let entry = &mut self.core.as_entries_mut()[index];
+        (&entry.key, &mut entry.value)
+    }
+
     /// Get the given key’s corresponding entry in the map for insertion and/or
     /// in-place manipulation.
     ///
@@ -1835,5 +1859,17 @@ mod tests {
         assert!(values.contains(&'a'));
         assert!(values.contains(&'b'));
         assert!(values.contains(&'c'));
+    }
+
+    #[test]
+    fn insert_unique_unchecked() {
+        let mut map = IndexMap::new();
+        let (k1, v1) = map.insert_unique_unchecked(10, 11);
+        assert_eq!((&10, &mut 11), (k1, v1));
+        let (k2, v2) = map.insert_unique_unchecked(20, 21);
+        assert_eq!((&20, &mut 21), (k2, v2));
+        assert_eq!(Some(&11), map.get(&10));
+        assert_eq!(Some(&21), map.get(&20));
+        assert_eq!(None, map.get(&30));
     }
 }

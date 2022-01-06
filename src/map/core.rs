@@ -209,7 +209,7 @@ impl<K, V> IndexMapCore<K, V> {
 
     /// Append a key-value pair, *without* checking whether it already exists,
     /// and return the pair's new index.
-    fn push(&mut self, hash: HashValue, key: K, value: V) -> usize {
+    pub(crate) fn push(&mut self, hash: HashValue, key: K, value: V) -> usize {
         let i = self.entries.len();
         self.indices.insert(hash.get(), i, get_hash(&self.entries));
         if i == self.entries.capacity() {
