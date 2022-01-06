@@ -843,6 +843,25 @@ where
     }
 }
 
+#[cfg(all(has_std, rustc_1_51))]
+impl<T, const N: usize> From<[T; N]> for IndexSet<T, RandomState>
+where
+    T: Eq + Hash,
+{
+    /// # Examples
+    ///
+    /// ```
+    /// use indexmap::IndexSet;
+    ///
+    /// let set1 = IndexSet::from([1, 2, 3, 4]);
+    /// let set2: IndexSet<_> = [1, 2, 3, 4].into();
+    /// assert_eq!(set1, set2);
+    /// ```
+    fn from(arr: [T; N]) -> Self {
+        std::array::IntoIter::new(arr).collect()
+    }
+}
+
 impl<T, S> Extend<T> for IndexSet<T, S>
 where
     T: Hash + Eq,
@@ -1709,5 +1728,14 @@ mod tests {
         assert_eq!(&set_d ^ &set_c, &set_a | &(&set_d - &set_b));
         assert_eq!(&set_c - &set_d, set_a);
         assert_eq!(&set_d - &set_c, &set_d - &set_b);
+    }
+
+    #[test]
+    #[cfg(all(has_std, rustc_1_51))]
+    fn from_array() {
+        let set1 = IndexSet::from([1, 2, 3, 4]);
+        let set2: IndexSet<_> = [1, 2, 3, 4].into();
+
+        assert_eq!(set1, set2);
     }
 }
