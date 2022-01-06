@@ -596,7 +596,7 @@ where
 
     /// Sort the set's values in place using the comparison funtion `cmp`.
     ///
-    /// Computes in **O(n log n)** time and **O(n)** space. The sort is unstable.
+    /// Computes in **O(n log n)** time. The sort is unstable.
     pub fn sort_unstable_by<F>(&mut self, mut cmp: F)
     where
         F: FnMut(&T, &T) -> Ordering,

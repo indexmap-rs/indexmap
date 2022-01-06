@@ -725,7 +725,7 @@ where
     /// The comparison function receives two key and value pairs to compare (you
     /// can sort by keys or values or their combination as needed).
     ///
-    /// Computes in **O(n log n + c)** time and **O(n)** space where *n* is
+    /// Computes in **O(n log n + c)** time where *n* is
     /// the length of the map and *c* is the capacity. The sort is unstable.
     pub fn sort_unstable_by<F>(&mut self, mut cmp: F)
     where
