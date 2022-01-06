@@ -348,7 +348,7 @@ where
     }
 
     /// Sort the map’s key-value pairs in place and in parallel, using the comparison
-    /// function `compare`.
+    /// function `cmp`.
     ///
     /// The comparison function receives two key and value pairs to compare (you
     /// can sort by keys or values or their combination as needed).
@@ -361,7 +361,7 @@ where
         });
     }
 
-    /// Sort the key-value pairs of the map in parallel and return a by value parallel
+    /// Sort the key-value pairs of the map in parallel and return a by-value parallel
     /// iterator of the key-value pairs with the result.
     pub fn par_sorted_by<F>(self, cmp: F) -> IntoParIter<K, V>
     where
@@ -369,6 +369,41 @@ where
     {
         let mut entries = self.into_entries();
         entries.par_sort_by(move |a, b| cmp(&a.key, &a.value, &b.key, &b.value));
+        IntoParIter { entries }
+    }
+
+    /// Sort the map's key-value pairs in parallel, by the default ordering of the keys.
+    pub fn par_sort_unstable_keys(&mut self)
+    where
+        K: Ord,
+    {
+        self.with_entries(|entries| {
+            entries.par_sort_unstable_by(|a, b| K::cmp(&a.key, &b.key));
+        });
+    }
+
+    /// Sort the map's key-value pairs in place and in parallel, using the comparison
+    /// function `cmp`.
+    ///
+    /// The comparison function receives two key and value pairs to compare (you
+    /// can sort by keys or values or their combination as needed).
+    pub fn par_sort_unstable_by<F>(&mut self, cmp: F)
+    where
+        F: Fn(&K, &V, &K, &V) -> Ordering + Sync,
+    {
+        self.with_entries(|entries| {
+            entries.par_sort_unstable_by(move |a, b| cmp(&a.key, &a.value, &b.key, &b.value));
+        });
+    }
+
+    /// Sort the key-value pairs of the map in parallel and return a by-value parallel
+    /// iterator of the key-value pairs with the result.
+    pub fn par_sorted_unstable_by<F>(self, cmp: F) -> IntoParIter<K, V>
+    where
+        F: Fn(&K, &V, &K, &V) -> Ordering + Sync,
+    {
+        let mut entries = self.into_entries();
+        entries.par_sort_unstable_by(move |a, b| cmp(&a.key, &a.value, &b.key, &b.value));
         IntoParIter { entries }
     }
 }
