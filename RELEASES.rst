@@ -1,3 +1,33 @@
+- 1.7.1
+
+  - The new ``IndexMap::into_keys`` and ``IndexMap::into_values`` will consume
+    the map into keys or values, respectively, matching Rust 1.54's ``HashMap``
+    methods, by @taiki-e in PR 195_.
+
+  - More of the iterator types implement ``Debug``, ``ExactSizeIterator``, and
+    ``FusedIterator``, by @cuviper in PR 196_.
+
+  - ``IndexMap`` and ``IndexSet`` now implement rayon's ``ParallelDrainRange``,
+    by @cuviper in PR 197_.
+
+  - ``IndexMap::with_hasher`` and ``IndexSet::with_hasher`` are now ``const``
+    functions, allowing static maps and sets, by @mwillsey in PR 203_.
+
+  - ``IndexMap`` and ``IndexSet`` now implement ``From`` for arrays, matching
+    Rust 1.56's implementation for ``HashMap``, by @rouge8 in PR 205_.
+
+  - ``IndexMap`` and ``IndexSet`` now have methods ``sort_unstable_keys``,
+    ``sort_unstable_by``, ``sorted_unstable_by``, and ``par_*`` equivalents,
+    which sort in-place without preserving the order of equal items, by
+    @bhgomes in PR 211_.
+
+.. _195: https://github.com/bluss/indexmap/pull/195
+.. _196: https://github.com/bluss/indexmap/pull/196
+.. _197: https://github.com/bluss/indexmap/pull/197
+.. _203: https://github.com/bluss/indexmap/pull/203
+.. _205: https://github.com/bluss/indexmap/pull/205
+.. _211: https://github.com/bluss/indexmap/pull/211
+
 - 1.7.0
 
   - **MSRV**: Rust 1.49 or later is now required.
