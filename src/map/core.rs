@@ -166,6 +166,19 @@ impl<K, V> IndexMapCore<K, V> {
         self.entries.drain(range)
     }
 
+    #[cfg(feature = "rayon")]
+    pub(crate) fn par_drain<R>(&mut self, range: R) -> rayon::vec::Drain<'_, Bucket<K, V>>
+    where
+        K: Send,
+        V: Send,
+        R: RangeBounds<usize>,
+    {
+        use rayon::iter::ParallelDrainRange;
+        let range = simplify_range(range, self.entries.len());
+        self.erase_indices(range.start, range.end);
+        self.entries.par_drain(range)
+    }
+
     pub(crate) fn split_off(&mut self, at: usize) -> Self {
         assert!(at <= self.entries.len());
         self.erase_indices(at, self.entries.len());

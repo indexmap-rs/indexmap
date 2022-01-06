@@ -69,12 +69,12 @@ pub use self::core::{Entry, OccupiedEntry, VacantEntry};
 /// ```
 #[cfg(has_std)]
 pub struct IndexMap<K, V, S = RandomState> {
-    core: IndexMapCore<K, V>,
+    pub(crate) core: IndexMapCore<K, V>,
     hash_builder: S,
 }
 #[cfg(not(has_std))]
 pub struct IndexMap<K, V, S> {
-    core: IndexMapCore<K, V>,
+    pub(crate) core: IndexMapCore<K, V>,
     hash_builder: S,
 }
 

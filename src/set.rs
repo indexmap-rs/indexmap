@@ -61,11 +61,11 @@ type Bucket<T> = super::Bucket<T, ()>;
 /// ```
 #[cfg(has_std)]
 pub struct IndexSet<T, S = RandomState> {
-    map: IndexMap<T, (), S>,
+    pub(crate) map: IndexMap<T, (), S>,
 }
 #[cfg(not(has_std))]
 pub struct IndexSet<T, S> {
-    map: IndexMap<T, (), S>,
+    pub(crate) map: IndexMap<T, (), S>,
 }
 
 impl<T, S> Clone for IndexSet<T, S>

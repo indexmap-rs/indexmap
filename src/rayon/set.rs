@@ -13,6 +13,7 @@ use crate::vec::Vec;
 use core::cmp::Ordering;
 use core::fmt;
 use core::hash::{BuildHasher, Hash};
+use core::ops::RangeBounds;
 
 use crate::Entries;
 use crate::IndexSet;
@@ -109,6 +110,42 @@ impl<'a, T: Sync> ParallelIterator for ParIter<'a, T> {
 
 impl<T: Sync> IndexedParallelIterator for ParIter<'_, T> {
     indexed_parallel_iterator_methods!(Bucket::key_ref);
+}
+
+/// Requires crate feature `"rayon"`.
+impl<'a, T, S> ParallelDrainRange<usize> for &'a mut IndexSet<T, S>
+where
+    T: Send,
+{
+    type Item = T;
+    type Iter = ParDrain<'a, T>;
+
+    fn par_drain<R: RangeBounds<usize>>(self, range: R) -> Self::Iter {
+        ParDrain {
+            entries: self.map.core.par_drain(range),
+        }
+    }
+}
+
+/// A parallel draining iterator over the items of a `IndexSet`.
+///
+/// This `struct` is created by the [`par_drain`] method on [`IndexSet`]
+/// (provided by rayon's `ParallelDrainRange` trait). See its documentation for more.
+///
+/// [`par_drain`]: ../struct.IndexSet.html#method.par_drain
+/// [`IndexSet`]: ../struct.IndexSet.html
+pub struct ParDrain<'a, T: Send> {
+    entries: rayon::vec::Drain<'a, Bucket<T>>,
+}
+
+impl<T: Send> ParallelIterator for ParDrain<'_, T> {
+    type Item = T;
+
+    parallel_iterator_methods!(Bucket::key);
+}
+
+impl<T: Send> IndexedParallelIterator for ParDrain<'_, T> {
+    indexed_parallel_iterator_methods!(Bucket::key);
 }
 
 /// Parallel iterator methods and other parallel methods.
