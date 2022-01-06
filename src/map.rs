@@ -166,10 +166,7 @@ impl<K, V, S> IndexMap<K, V, S> {
     #[inline]
     pub fn with_capacity_and_hasher(n: usize, hash_builder: S) -> Self {
         if n == 0 {
-            IndexMap {
-                core: IndexMapCore::new(),
-                hash_builder,
-            }
+            Self::with_hasher(hash_builder)
         } else {
             IndexMap {
                 core: IndexMapCore::with_capacity(n),
@@ -178,9 +175,15 @@ impl<K, V, S> IndexMap<K, V, S> {
         }
     }
 
-    /// Create a new map with `hash_builder`
-    pub fn with_hasher(hash_builder: S) -> Self {
-        Self::with_capacity_and_hasher(0, hash_builder)
+    /// Create a new map with `hash_builder`.
+    ///
+    /// This function is `const`, so it
+    /// can be called in `static` contexts.
+    pub const fn with_hasher(hash_builder: S) -> Self {
+        IndexMap {
+            core: IndexMapCore::new(),
+            hash_builder,
+        }
     }
 
     /// Computes in **O(1)** time.

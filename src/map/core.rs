@@ -120,7 +120,7 @@ impl<K, V> Entries for IndexMapCore<K, V> {
 
 impl<K, V> IndexMapCore<K, V> {
     #[inline]
-    pub(crate) fn new() -> Self {
+    pub(crate) const fn new() -> Self {
         IndexMapCore {
             indices: RawTable::new(),
             entries: Vec::new(),
