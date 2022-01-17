@@ -6,8 +6,6 @@ use quickcheck::Arbitrary;
 use quickcheck::Gen;
 use quickcheck::TestResult;
 
-use rand::Rng;
-
 use fnv::FnvHasher;
 use std::hash::{BuildHasher, BuildHasherDefault};
 type FnvBuilder = BuildHasherDefault<FnvHasher>;
@@ -96,7 +94,8 @@ quickcheck! {
         true
     }
 
-    fn with_cap(cap: usize) -> bool {
+    fn with_cap(template: Vec<()>) -> bool {
+        let cap = template.len();
         let map: IndexMap<u8, u8> = IndexMap::with_capacity(cap);
         println!("wish: {}, got: {} (diff: {})", cap, map.capacity(), map.capacity() as isize - cap as isize);
         map.capacity() >= cap
@@ -199,8 +198,8 @@ where
     K: Arbitrary,
     V: Arbitrary,
 {
-    fn arbitrary<G: Gen>(g: &mut G) -> Self {
-        match g.gen::<u32>() % 4 {
+    fn arbitrary(g: &mut Gen) -> Self {
+        match u32::arbitrary(g) % 4 {
             0 => Add(K::arbitrary(g), V::arbitrary(g)),
             1 => AddEntry(K::arbitrary(g), V::arbitrary(g)),
             2 => Remove(K::arbitrary(g)),
@@ -452,12 +451,12 @@ impl Deref for Alpha {
 const ALPHABET: &[u8] = b"abcdefghijklmnopqrstuvwxyz";
 
 impl Arbitrary for Alpha {
-    fn arbitrary<G: Gen>(g: &mut G) -> Self {
-        let len = g.next_u32() % g.size() as u32;
+    fn arbitrary(g: &mut Gen) -> Self {
+        let len = usize::arbitrary(g) % g.size();
         let len = min(len, 16);
         Alpha(
             (0..len)
-                .map(|_| ALPHABET[g.next_u32() as usize % ALPHABET.len()] as char)
+                .map(|_| ALPHABET[usize::arbitrary(g) % ALPHABET.len()] as char)
                 .collect(),
         )
     }
@@ -482,8 +481,8 @@ impl<T> Arbitrary for Large<Vec<T>>
 where
     T: Arbitrary,
 {
-    fn arbitrary<G: Gen>(g: &mut G) -> Self {
-        let len = g.next_u32() % (g.size() * 10) as u32;
+    fn arbitrary(g: &mut Gen) -> Self {
+        let len = usize::arbitrary(g) % (g.size() * 10);
         Large((0..len).map(|_| T::arbitrary(g)).collect())
     }
 

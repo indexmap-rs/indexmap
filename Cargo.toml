@@ -46,9 +46,9 @@ default-features = false
 features = ["raw"]
 
 [dev-dependencies]
-itertools = "0.9"
-rand = {version = "0.7", features = ["small_rng"] }
-quickcheck = { version = "0.9", default-features = false }
+itertools = "0.10"
+rand = {version = "0.8", features = ["small_rng"] }
+quickcheck = { version = "1.0", default-features = false }
 fnv = "1.0"
 lazy_static = "1.3"
 fxhash = "0.2.1"
