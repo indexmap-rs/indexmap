@@ -18,7 +18,7 @@ use core::mem::replace;
 use core::ops::RangeBounds;
 
 use crate::equivalent::Equivalent;
-use crate::util::{enumerate, simplify_range};
+use crate::util::simplify_range;
 use crate::{Bucket, Entries, HashValue};
 
 /// Core of the map that does not depend on S
@@ -185,9 +185,7 @@ impl<K, V> IndexMapCore<K, V> {
         let entries = self.entries.split_off(at);
 
         let mut indices = RawTable::with_capacity(entries.len());
-        for (i, entry) in enumerate(&entries) {
-            indices.insert_no_grow(entry.hash.get(), i);
-        }
+        raw::insert_bulk_no_grow(&mut indices, &entries);
         Self { indices, entries }
     }
 
@@ -372,15 +370,9 @@ impl<K, V> IndexMapCore<K, V> {
             // Reinsert everything, as there are few kept indices
             self.indices.clear();
 
-            // Reinsert stable indices
-            for (i, entry) in enumerate(start_entries) {
-                self.indices.insert_no_grow(entry.hash.get(), i);
-            }
-
-            // Reinsert shifted indices
-            for (i, entry) in (start..).zip(shifted_entries) {
-                self.indices.insert_no_grow(entry.hash.get(), i);
-            }
+            // Reinsert stable indices, then shifted indices
+            raw::insert_bulk_no_grow(&mut self.indices, start_entries);
+            raw::insert_bulk_no_grow(&mut self.indices, shifted_entries);
         } else if erased + shifted < half_capacity {
             // Find each affected index, as there are few to adjust
 
@@ -429,11 +421,7 @@ impl<K, V> IndexMapCore<K, V> {
 
     fn rebuild_hash_table(&mut self) {
         self.indices.clear();
-        debug_assert!(self.indices.capacity() >= self.entries.len());
-        for (i, entry) in enumerate(&self.entries) {
-            // We should never have to reallocate, so there's no need for a real hasher.
-            self.indices.insert_no_grow(entry.hash.get(), i);
-        }
+        raw::insert_bulk_no_grow(&mut self.indices, &self.entries);
     }
 
     pub(crate) fn reverse(&mut self) {

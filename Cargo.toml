@@ -25,7 +25,7 @@ rayon = { version = "1.4.1", optional = true }
 rustc-rayon = { version = "0.4", optional = true }
 
 [dependencies.hashbrown]
-version = "0.11"
+version = "0.12"
 default-features = false
 features = ["raw"]
 
