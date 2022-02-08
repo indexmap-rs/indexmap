@@ -30,8 +30,6 @@ jobs:
             features:
           - rust: nightly
             bench: test build benchmarks
-          - rust: nightly
-            features: test_low_transition_point
 
     steps:
       - uses: actions/checkout@v2

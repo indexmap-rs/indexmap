@@ -47,7 +47,6 @@ serde-1 = ["serde"]
 std = []
 
 # for testing only, of course
-test_low_transition_point = []
 test_debug = []
 
 [profile.bench]
