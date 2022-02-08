@@ -40,9 +40,6 @@ fxhash = "0.2.1"
 serde_derive = "1.0"
 
 [features]
-# Serialization with serde 1.0
-serde-1 = ["serde"]
-
 # Force the use of `std`, bypassing target detection.
 std = []
 
@@ -57,7 +54,7 @@ no-dev-version = true
 tag-name = "{{version}}"
 
 [package.metadata.docs.rs]
-features = ["serde-1", "rayon"]
+features = ["serde", "rayon"]
 
 [workspace]
 members = ["test-nostd", "test-serde"]

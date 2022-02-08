@@ -5,6 +5,6 @@ publish = false
 edition = "2021"
 
 [dependencies]
-indexmap = { path = "..", features = ["serde-1"] }
+indexmap = { path = "..", features = ["serde"] }
 
 [dev-dependencies]
