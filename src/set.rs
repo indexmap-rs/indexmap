@@ -1366,7 +1366,6 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::util::enumerate;
     use std::string::String;
 
     #[test]
@@ -1395,7 +1394,7 @@ mod tests {
         let not_present = [1, 3, 6, 9, 10];
         let mut set = IndexSet::with_capacity(insert.len());
 
-        for (i, &elt) in enumerate(&insert) {
+        for (i, &elt) in insert.iter().enumerate() {
             assert_eq!(set.len(), i);
             set.insert(elt);
             assert_eq!(set.len(), i + 1);
@@ -1414,7 +1413,7 @@ mod tests {
         let present = vec![1, 6, 2];
         let mut set = IndexSet::with_capacity(insert.len());
 
-        for (i, &elt) in enumerate(&insert) {
+        for (i, &elt) in insert.iter().enumerate() {
             assert_eq!(set.len(), i);
             let (index, success) = set.insert_full(elt);
             assert!(success);
@@ -1501,7 +1500,7 @@ mod tests {
         let not_present = [1, 3, 6, 9, 10];
         let mut set = IndexSet::with_capacity(replace.len());
 
-        for (i, &elt) in enumerate(&replace) {
+        for (i, &elt) in replace.iter().enumerate() {
             assert_eq!(set.len(), i);
             set.replace(elt);
             assert_eq!(set.len(), i + 1);
@@ -1520,7 +1519,7 @@ mod tests {
         let present = vec![1, 6, 2];
         let mut set = IndexSet::with_capacity(replace.len());
 
-        for (i, &elt) in enumerate(&replace) {
+        for (i, &elt) in replace.iter().enumerate() {
             assert_eq!(set.len(), i);
             let (index, replaced) = set.replace_full(elt);
             assert!(replaced.is_none());
@@ -1607,7 +1606,7 @@ mod tests {
         let not_present = [1, 3, 6, 9, 10];
         let mut set = IndexSet::with_capacity(insert.len());
 
-        for (i, &elt) in enumerate(&insert) {
+        for (i, &elt) in insert.iter().enumerate() {
             assert_eq!(set.len(), i);
             set.insert(elt);
             assert_eq!(set.len(), i + 1);

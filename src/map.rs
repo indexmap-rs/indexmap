@@ -1495,7 +1495,6 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::util::enumerate;
     use std::string::String;
 
     #[test]
@@ -1524,7 +1523,7 @@ mod tests {
         let not_present = [1, 3, 6, 9, 10];
         let mut map = IndexMap::with_capacity(insert.len());
 
-        for (i, &elt) in enumerate(&insert) {
+        for (i, &elt) in insert.iter().enumerate() {
             assert_eq!(map.len(), i);
             map.insert(elt, elt);
             assert_eq!(map.len(), i + 1);
@@ -1544,7 +1543,7 @@ mod tests {
         let present = vec![1, 6, 2];
         let mut map = IndexMap::with_capacity(insert.len());
 
-        for (i, &elt) in enumerate(&insert) {
+        for (i, &elt) in insert.iter().enumerate() {
             assert_eq!(map.len(), i);
             let (index, existing) = map.insert_full(elt, elt);
             assert_eq!(existing, None);
@@ -1611,7 +1610,7 @@ mod tests {
         let not_present = [1, 3, 6, 9, 10];
         let mut map = IndexMap::with_capacity(insert.len());
 
-        for (i, &elt) in enumerate(&insert) {
+        for (i, &elt) in insert.iter().enumerate() {
             assert_eq!(map.len(), i);
             map.insert(elt, elt);
             assert_eq!(map.len(), i + 1);
