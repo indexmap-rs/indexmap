@@ -61,13 +61,12 @@
 //!
 //! ## No Standard Library Targets
 //!
-//! This crate supports being built without `std`, requiring
-//! `alloc` instead. This is enabled automatically when it is detected that
-//! `std` is not available. There is no crate feature to enable/disable to
-//! trigger this. It can be tested by building for a std-less target.
+//! This crate supports being built without `std`, requiring `alloc` instead.
+//! This is chosen by disabling the default "std" cargo feature, by adding
+//! `default-features = false` to your dependency specification.
 //!
 //! - Creating maps and sets using [`new`][IndexMap::new] and
-//! [`with_capacity`][IndexMap::with_capacity] is unavailable without `std`.  
+//! [`with_capacity`][IndexMap::with_capacity] is unavailable without `std`.
 //!   Use methods [`IndexMap::default`][def],
 //!   [`with_hasher`][IndexMap::with_hasher],
 //!   [`with_capacity_and_hasher`][IndexMap::with_capacity_and_hasher] instead.
@@ -79,7 +78,7 @@
 
 extern crate alloc;
 
-#[cfg(has_std)]
+#[cfg(feature = "std")]
 #[macro_use]
 extern crate std;
 

@@ -16,7 +16,7 @@ use ::core::iter::{FromIterator, FusedIterator};
 use ::core::ops::{Index, IndexMut, RangeBounds};
 use ::core::slice::{Iter as SliceIter, IterMut as SliceIterMut};
 
-#[cfg(has_std)]
+#[cfg(feature = "std")]
 use std::collections::hash_map::RandomState;
 
 use self::core::IndexMapCore;
@@ -67,12 +67,12 @@ pub use self::core::{Entry, OccupiedEntry, VacantEntry};
 /// assert_eq!(letters[&'u'], 1);
 /// assert_eq!(letters.get(&'y'), None);
 /// ```
-#[cfg(has_std)]
+#[cfg(feature = "std")]
 pub struct IndexMap<K, V, S = RandomState> {
     pub(crate) core: IndexMapCore<K, V>,
     hash_builder: S,
 }
-#[cfg(not(has_std))]
+#[cfg(not(feature = "std"))]
 pub struct IndexMap<K, V, S> {
     pub(crate) core: IndexMapCore<K, V>,
     hash_builder: S,
@@ -140,7 +140,7 @@ where
     }
 }
 
-#[cfg(has_std)]
+#[cfg(feature = "std")]
 impl<K, V> IndexMap<K, V> {
     /// Create a new map. (Does not allocate.)
     #[inline]
@@ -1391,7 +1391,7 @@ where
     }
 }
 
-#[cfg(all(has_std, rustc_1_51))]
+#[cfg(feature = "std")]
 impl<K, V, const N: usize> From<[(K, V); N]> for IndexMap<K, V, RandomState>
 where
     K: Hash + Eq,
@@ -1906,7 +1906,7 @@ mod tests {
     }
 
     #[test]
-    #[cfg(all(has_std, rustc_1_51))]
+    #[cfg(feature = "std")]
     fn from_array() {
         let map = IndexMap::from([(1, 2), (3, 4)]);
         let mut expected = IndexMap::new();

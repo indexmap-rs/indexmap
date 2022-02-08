@@ -3,7 +3,7 @@
 #[cfg(feature = "rayon")]
 pub use crate::rayon::set as rayon;
 
-#[cfg(has_std)]
+#[cfg(feature = "std")]
 use std::collections::hash_map::RandomState;
 
 use crate::vec::{self, Vec};
@@ -59,11 +59,11 @@ type Bucket<T> = super::Bucket<T, ()>;
 /// assert!(letters.contains(&'u'));
 /// assert!(!letters.contains(&'y'));
 /// ```
-#[cfg(has_std)]
+#[cfg(feature = "std")]
 pub struct IndexSet<T, S = RandomState> {
     pub(crate) map: IndexMap<T, (), S>,
 }
-#[cfg(not(has_std))]
+#[cfg(not(feature = "std"))]
 pub struct IndexSet<T, S> {
     pub(crate) map: IndexMap<T, (), S>,
 }
@@ -124,7 +124,7 @@ where
     }
 }
 
-#[cfg(has_std)]
+#[cfg(feature = "std")]
 impl<T> IndexSet<T> {
     /// Create a new set. (Does not allocate.)
     pub fn new() -> Self {
@@ -888,7 +888,7 @@ where
     }
 }
 
-#[cfg(all(has_std, rustc_1_51))]
+#[cfg(feature = "std")]
 impl<T, const N: usize> From<[T; N]> for IndexSet<T, RandomState>
 where
     T: Eq + Hash,
@@ -1882,7 +1882,7 @@ mod tests {
     }
 
     #[test]
-    #[cfg(all(has_std, rustc_1_51))]
+    #[cfg(feature = "std")]
     fn from_array() {
         let set1 = IndexSet::from([1, 2, 3, 4]);
         let set2: IndexSet<_> = [1, 2, 3, 4].into();
