@@ -12,7 +12,7 @@ use crate::vec::{self, Vec};
 use ::core::cmp::Ordering;
 use ::core::fmt;
 use ::core::hash::{BuildHasher, Hash, Hasher};
-use ::core::iter::{FromIterator, FusedIterator};
+use ::core::iter::FusedIterator;
 use ::core::ops::{Index, IndexMut, RangeBounds};
 use ::core::slice::{Iter as SliceIter, IterMut as SliceIterMut};
 
@@ -1406,7 +1406,7 @@ where
     /// assert_eq!(map1, map2);
     /// ```
     fn from(arr: [(K, V); N]) -> Self {
-        std::array::IntoIter::new(arr).collect()
+        Self::from_iter(arr)
     }
 }
 
