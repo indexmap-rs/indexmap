@@ -479,21 +479,6 @@ where
         }
     }
 
-    pub(crate) fn get_full_mut2_impl<Q: ?Sized>(
-        &mut self,
-        key: &Q,
-    ) -> Option<(usize, &mut K, &mut V)>
-    where
-        Q: Hash + Equivalent<K>,
-    {
-        if let Some(i) = self.get_index_of(key) {
-            let entry = &mut self.as_entries_mut()[i];
-            Some((i, &mut entry.key, &mut entry.value))
-        } else {
-            None
-        }
-    }
-
     /// Remove the key-value pair equivalent to `key` and return
     /// its value.
     ///
@@ -780,8 +765,8 @@ impl<K, V, S> IndexMap<K, V, S> {
     /// Valid indices are *0 <= index < self.len()*
     ///
     /// Computes in **O(1)** time.
-    pub fn get_index_mut(&mut self, index: usize) -> Option<(&mut K, &mut V)> {
-        self.as_entries_mut().get_mut(index).map(Bucket::muts)
+    pub fn get_index_mut(&mut self, index: usize) -> Option<(&K, &mut V)> {
+        self.as_entries_mut().get_mut(index).map(Bucket::ref_mut)
     }
 
     /// Get the first key-value pair
