@@ -201,10 +201,10 @@ impl<K, V> IndexMapCore<K, V> {
         self.entries.reserve_exact(additional);
     }
 
-    /// Shrink the capacity of the map as much as possible.
-    pub(crate) fn shrink_to_fit(&mut self) {
-        self.indices.shrink_to(0, get_hash(&self.entries));
-        self.entries.shrink_to_fit();
+    /// Shrink the capacity of the map with a lower bound
+    pub(crate) fn shrink_to(&mut self, min_capacity: usize) {
+        self.indices.shrink_to(min_capacity, get_hash(&self.entries));
+        self.entries.shrink_to(min_capacity);
     }
 
     /// Remove the last key-value pair

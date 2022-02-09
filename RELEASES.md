@@ -15,7 +15,9 @@
     `MutableKeys::get_index_mut2` to access the former behavior.
 
   - `IterMut` and `ValuesMut` now implement `Debug`.
-    
+
+  - The new `IndexMap::shrink_to` and `IndexSet::shrink_to` methods shrink
+    the capacity with a lower bound.
 
 - 1.8.1
 
