@@ -72,7 +72,7 @@ jobs:
           target: ${{ matrix.target }}
       - name: Tests
         run: |
-          cargo build -vv --target=${{ matrix.target }}
+          cargo build -vv --target=${{ matrix.target }} --no-default-features
           cargo build -v -p test-nostd --target=${{ matrix.target }}
 
   clippy:
