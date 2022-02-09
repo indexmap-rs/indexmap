@@ -332,7 +332,14 @@ where
     ///
     /// Computes in **O(n)** time.
     pub fn shrink_to_fit(&mut self) {
-        self.core.shrink_to_fit();
+        self.core.shrink_to(0);
+    }
+
+    /// Shrink the capacity of the map with a lower limit.
+    ///
+    /// Computes in **O(n)** time.
+    pub fn shrink_to(&mut self, min_capacity: usize) {
+        self.core.shrink_to(min_capacity);
     }
 
     fn hash<Q: ?Sized + Hash>(&self, key: &Q) -> HashValue {

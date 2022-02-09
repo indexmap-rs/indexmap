@@ -268,6 +268,13 @@ where
         self.map.shrink_to_fit();
     }
 
+    /// Shrink the capacity of the set with a lower limit.
+    ///
+    /// Computes in **O(n)** time.
+    pub fn shrink_to(&mut self, min_capacity: usize) {
+        self.map.shrink_to(min_capacity);
+    }
+
     /// Insert the value into the set.
     ///
     /// If an equivalent item already exists in the set, it returns
