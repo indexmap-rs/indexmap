@@ -4,6 +4,8 @@
 
   - The `hashbrown` dependency has been updated to version 0.12.
 
+  - `IterMut` and `ValuesMut` now implement `Debug`.
+
 - 1.8.2
 
   - Bump the `rustc-rayon` dependency, for compiler use only.

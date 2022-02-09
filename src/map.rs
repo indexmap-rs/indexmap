@@ -999,7 +999,12 @@ impl<K, V> ExactSizeIterator for ValuesMut<'_, K, V> {
 
 impl<K, V> FusedIterator for ValuesMut<'_, K, V> {}
 
-// TODO: `impl Debug for ValuesMut` once we have MSRV 1.53 for `slice::IterMut::as_slice`
+impl<K, V: fmt::Debug> fmt::Debug for ValuesMut<'_, K, V> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let iter = self.iter.as_slice().iter().map(Bucket::value_ref);
+        f.debug_list().entries(iter).finish()
+    }
+}
 
 /// An owning iterator over the values of a `IndexMap`.
 ///
@@ -1110,7 +1115,12 @@ impl<K, V> ExactSizeIterator for IterMut<'_, K, V> {
 
 impl<K, V> FusedIterator for IterMut<'_, K, V> {}
 
-// TODO: `impl Debug for IterMut` once we have MSRV 1.53 for `slice::IterMut::as_slice`
+impl<K: fmt::Debug, V: fmt::Debug> fmt::Debug for IterMut<'_, K, V> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let iter = self.iter.as_slice().iter().map(Bucket::refs);
+        f.debug_list().entries(iter).finish()
+    }
+}
 
 /// An owning iterator over the entries of a `IndexMap`.
 ///
