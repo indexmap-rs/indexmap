@@ -2,8 +2,6 @@ use core::hash::{BuildHasher, Hash};
 
 use super::{Bucket, Entries, Equivalent, IndexMap};
 
-pub struct PrivateMarker {}
-
 /// Opt-in mutable access to keys.
 ///
 /// These methods expose `&mut K`, mutable references to the key as it is stored
@@ -16,7 +14,9 @@ pub struct PrivateMarker {}
 /// implementing PartialEq, Eq, or Hash incorrectly would be).
 ///
 /// `use` this trait to enable its methods for `IndexMap`.
-pub trait MutableKeys {
+///
+/// This trait is sealed and cannot be implemented for types outside this crate.
+pub trait MutableKeys: private::Sealed {
     type Key;
     type Value;
 
@@ -47,12 +47,6 @@ pub trait MutableKeys {
     fn retain2<F>(&mut self, keep: F)
     where
         F: FnMut(&mut Self::Key, &mut Self::Value) -> bool;
-
-    #[doc(hidden)]
-    /// This method is not useful in itself – it is there to “seal” the trait
-    /// for external implementation, so that we can add methods without
-    /// causing breaking changes.
-    fn __private_marker(&self) -> PrivateMarker;
 }
 
 /// Opt-in mutable access to keys.
@@ -88,8 +82,10 @@ where
     {
         self.retain_mut(keep)
     }
+}
 
-    fn __private_marker(&self) -> PrivateMarker {
-        PrivateMarker {}
-    }
+mod private {
+    pub trait Sealed {}
+
+    impl<K, V, S> Sealed for super::IndexMap<K, V, S> {}
 }
