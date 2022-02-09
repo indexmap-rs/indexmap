@@ -1,3 +1,20 @@
+- 2.0.0 (pending)
+
+  - **MSRV**: Rust 1.56 or later is now required.
+
+  - The `hashbrown` dependency has been updated to version 0.12.
+
+  - The `"std"` feature is no longer auto-detected. It is included in the
+    default feature set, or else can be enabled like any other Cargo feature.
+
+  - The `"serde-1"` feature has been removed, leaving just the optional
+    `"serde"` dependency to be enabled like a feature itself.
+
+  - `IndexMap::get_index_mut` now returns `Option<(&K, &mut V)>`, changing
+    the key part from `&mut K` to `&K`. There is also a new alternative
+    `MutableKeys::get_index_mut2` to access the former behavior.
+    
+
 - 1.8.1
 
   - The new `IndexSet::replace_full` will return the index of the item along
