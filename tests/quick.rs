@@ -1,9 +1,9 @@
 use indexmap::{IndexMap, IndexSet};
 use itertools::Itertools;
 
-use quickcheck::quickcheck;
 use quickcheck::Arbitrary;
 use quickcheck::Gen;
+use quickcheck::QuickCheck;
 use quickcheck::TestResult;
 
 use fnv::FnvHasher;
@@ -39,7 +39,42 @@ where
     IndexMap::from_iter(iter.into_iter().copied().map(|k| (k, ())))
 }
 
-quickcheck! {
+// Helper macro to allow us to use smaller quickcheck limits under miri.
+macro_rules! quickcheck_limit {
+    (@as_items $($i:item)*) => ($($i)*);
+    {
+        $(
+            $(#[$m:meta])*
+            fn $fn_name:ident($($arg_name:ident : $arg_ty:ty),*) -> $ret:ty {
+                $($code:tt)*
+            }
+        )*
+    } => (
+        quickcheck::quickcheck! {
+            @as_items
+            $(
+                #[test]
+                $(#[$m])*
+                fn $fn_name() {
+                    fn prop($($arg_name: $arg_ty),*) -> $ret {
+                        $($code)*
+                    }
+                    let mut quickcheck = QuickCheck::new();
+                    if cfg!(miri) {
+                        quickcheck = quickcheck
+                            .gen(Gen::new(10))
+                            .tests(10)
+                            .max_tests(100);
+                    }
+
+                    quickcheck.quickcheck(prop as fn($($arg_ty),*) -> $ret);
+                }
+            )*
+        }
+    )
+}
+
+quickcheck_limit! {
     fn contains(insert: Vec<u32>) -> bool {
         let mut map = IndexMap::new();
         for &key in &insert {
@@ -260,7 +295,7 @@ where
     true
 }
 
-quickcheck! {
+quickcheck_limit! {
     fn operations_i8(ops: Large<Vec<Op<i8, i8>>>) -> bool {
         let mut map = IndexMap::new();
         let mut reference = HashMap::new();

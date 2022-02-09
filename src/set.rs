@@ -1426,7 +1426,7 @@ mod tests {
 
         let mut values = vec![];
         values.extend(0..16);
-        values.extend(128..267);
+        values.extend(if cfg!(miri) { 32..64 } else { 128..267 });
 
         for &i in &values {
             let old_set = set.clone();

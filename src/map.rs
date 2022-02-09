@@ -1567,7 +1567,7 @@ mod tests {
 
         let mut keys = vec![];
         keys.extend(0..16);
-        keys.extend(128..267);
+        keys.extend(if cfg!(miri) { 32..64 } else { 128..267 });
 
         for &i in &keys {
             let old_map = map.clone();
