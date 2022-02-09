@@ -13,6 +13,8 @@
   - `IndexMap::get_index_mut` now returns `Option<(&K, &mut V)>`, changing
     the key part from `&mut K` to `&K`. There is also a new alternative
     `MutableKeys::get_index_mut2` to access the former behavior.
+
+  - `IterMut` and `ValuesMut` now implement `Debug`.
     
 
 - 1.8.1
