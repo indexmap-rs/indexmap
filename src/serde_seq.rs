@@ -18,7 +18,7 @@
 //! }
 //! ```
 //!
-//! Requires crate feature `"serde"` or `"serde-1"`
+//! Requires crate feature `"serde"`
 
 use serde::de::{Deserialize, Deserializer, SeqAccess, Visitor};
 use serde::ser::{Serialize, Serializer};
@@ -44,7 +44,7 @@ use crate::IndexMap;
 /// }
 /// ```
 ///
-/// Requires crate feature `"serde"` or `"serde-1"`
+/// Requires crate feature `"serde"`
 pub fn serialize<K, V, S, T>(map: &IndexMap<K, V, S>, serializer: T) -> Result<T::Ok, T::Error>
 where
     K: Serialize + Hash + Eq,
@@ -100,7 +100,7 @@ where
 /// }
 /// ```
 ///
-/// Requires crate feature `"serde"` or `"serde-1"`
+/// Requires crate feature `"serde"`
 pub fn deserialize<'de, D, K, V, S>(deserializer: D) -> Result<IndexMap<K, V, S>, D::Error>
 where
     D: Deserializer<'de>,

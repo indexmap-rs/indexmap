@@ -16,7 +16,7 @@ jobs:
     strategy:
       matrix:
         include:
-          - rust: 1.49.0 # MSRV
+          - rust: 1.56.0 # MSRV
             features:
           - rust: stable
             features: serde
@@ -30,8 +30,6 @@ jobs:
             features:
           - rust: nightly
             bench: test build benchmarks
-          - rust: nightly
-            features: test_low_transition_point
 
     steps:
       - uses: actions/checkout@v2
@@ -59,7 +57,7 @@ jobs:
     strategy:
       matrix:
         include:
-          - rust: 1.49.0
+          - rust: 1.56.0
             target: thumbv6m-none-eabi
           - rust: stable
             target: thumbv6m-none-eabi
@@ -74,7 +72,7 @@ jobs:
           target: ${{ matrix.target }}
       - name: Tests
         run: |
-          cargo build -vv --target=${{ matrix.target }}
+          cargo build -vv --target=${{ matrix.target }} --no-default-features
           cargo build -v -p test-nostd --target=${{ matrix.target }}
 
   clippy:

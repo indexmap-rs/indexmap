@@ -1,4 +1,4 @@
-#[cfg(has_std)]
+#[cfg(feature = "std")]
 #[macro_export]
 /// Create an `IndexMap` from a list of key-value pairs
 ///
@@ -35,7 +35,7 @@ macro_rules! indexmap {
     };
 }
 
-#[cfg(has_std)]
+#[cfg(feature = "std")]
 #[macro_export]
 /// Create an `IndexSet` from a list of values
 ///

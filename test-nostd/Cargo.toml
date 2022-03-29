@@ -1,11 +1,12 @@
 [package]
 name = "test-nostd"
 version = "0.1.0"
-authors = ["bluss"]
 publish = false
-edition = "2018"
+edition = "2021"
 
-[dependencies]
-indexmap = { path = "..", features = ["serde-1"] }
+[dependencies.indexmap]
+path = ".."
+default-features = false
+features = ["serde"]
 
 [dev-dependencies]

@@ -2,7 +2,6 @@
 
 use core::hash::BuildHasherDefault;
 use core::hash::Hasher;
-use core::iter::FromIterator;
 
 use indexmap::IndexMap;
 use indexmap::IndexSet;

@@ -3,14 +3,14 @@
 #[cfg(feature = "rayon")]
 pub use crate::rayon::set as rayon;
 
-#[cfg(has_std)]
+#[cfg(feature = "std")]
 use std::collections::hash_map::RandomState;
 
 use crate::vec::{self, Vec};
 use core::cmp::Ordering;
 use core::fmt;
 use core::hash::{BuildHasher, Hash};
-use core::iter::{Chain, FromIterator, FusedIterator};
+use core::iter::{Chain, FusedIterator};
 use core::ops::{BitAnd, BitOr, BitXor, Index, RangeBounds, Sub};
 use core::slice;
 
@@ -59,11 +59,11 @@ type Bucket<T> = super::Bucket<T, ()>;
 /// assert!(letters.contains(&'u'));
 /// assert!(!letters.contains(&'y'));
 /// ```
-#[cfg(has_std)]
+#[cfg(feature = "std")]
 pub struct IndexSet<T, S = RandomState> {
     pub(crate) map: IndexMap<T, (), S>,
 }
-#[cfg(not(has_std))]
+#[cfg(not(feature = "std"))]
 pub struct IndexSet<T, S> {
     pub(crate) map: IndexMap<T, (), S>,
 }
@@ -124,7 +124,7 @@ where
     }
 }
 
-#[cfg(has_std)]
+#[cfg(feature = "std")]
 impl<T> IndexSet<T> {
     /// Create a new set. (Does not allocate.)
     pub fn new() -> Self {
@@ -266,6 +266,13 @@ where
     /// Computes in **O(n)** time.
     pub fn shrink_to_fit(&mut self) {
         self.map.shrink_to_fit();
+    }
+
+    /// Shrink the capacity of the set with a lower limit.
+    ///
+    /// Computes in **O(n)** time.
+    pub fn shrink_to(&mut self, min_capacity: usize) {
+        self.map.shrink_to(min_capacity);
     }
 
     /// Insert the value into the set.
@@ -888,7 +895,7 @@ where
     }
 }
 
-#[cfg(all(has_std, rustc_1_51))]
+#[cfg(feature = "std")]
 impl<T, const N: usize> From<[T; N]> for IndexSet<T, RandomState>
 where
     T: Eq + Hash,
@@ -903,7 +910,7 @@ where
     /// assert_eq!(set1, set2);
     /// ```
     fn from(arr: [T; N]) -> Self {
-        std::array::IntoIter::new(arr).collect()
+        Self::from_iter(arr)
     }
 }
 
@@ -1366,7 +1373,6 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::util::enumerate;
     use std::string::String;
 
     #[test]
@@ -1395,7 +1401,7 @@ mod tests {
         let not_present = [1, 3, 6, 9, 10];
         let mut set = IndexSet::with_capacity(insert.len());
 
-        for (i, &elt) in enumerate(&insert) {
+        for (i, &elt) in insert.iter().enumerate() {
             assert_eq!(set.len(), i);
             set.insert(elt);
             assert_eq!(set.len(), i + 1);
@@ -1414,7 +1420,7 @@ mod tests {
         let present = vec![1, 6, 2];
         let mut set = IndexSet::with_capacity(insert.len());
 
-        for (i, &elt) in enumerate(&insert) {
+        for (i, &elt) in insert.iter().enumerate() {
             assert_eq!(set.len(), i);
             let (index, success) = set.insert_full(elt);
             assert!(success);
@@ -1501,7 +1507,7 @@ mod tests {
         let not_present = [1, 3, 6, 9, 10];
         let mut set = IndexSet::with_capacity(replace.len());
 
-        for (i, &elt) in enumerate(&replace) {
+        for (i, &elt) in replace.iter().enumerate() {
             assert_eq!(set.len(), i);
             set.replace(elt);
             assert_eq!(set.len(), i + 1);
@@ -1520,7 +1526,7 @@ mod tests {
         let present = vec![1, 6, 2];
         let mut set = IndexSet::with_capacity(replace.len());
 
-        for (i, &elt) in enumerate(&replace) {
+        for (i, &elt) in replace.iter().enumerate() {
             assert_eq!(set.len(), i);
             let (index, replaced) = set.replace_full(elt);
             assert!(replaced.is_none());
@@ -1607,7 +1613,7 @@ mod tests {
         let not_present = [1, 3, 6, 9, 10];
         let mut set = IndexSet::with_capacity(insert.len());
 
-        for (i, &elt) in enumerate(&insert) {
+        for (i, &elt) in insert.iter().enumerate() {
             assert_eq!(set.len(), i);
             set.insert(elt);
             assert_eq!(set.len(), i + 1);
@@ -1882,7 +1888,7 @@ mod tests {
     }
 
     #[test]
-    #[cfg(all(has_std, rustc_1_51))]
+    #[cfg(feature = "std")]
     fn from_array() {
         let set1 = IndexSet::from([1, 2, 3, 4]);
         let set2: IndexSet<_> = [1, 2, 3, 4].into();

@@ -12,11 +12,11 @@ use crate::vec::{self, Vec};
 use ::core::cmp::Ordering;
 use ::core::fmt;
 use ::core::hash::{BuildHasher, Hash, Hasher};
-use ::core::iter::{FromIterator, FusedIterator};
+use ::core::iter::FusedIterator;
 use ::core::ops::{Index, IndexMut, RangeBounds};
 use ::core::slice::{Iter as SliceIter, IterMut as SliceIterMut};
 
-#[cfg(has_std)]
+#[cfg(feature = "std")]
 use std::collections::hash_map::RandomState;
 
 use self::core::IndexMapCore;
@@ -67,12 +67,12 @@ pub use self::core::{Entry, OccupiedEntry, VacantEntry};
 /// assert_eq!(letters[&'u'], 1);
 /// assert_eq!(letters.get(&'y'), None);
 /// ```
-#[cfg(has_std)]
+#[cfg(feature = "std")]
 pub struct IndexMap<K, V, S = RandomState> {
     pub(crate) core: IndexMapCore<K, V>,
     hash_builder: S,
 }
-#[cfg(not(has_std))]
+#[cfg(not(feature = "std"))]
 pub struct IndexMap<K, V, S> {
     pub(crate) core: IndexMapCore<K, V>,
     hash_builder: S,
@@ -140,7 +140,7 @@ where
     }
 }
 
-#[cfg(has_std)]
+#[cfg(feature = "std")]
 impl<K, V> IndexMap<K, V> {
     /// Create a new map. (Does not allocate.)
     #[inline]
@@ -332,7 +332,14 @@ where
     ///
     /// Computes in **O(n)** time.
     pub fn shrink_to_fit(&mut self) {
-        self.core.shrink_to_fit();
+        self.core.shrink_to(0);
+    }
+
+    /// Shrink the capacity of the map with a lower limit.
+    ///
+    /// Computes in **O(n)** time.
+    pub fn shrink_to(&mut self, min_capacity: usize) {
+        self.core.shrink_to(min_capacity);
     }
 
     fn hash<Q: ?Sized + Hash>(&self, key: &Q) -> HashValue {
@@ -474,21 +481,6 @@ where
         if let Some(i) = self.get_index_of(key) {
             let entry = &mut self.as_entries_mut()[i];
             Some((i, &entry.key, &mut entry.value))
-        } else {
-            None
-        }
-    }
-
-    pub(crate) fn get_full_mut2_impl<Q: ?Sized>(
-        &mut self,
-        key: &Q,
-    ) -> Option<(usize, &mut K, &mut V)>
-    where
-        Q: Hash + Equivalent<K>,
-    {
-        if let Some(i) = self.get_index_of(key) {
-            let entry = &mut self.as_entries_mut()[i];
-            Some((i, &mut entry.key, &mut entry.value))
         } else {
             None
         }
@@ -780,8 +772,8 @@ impl<K, V, S> IndexMap<K, V, S> {
     /// Valid indices are *0 <= index < self.len()*
     ///
     /// Computes in **O(1)** time.
-    pub fn get_index_mut(&mut self, index: usize) -> Option<(&mut K, &mut V)> {
-        self.as_entries_mut().get_mut(index).map(Bucket::muts)
+    pub fn get_index_mut(&mut self, index: usize) -> Option<(&K, &mut V)> {
+        self.as_entries_mut().get_mut(index).map(Bucket::ref_mut)
     }
 
     /// Get the first key-value pair
@@ -999,7 +991,12 @@ impl<K, V> ExactSizeIterator for ValuesMut<'_, K, V> {
 
 impl<K, V> FusedIterator for ValuesMut<'_, K, V> {}
 
-// TODO: `impl Debug for ValuesMut` once we have MSRV 1.53 for `slice::IterMut::as_slice`
+impl<K, V: fmt::Debug> fmt::Debug for ValuesMut<'_, K, V> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let iter = self.iter.as_slice().iter().map(Bucket::value_ref);
+        f.debug_list().entries(iter).finish()
+    }
+}
 
 /// An owning iterator over the values of a `IndexMap`.
 ///
@@ -1110,7 +1107,12 @@ impl<K, V> ExactSizeIterator for IterMut<'_, K, V> {
 
 impl<K, V> FusedIterator for IterMut<'_, K, V> {}
 
-// TODO: `impl Debug for IterMut` once we have MSRV 1.53 for `slice::IterMut::as_slice`
+impl<K: fmt::Debug, V: fmt::Debug> fmt::Debug for IterMut<'_, K, V> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let iter = self.iter.as_slice().iter().map(Bucket::refs);
+        f.debug_list().entries(iter).finish()
+    }
+}
 
 /// An owning iterator over the entries of a `IndexMap`.
 ///
@@ -1391,7 +1393,7 @@ where
     }
 }
 
-#[cfg(all(has_std, rustc_1_51))]
+#[cfg(feature = "std")]
 impl<K, V, const N: usize> From<[(K, V); N]> for IndexMap<K, V, RandomState>
 where
     K: Hash + Eq,
@@ -1406,7 +1408,7 @@ where
     /// assert_eq!(map1, map2);
     /// ```
     fn from(arr: [(K, V); N]) -> Self {
-        std::array::IntoIter::new(arr).collect()
+        Self::from_iter(arr)
     }
 }
 
@@ -1495,7 +1497,6 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::util::enumerate;
     use std::string::String;
 
     #[test]
@@ -1524,7 +1525,7 @@ mod tests {
         let not_present = [1, 3, 6, 9, 10];
         let mut map = IndexMap::with_capacity(insert.len());
 
-        for (i, &elt) in enumerate(&insert) {
+        for (i, &elt) in insert.iter().enumerate() {
             assert_eq!(map.len(), i);
             map.insert(elt, elt);
             assert_eq!(map.len(), i + 1);
@@ -1544,7 +1545,7 @@ mod tests {
         let present = vec![1, 6, 2];
         let mut map = IndexMap::with_capacity(insert.len());
 
-        for (i, &elt) in enumerate(&insert) {
+        for (i, &elt) in insert.iter().enumerate() {
             assert_eq!(map.len(), i);
             let (index, existing) = map.insert_full(elt, elt);
             assert_eq!(existing, None);
@@ -1611,7 +1612,7 @@ mod tests {
         let not_present = [1, 3, 6, 9, 10];
         let mut map = IndexMap::with_capacity(insert.len());
 
-        for (i, &elt) in enumerate(&insert) {
+        for (i, &elt) in insert.iter().enumerate() {
             assert_eq!(map.len(), i);
             map.insert(elt, elt);
             assert_eq!(map.len(), i + 1);
@@ -1906,7 +1907,7 @@ mod tests {
     }
 
     #[test]
-    #[cfg(all(has_std, rustc_1_51))]
+    #[cfg(feature = "std")]
     fn from_array() {
         let map = IndexMap::from([(1, 2), (3, 4)]);
         let mut expected = IndexMap::new();

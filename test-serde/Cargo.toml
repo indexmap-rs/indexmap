@@ -1,14 +1,13 @@
 [package]
 name = "test-serde"
 version = "0.1.0"
-authors = ["bluss"]
 publish = false
-edition = "2018"
+edition = "2021"
 
 [dependencies]
 
 [dev-dependencies]
 fnv = "1.0"
-indexmap = { path = "..", features = ["serde-1"] }
+indexmap = { path = "..", features = ["serde"] }
 serde = { version = "1.0.99", features = ["derive"] }
 serde_test = "1.0.99"
