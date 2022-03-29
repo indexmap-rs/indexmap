@@ -396,18 +396,29 @@ where
     }
 
     /// Adds a value to the set, replacing the existing value, if any, that is
-    /// equal to the given one. Returns the replaced value.
+    /// equal to the given one, without altering its insertion order. Returns
+    /// the replaced value.
     ///
     /// Computes in **O(1)** time (average).
     pub fn replace(&mut self, value: T) -> Option<T> {
+        self.replace_full(value).1
+    }
+
+    /// Adds a value to the set, replacing the existing value, if any, that is
+    /// equal to the given one, without altering its insertion order. Returns
+    /// the index of the item and its replaced value.
+    ///
+    /// Computes in **O(1)** time (average).
+    pub fn replace_full(&mut self, value: T) -> (usize, Option<T>) {
         use super::map::Entry::*;
 
         match self.map.entry(value) {
             Vacant(e) => {
+                let index = e.index();
                 e.insert(());
-                None
+                (index, None)
             }
-            Occupied(e) => Some(e.replace_key()),
+            Occupied(e) => (e.index(), Some(e.replace_key())),
         }
     }
 
@@ -1480,6 +1491,112 @@ mod tests {
             assert_eq!(a, b);
         }
         for (i, v) in (0..insert.len()).zip(set.iter()) {
+            assert_eq!(set.get_index(i).unwrap(), v);
+        }
+    }
+
+    #[test]
+    fn replace() {
+        let replace = [0, 4, 2, 12, 8, 7, 11, 5];
+        let not_present = [1, 3, 6, 9, 10];
+        let mut set = IndexSet::with_capacity(replace.len());
+
+        for (i, &elt) in enumerate(&replace) {
+            assert_eq!(set.len(), i);
+            set.replace(elt);
+            assert_eq!(set.len(), i + 1);
+            assert_eq!(set.get(&elt), Some(&elt));
+        }
+        println!("{:?}", set);
+
+        for &elt in &not_present {
+            assert!(set.get(&elt).is_none());
+        }
+    }
+
+    #[test]
+    fn replace_full() {
+        let replace = vec![9, 2, 7, 1, 4, 6, 13];
+        let present = vec![1, 6, 2];
+        let mut set = IndexSet::with_capacity(replace.len());
+
+        for (i, &elt) in enumerate(&replace) {
+            assert_eq!(set.len(), i);
+            let (index, replaced) = set.replace_full(elt);
+            assert!(replaced.is_none());
+            assert_eq!(Some(index), set.get_full(&elt).map(|x| x.0));
+            assert_eq!(set.len(), i + 1);
+        }
+
+        let len = set.len();
+        for &elt in &present {
+            let (index, replaced) = set.replace_full(elt);
+            assert_eq!(Some(elt), replaced);
+            assert_eq!(Some(index), set.get_full(&elt).map(|x| x.0));
+            assert_eq!(set.len(), len);
+        }
+    }
+
+    #[test]
+    fn replace_2() {
+        let mut set = IndexSet::with_capacity(16);
+
+        let mut values = vec![];
+        values.extend(0..16);
+        values.extend(if cfg!(miri) { 32..64 } else { 128..267 });
+
+        for &i in &values {
+            let old_set = set.clone();
+            set.replace(i);
+            for value in old_set.iter() {
+                if set.get(value).is_none() {
+                    println!("old_set: {:?}", old_set);
+                    println!("set: {:?}", set);
+                    panic!("did not find {} in set", value);
+                }
+            }
+        }
+
+        for &i in &values {
+            assert!(set.get(&i).is_some(), "did not find {}", i);
+        }
+    }
+
+    #[test]
+    fn replace_dup() {
+        let mut elements = vec![0, 2, 4, 6, 8];
+        let mut set: IndexSet<u8> = elements.drain(..).collect();
+        {
+            let (i, v) = set.get_full(&0).unwrap();
+            assert_eq!(set.len(), 5);
+            assert_eq!(i, 0);
+            assert_eq!(*v, 0);
+        }
+        {
+            let replaced = set.replace(0);
+            let (i, v) = set.get_full(&0).unwrap();
+            assert_eq!(set.len(), 5);
+            assert_eq!(replaced, Some(0));
+            assert_eq!(i, 0);
+            assert_eq!(*v, 0);
+        }
+    }
+
+    #[test]
+    fn replace_order() {
+        let replace = [0, 4, 2, 12, 8, 7, 11, 5, 3, 17, 19, 22, 23];
+        let mut set = IndexSet::new();
+
+        for &elt in &replace {
+            set.replace(elt);
+        }
+
+        assert_eq!(set.iter().count(), set.len());
+        assert_eq!(set.iter().count(), replace.len());
+        for (a, b) in replace.iter().zip(set.iter()) {
+            assert_eq!(a, b);
+        }
+        for (i, v) in (0..replace.len()).zip(set.iter()) {
             assert_eq!(set.get_index(i).unwrap(), v);
         }
     }

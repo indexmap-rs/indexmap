@@ -1,3 +1,10 @@
+- 1.8.1
+
+  - The new ``IndexSet::replace_full`` will return the index of the item along
+    with the replaced value, if any, by @zakcutner in PR 222_.
+
+.. _222: https://github.com/bluss/indexmap/pull/222
+
 - 1.8.0
 
   - The new ``IndexMap::into_keys`` and ``IndexMap::into_values`` will consume
