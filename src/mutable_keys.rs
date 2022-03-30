@@ -35,7 +35,7 @@ pub trait MutableKeys<Idx = usize>: private::Sealed {
     /// Valid indices are *0 <= index < self.len()*
     ///
     /// Computes in **O(1)** time.
-    fn get_index_mut2(&mut self, index: usize) -> Option<(&mut Self::Key, &mut Self::Value)>;
+    fn get_index_mut2(&mut self, index: Idx) -> Option<(&mut Self::Key, &mut Self::Value)>;
 
     /// Scan through each key-value pair in the map and keep those where the
     /// closure `keep` returns `true`.
@@ -73,8 +73,10 @@ where
         }
     }
 
-    fn get_index_mut2(&mut self, index: usize) -> Option<(&mut K, &mut V)> {
-        self.as_entries_mut().get_mut(index).map(Bucket::muts)
+    fn get_index_mut2(&mut self, index: Idx) -> Option<(&mut K, &mut V)> {
+        self.as_entries_mut()
+            .get_mut(index.into_usize())
+            .map(Bucket::muts)
     }
 
     fn retain2<F>(&mut self, keep: F)
