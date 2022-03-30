@@ -669,9 +669,10 @@ impl<T, S, Idx: Indexable> IndexSet<T, S, Idx> {
     ///
     /// Computes in **O(1)** time.
     pub fn get_index(&self, index: Idx) -> Option<&T> {
-        self.as_entries()
-            .get(index.into_usize())
-            .map(Bucket::key_ref)
+        if let Ok(index_usize) = index.try_into() {
+            return self.as_entries().get(index_usize).map(Bucket::key_ref);
+        }
+        None
     }
 
     /// Get the first value

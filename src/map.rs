@@ -772,7 +772,10 @@ impl<K, V, S, Idx: Indexable> IndexMap<K, V, S, Idx> {
     ///
     /// Computes in **O(1)** time.
     pub fn get_index(&self, index: Idx) -> Option<(&K, &V)> {
-        self.as_entries().get(index.into_usize()).map(Bucket::refs)
+        if let Ok(index_usize) = index.try_into() {
+            return self.as_entries().get(index_usize).map(Bucket::refs);
+        }
+        None
     }
 
     /// Get a key-value pair by index
@@ -781,9 +784,13 @@ impl<K, V, S, Idx: Indexable> IndexMap<K, V, S, Idx> {
     ///
     /// Computes in **O(1)** time.
     pub fn get_index_mut(&mut self, index: Idx) -> Option<(&K, &mut V)> {
-        self.as_entries_mut()
-            .get_mut(index.into_usize())
-            .map(Bucket::ref_mut)
+        if let Ok(index_usize) = index.try_into() {
+            return self
+                .as_entries_mut()
+                .get_mut(index_usize)
+                .map(Bucket::ref_mut);
+        }
+        None
     }
 
     /// Get the first key-value pair

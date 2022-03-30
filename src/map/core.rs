@@ -281,13 +281,13 @@ impl<K, V, Idx: Indexable> IndexMapCore<K, V, Idx> {
 
     /// Remove an entry by shifting all entries that follow it
     pub(crate) fn shift_remove_index(&mut self, index: Idx) -> Option<(K, V)> {
-        match self.entries.get(index.into_usize()) {
-            Some(entry) => {
+        if let Ok(index_usize) = index.try_into() {
+            if let Some(entry) = self.entries.get(index_usize) {
                 erase_index(&mut self.indices, entry.hash, index);
-                Some(self.shift_remove_finish(index))
+                return Some(self.shift_remove_finish(index));
             }
-            None => None,
         }
+        None
     }
 
     /// Remove an entry by shifting all entries that follow it
@@ -339,13 +339,13 @@ impl<K, V, Idx: Indexable> IndexMapCore<K, V, Idx> {
 
     /// Remove an entry by swapping it with the last
     pub(crate) fn swap_remove_index(&mut self, index: Idx) -> Option<(K, V)> {
-        match self.entries.get(index.into_usize()) {
-            Some(entry) => {
+        if let Ok(index_usize) = index.try_into() {
+            if let Some(entry) = self.entries.get(index_usize) {
                 erase_index(&mut self.indices, entry.hash, index);
-                Some(self.swap_remove_finish(index))
+                return Some(self.swap_remove_finish(index));
             }
-            None => None,
         }
+        None
     }
 
     /// Finish removing an entry by swapping it with the last

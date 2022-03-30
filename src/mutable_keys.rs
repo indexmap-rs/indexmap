@@ -74,9 +74,10 @@ where
     }
 
     fn get_index_mut2(&mut self, index: Idx) -> Option<(&mut K, &mut V)> {
-        self.as_entries_mut()
-            .get_mut(index.into_usize())
-            .map(Bucket::muts)
+        if let Ok(index_usize) = index.try_into() {
+            return self.as_entries_mut().get_mut(index_usize).map(Bucket::muts);
+        }
+        None
     }
 
     fn retain2<F>(&mut self, keep: F)
