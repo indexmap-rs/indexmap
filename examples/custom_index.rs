@@ -24,17 +24,19 @@ pub struct FancyIndex(u16);
 pub type FancyMap<K, V> = IndexMap<K, V, FxBuildHasher, FancyIndex>;
 pub type FancySet<T> = IndexSet<T, FxBuildHasher, FancyIndex>;
 
-impl Indexable for FancyIndex {
-    fn try_from_usize(i: usize) -> Option<Self> {
-        if i <= usize::from(u16::max_value()) {
-            Some(FancyIndex(i as u16))
-        } else {
-            None
-        }
-    }
+impl Indexable for FancyIndex {}
 
-    fn try_into_usize(self) -> Option<usize> {
-        Some(self.0.into())
+impl TryFrom<usize> for FancyIndex {
+    type Error = <u16 as TryFrom<usize>>::Error;
+
+    fn try_from(value: usize) -> Result<Self, Self::Error> {
+        Ok(FancyIndex(u16::try_from(value)?))
+    }
+}
+
+impl From<FancyIndex> for usize {
+    fn from(i: FancyIndex) -> usize {
+        i.0.into()
     }
 }
 

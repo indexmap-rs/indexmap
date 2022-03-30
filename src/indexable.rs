@@ -2,69 +2,33 @@ use crate::IndexMap;
 use core::ops::{Index, IndexMut};
 
 /// Indexable types can convert to and from `usize`.
-pub trait Indexable: Sized + Copy + Ord + Send + Sync {
-    /// Creates an index from a `usize` or returns `None`.
-    fn try_from_usize(i: usize) -> Option<Self>;
-
+pub trait Indexable: Sized + Copy + Ord + Send + Sync + TryFrom<usize> + TryInto<usize> {
     /// Creates an index from a `usize`; panics on failure.
     #[inline]
+    #[track_caller]
     fn from_usize(i: usize) -> Self {
-        Self::try_from_usize(i).expect("invalid index!")
+        match Self::try_from(i) {
+            Ok(i) => i,
+            Err(_) => panic!("invalid index!"),
+        }
     }
-
-    /// Converts the index to a `usize` or returns `None`.
-    fn try_into_usize(self) -> Option<usize>;
 
     /// Converts the index to a `usize`; panics on failure.
     #[inline]
+    #[track_caller]
     fn into_usize(self) -> usize {
-        self.try_into_usize().expect("invalid index!")
+        match self.try_into() {
+            Ok(i) => i,
+            Err(_) => panic!("invalid index!"),
+        }
     }
 }
 
-impl Indexable for usize {
-    #[inline]
-    fn try_from_usize(i: usize) -> Option<Self> {
-        Some(i)
-    }
-
-    #[inline]
-    fn from_usize(i: usize) -> Self {
-        i
-    }
-
-    #[inline]
-    fn try_into_usize(self) -> Option<usize> {
-        Some(self)
-    }
-
-    #[inline]
-    fn into_usize(self) -> usize {
-        self
-    }
-}
+impl Indexable for usize {}
 
 macro_rules! impl_indexable {
     ($($ty:ident)*) => {$(
-        impl Indexable for $ty {
-            #[inline]
-            fn try_from_usize(i: usize) -> Option<Self> {
-                if i <= core::$ty::MAX as usize {
-                    Some(i as $ty)
-                } else {
-                    None
-                }
-            }
-
-            #[inline]
-            fn try_into_usize(self) -> Option<usize> {
-                if self <= core::usize::MAX as $ty {
-                    Some(self as usize)
-                } else {
-                    None
-                }
-            }
-        }
+        impl Indexable for $ty {}
 
         impl<K, V, S> Index<$ty> for IndexMap<K, V, S, $ty> {
             type Output = V;
