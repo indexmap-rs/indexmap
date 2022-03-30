@@ -87,6 +87,7 @@ use alloc::vec::{self, Vec};
 #[macro_use]
 mod macros;
 mod equivalent;
+mod indexable;
 mod mutable_keys;
 #[cfg(feature = "serde")]
 mod serde;
@@ -106,6 +107,7 @@ mod rayon;
 mod rustc;
 
 pub use crate::equivalent::Equivalent;
+pub use crate::indexable::Indexable;
 pub use crate::map::IndexMap;
 pub use crate::set::IndexSet;
 
@@ -181,11 +183,16 @@ impl<K, V> Bucket<K, V> {
     }
 }
 
+/// Get basic unbounded access to entries
 trait Entries {
     type Entry;
     fn into_entries(self) -> Vec<Self::Entry>;
     fn as_entries(&self) -> &[Self::Entry];
     fn as_entries_mut(&mut self) -> &mut [Self::Entry];
+}
+
+/// Borrow entries and fix the indices afterward
+trait WithEntries: Entries {
     fn with_entries<F>(&mut self, f: F)
     where
         F: FnOnce(&mut [Self::Entry]);

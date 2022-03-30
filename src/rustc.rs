@@ -9,7 +9,7 @@ use rustc_rayon::iter::{IndexedParallelIterator, IntoParallelIterator, ParallelI
 mod map {
     use super::*;
 
-    impl<K, V, S> IntoParallelIterator for IndexMap<K, V, S>
+    impl<K, V, S, Idx> IntoParallelIterator for IndexMap<K, V, S, Idx>
     where
         K: Send,
         V: Send,
@@ -38,7 +38,7 @@ mod map {
         indexed_parallel_iterator_methods!(Bucket::key_value);
     }
 
-    impl<'a, K, V, S> IntoParallelIterator for &'a IndexMap<K, V, S>
+    impl<'a, K, V, S, Idx> IntoParallelIterator for &'a IndexMap<K, V, S, Idx>
     where
         K: Sync,
         V: Sync,
@@ -67,7 +67,7 @@ mod map {
         indexed_parallel_iterator_methods!(Bucket::refs);
     }
 
-    impl<'a, K, V, S> IntoParallelIterator for &'a mut IndexMap<K, V, S>
+    impl<'a, K, V, S, Idx> IntoParallelIterator for &'a mut IndexMap<K, V, S, Idx>
     where
         K: Sync + Send,
         V: Send,
@@ -100,7 +100,7 @@ mod map {
 mod set {
     use super::*;
 
-    impl<T, S> IntoParallelIterator for IndexSet<T, S>
+    impl<T, S, Idx> IntoParallelIterator for IndexSet<T, S, Idx>
     where
         T: Send,
     {
@@ -128,7 +128,7 @@ mod set {
         indexed_parallel_iterator_methods!(Bucket::key);
     }
 
-    impl<'a, T, S> IntoParallelIterator for &'a IndexSet<T, S>
+    impl<'a, T, S, Idx> IntoParallelIterator for &'a IndexSet<T, S, Idx>
     where
         T: Sync,
     {

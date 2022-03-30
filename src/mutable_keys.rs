@@ -1,6 +1,6 @@
 use core::hash::{BuildHasher, Hash};
 
-use super::{Bucket, Entries, Equivalent, IndexMap};
+use super::{Bucket, Entries, Equivalent, IndexMap, Indexable};
 
 /// Opt-in mutable access to keys.
 ///
@@ -16,7 +16,7 @@ use super::{Bucket, Entries, Equivalent, IndexMap};
 /// `use` this trait to enable its methods for `IndexMap`.
 ///
 /// This trait is sealed and cannot be implemented for types outside this crate.
-pub trait MutableKeys: private::Sealed {
+pub trait MutableKeys<Idx = usize>: private::Sealed {
     type Key;
     type Value;
 
@@ -26,7 +26,7 @@ pub trait MutableKeys: private::Sealed {
     fn get_full_mut2<Q: ?Sized>(
         &mut self,
         key: &Q,
-    ) -> Option<(usize, &mut Self::Key, &mut Self::Value)>
+    ) -> Option<(Idx, &mut Self::Key, &mut Self::Value)>
     where
         Q: Hash + Equivalent<Self::Key>;
 
@@ -52,20 +52,21 @@ pub trait MutableKeys: private::Sealed {
 /// Opt-in mutable access to keys.
 ///
 /// See [`MutableKeys`](trait.MutableKeys.html) for more information.
-impl<K, V, S> MutableKeys for IndexMap<K, V, S>
+impl<K, V, S, Idx> MutableKeys<Idx> for IndexMap<K, V, S, Idx>
 where
     K: Eq + Hash,
     S: BuildHasher,
+    Idx: Indexable,
 {
     type Key = K;
     type Value = V;
 
-    fn get_full_mut2<Q: ?Sized>(&mut self, key: &Q) -> Option<(usize, &mut K, &mut V)>
+    fn get_full_mut2<Q: ?Sized>(&mut self, key: &Q) -> Option<(Idx, &mut K, &mut V)>
     where
         Q: Hash + Equivalent<K>,
     {
         if let Some(i) = self.get_index_of(key) {
-            let entry = &mut self.as_entries_mut()[i];
+            let entry = &mut self.as_entries_mut()[i.into_usize()];
             Some((i, &mut entry.key, &mut entry.value))
         } else {
             None
@@ -87,5 +88,5 @@ where
 mod private {
     pub trait Sealed {}
 
-    impl<K, V, S> Sealed for super::IndexMap<K, V, S> {}
+    impl<K, V, S, Idx> Sealed for super::IndexMap<K, V, S, Idx> {}
 }

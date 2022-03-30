@@ -21,8 +21,9 @@ use std::collections::hash_map::RandomState;
 
 use self::core::IndexMapCore;
 use crate::equivalent::Equivalent;
+use crate::indexable::Indexable;
 use crate::util::third;
-use crate::{Bucket, Entries, HashValue};
+use crate::{Bucket, Entries, HashValue, WithEntries};
 
 pub use self::core::{Entry, OccupiedEntry, VacantEntry};
 
@@ -68,21 +69,22 @@ pub use self::core::{Entry, OccupiedEntry, VacantEntry};
 /// assert_eq!(letters.get(&'y'), None);
 /// ```
 #[cfg(feature = "std")]
-pub struct IndexMap<K, V, S = RandomState> {
-    pub(crate) core: IndexMapCore<K, V>,
+pub struct IndexMap<K, V, S = RandomState, Idx = usize> {
+    pub(crate) core: IndexMapCore<K, V, Idx>,
     hash_builder: S,
 }
 #[cfg(not(feature = "std"))]
-pub struct IndexMap<K, V, S> {
-    pub(crate) core: IndexMapCore<K, V>,
+pub struct IndexMap<K, V, S, Idx = usize> {
+    pub(crate) core: IndexMapCore<K, V, Idx>,
     hash_builder: S,
 }
 
-impl<K, V, S> Clone for IndexMap<K, V, S>
+impl<K, V, S, Idx> Clone for IndexMap<K, V, S, Idx>
 where
     K: Clone,
     V: Clone,
     S: Clone,
+    Idx: Indexable,
 {
     fn clone(&self) -> Self {
         IndexMap {
@@ -97,7 +99,7 @@ where
     }
 }
 
-impl<K, V, S> Entries for IndexMap<K, V, S> {
+impl<K, V, S, Idx> Entries for IndexMap<K, V, S, Idx> {
     type Entry = Bucket<K, V>;
 
     #[inline]
@@ -114,7 +116,9 @@ impl<K, V, S> Entries for IndexMap<K, V, S> {
     fn as_entries_mut(&mut self) -> &mut [Self::Entry] {
         self.core.as_entries_mut()
     }
+}
 
+impl<K, V, S, Idx: Indexable> WithEntries for IndexMap<K, V, S, Idx> {
     fn with_entries<F>(&mut self, f: F)
     where
         F: FnOnce(&mut [Self::Entry]),
@@ -123,10 +127,11 @@ impl<K, V, S> Entries for IndexMap<K, V, S> {
     }
 }
 
-impl<K, V, S> fmt::Debug for IndexMap<K, V, S>
+impl<K, V, S, Idx> fmt::Debug for IndexMap<K, V, S, Idx>
 where
     K: fmt::Debug,
     V: fmt::Debug,
+    Idx: fmt::Debug,
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         if cfg!(not(feature = "test_debug")) {
@@ -158,7 +163,7 @@ impl<K, V> IndexMap<K, V> {
     }
 }
 
-impl<K, V, S> IndexMap<K, V, S> {
+impl<K, V, S, Idx> IndexMap<K, V, S, Idx> {
     /// Create a new map with capacity for `n` key-value pairs. (Does not
     /// allocate if `n` is zero.)
     ///
@@ -268,7 +273,9 @@ impl<K, V, S> IndexMap<K, V, S> {
     pub fn clear(&mut self) {
         self.core.clear();
     }
+}
 
+impl<K, V, S, Idx: Indexable> IndexMap<K, V, S, Idx> {
     /// Shortens the map, keeping the first `len` elements and dropping the rest.
     ///
     /// If `len` is greater than the map's current length, this has no effect.
@@ -279,7 +286,7 @@ impl<K, V, S> IndexMap<K, V, S> {
     /// Clears the `IndexMap` in the given index range, returning those
     /// key-value pairs as a drain iterator.
     ///
-    /// The range may be any type that implements `RangeBounds<usize>`,
+    /// The range may be any type that implements `RangeBounds<Idx>`,
     /// including all of the `std::ops::Range*` types, or even a tuple pair of
     /// `Bound` start and end values. To drain the map entirely, use `RangeFull`
     /// like `map.drain(..)`.
@@ -291,7 +298,7 @@ impl<K, V, S> IndexMap<K, V, S> {
     /// the end point is greater than the length of the map.
     pub fn drain<R>(&mut self, range: R) -> Drain<'_, K, V>
     where
-        R: RangeBounds<usize>,
+        R: RangeBounds<Idx>,
     {
         Drain {
             iter: self.core.drain(range),
@@ -305,7 +312,7 @@ impl<K, V, S> IndexMap<K, V, S> {
     /// the elements `[0, at)` with its previous capacity unchanged.
     ///
     /// ***Panics*** if `at > len`.
-    pub fn split_off(&mut self, at: usize) -> Self
+    pub fn split_off(&mut self, at: Idx) -> Self
     where
         S: Clone,
     {
@@ -316,10 +323,11 @@ impl<K, V, S> IndexMap<K, V, S> {
     }
 }
 
-impl<K, V, S> IndexMap<K, V, S>
+impl<K, V, S, Idx> IndexMap<K, V, S, Idx>
 where
     K: Hash + Eq,
     S: BuildHasher,
+    Idx: Indexable,
 {
     /// Reserve capacity for `additional` more key-value pairs.
     ///
@@ -378,7 +386,7 @@ where
     ///
     /// See also [`entry`](#method.entry) if you you want to insert *or* modify
     /// or if you need to get the index of the corresponding key-value pair.
-    pub fn insert_full(&mut self, key: K, value: V) -> (usize, Option<V>) {
+    pub fn insert_full(&mut self, key: K, value: V) -> (Idx, Option<V>) {
         let hash = self.hash(&key);
         self.core.insert_full(hash, key, value)
     }
@@ -387,7 +395,7 @@ where
     /// in-place manipulation.
     ///
     /// Computes in **O(1)** time (amortized average).
-    pub fn entry(&mut self, key: K) -> Entry<'_, K, V> {
+    pub fn entry(&mut self, key: K) -> Entry<'_, K, V, Idx> {
         let hash = self.hash(&key);
         self.core.entry(hash, key)
     }
@@ -411,7 +419,7 @@ where
         Q: Hash + Equivalent<K>,
     {
         if let Some(i) = self.get_index_of(key) {
-            let entry = &self.as_entries()[i];
+            let entry = &self.as_entries()[i.into_usize()];
             Some(&entry.value)
         } else {
             None
@@ -427,7 +435,7 @@ where
         Q: Hash + Equivalent<K>,
     {
         if let Some(i) = self.get_index_of(key) {
-            let entry = &self.as_entries()[i];
+            let entry = &self.as_entries()[i.into_usize()];
             Some((&entry.key, &entry.value))
         } else {
             None
@@ -435,12 +443,12 @@ where
     }
 
     /// Return item index, key and value
-    pub fn get_full<Q: ?Sized>(&self, key: &Q) -> Option<(usize, &K, &V)>
+    pub fn get_full<Q: ?Sized>(&self, key: &Q) -> Option<(Idx, &K, &V)>
     where
         Q: Hash + Equivalent<K>,
     {
         if let Some(i) = self.get_index_of(key) {
-            let entry = &self.as_entries()[i];
+            let entry = &self.as_entries()[i.into_usize()];
             Some((i, &entry.key, &entry.value))
         } else {
             None
@@ -450,7 +458,7 @@ where
     /// Return item index, if it exists in the map
     ///
     /// Computes in **O(1)** time (average).
-    pub fn get_index_of<Q: ?Sized>(&self, key: &Q) -> Option<usize>
+    pub fn get_index_of<Q: ?Sized>(&self, key: &Q) -> Option<Idx>
     where
         Q: Hash + Equivalent<K>,
     {
@@ -467,19 +475,19 @@ where
         Q: Hash + Equivalent<K>,
     {
         if let Some(i) = self.get_index_of(key) {
-            let entry = &mut self.as_entries_mut()[i];
+            let entry = &mut self.as_entries_mut()[i.into_usize()];
             Some(&mut entry.value)
         } else {
             None
         }
     }
 
-    pub fn get_full_mut<Q: ?Sized>(&mut self, key: &Q) -> Option<(usize, &K, &mut V)>
+    pub fn get_full_mut<Q: ?Sized>(&mut self, key: &Q) -> Option<(Idx, &K, &mut V)>
     where
         Q: Hash + Equivalent<K>,
     {
         if let Some(i) = self.get_index_of(key) {
-            let entry = &mut self.as_entries_mut()[i];
+            let entry = &mut self.as_entries_mut()[i.into_usize()];
             Some((i, &entry.key, &mut entry.value))
         } else {
             None
@@ -561,7 +569,7 @@ where
     /// Return `None` if `key` is not in map.
     ///
     /// Computes in **O(1)** time (average).
-    pub fn swap_remove_full<Q: ?Sized>(&mut self, key: &Q) -> Option<(usize, K, V)>
+    pub fn swap_remove_full<Q: ?Sized>(&mut self, key: &Q) -> Option<(Idx, K, V)>
     where
         Q: Hash + Equivalent<K>,
     {
@@ -618,7 +626,7 @@ where
     /// Return `None` if `key` is not in map.
     ///
     /// Computes in **O(n)** time (average).
-    pub fn shift_remove_full<Q: ?Sized>(&mut self, key: &Q) -> Option<(usize, K, V)>
+    pub fn shift_remove_full<Q: ?Sized>(&mut self, key: &Q) -> Option<(Idx, K, V)>
     where
         Q: Hash + Equivalent<K>,
     {
@@ -757,14 +765,14 @@ where
     }
 }
 
-impl<K, V, S> IndexMap<K, V, S> {
+impl<K, V, S, Idx: Indexable> IndexMap<K, V, S, Idx> {
     /// Get a key-value pair by index
     ///
     /// Valid indices are *0 <= index < self.len()*
     ///
     /// Computes in **O(1)** time.
-    pub fn get_index(&self, index: usize) -> Option<(&K, &V)> {
-        self.as_entries().get(index).map(Bucket::refs)
+    pub fn get_index(&self, index: Idx) -> Option<(&K, &V)> {
+        self.as_entries().get(index.into_usize()).map(Bucket::refs)
     }
 
     /// Get a key-value pair by index
@@ -772,8 +780,10 @@ impl<K, V, S> IndexMap<K, V, S> {
     /// Valid indices are *0 <= index < self.len()*
     ///
     /// Computes in **O(1)** time.
-    pub fn get_index_mut(&mut self, index: usize) -> Option<(&K, &mut V)> {
-        self.as_entries_mut().get_mut(index).map(Bucket::ref_mut)
+    pub fn get_index_mut(&mut self, index: Idx) -> Option<(&K, &mut V)> {
+        self.as_entries_mut()
+            .get_mut(index.into_usize())
+            .map(Bucket::ref_mut)
     }
 
     /// Get the first key-value pair
@@ -813,7 +823,7 @@ impl<K, V, S> IndexMap<K, V, S> {
     /// the position of what used to be the last element!**
     ///
     /// Computes in **O(1)** time (average).
-    pub fn swap_remove_index(&mut self, index: usize) -> Option<(K, V)> {
+    pub fn swap_remove_index(&mut self, index: Idx) -> Option<(K, V)> {
         self.core.swap_remove_index(index)
     }
 
@@ -826,14 +836,14 @@ impl<K, V, S> IndexMap<K, V, S> {
     /// **This perturbs the index of all of those elements!**
     ///
     /// Computes in **O(n)** time (average).
-    pub fn shift_remove_index(&mut self, index: usize) -> Option<(K, V)> {
+    pub fn shift_remove_index(&mut self, index: Idx) -> Option<(K, V)> {
         self.core.shift_remove_index(index)
     }
 
     /// Swaps the position of two key-value pairs in the map.
     ///
     /// ***Panics*** if `a` or `b` are out of bounds.
-    pub fn swap_indices(&mut self, a: usize, b: usize) {
+    pub fn swap_indices(&mut self, a: Idx, b: Idx) {
         self.core.swap_indices(a, b)
     }
 }
@@ -1186,7 +1196,7 @@ impl<K: fmt::Debug, V: fmt::Debug> fmt::Debug for Drain<'_, K, V> {
     }
 }
 
-impl<'a, K, V, S> IntoIterator for &'a IndexMap<K, V, S> {
+impl<'a, K, V, S, Idx> IntoIterator for &'a IndexMap<K, V, S, Idx> {
     type Item = (&'a K, &'a V);
     type IntoIter = Iter<'a, K, V>;
     fn into_iter(self) -> Self::IntoIter {
@@ -1194,7 +1204,7 @@ impl<'a, K, V, S> IntoIterator for &'a IndexMap<K, V, S> {
     }
 }
 
-impl<'a, K, V, S> IntoIterator for &'a mut IndexMap<K, V, S> {
+impl<'a, K, V, S, Idx> IntoIterator for &'a mut IndexMap<K, V, S, Idx> {
     type Item = (&'a K, &'a mut V);
     type IntoIter = IterMut<'a, K, V>;
     fn into_iter(self) -> Self::IntoIter {
@@ -1202,7 +1212,7 @@ impl<'a, K, V, S> IntoIterator for &'a mut IndexMap<K, V, S> {
     }
 }
 
-impl<K, V, S> IntoIterator for IndexMap<K, V, S> {
+impl<K, V, S, Idx> IntoIterator for IndexMap<K, V, S, Idx> {
     type Item = (K, V);
     type IntoIter = IntoIter<K, V>;
     fn into_iter(self) -> Self::IntoIter {
@@ -1234,11 +1244,12 @@ impl<K, V, S> IntoIterator for IndexMap<K, V, S> {
 /// map.insert("foo", 1);
 /// println!("{:?}", map["bar"]); // panics!
 /// ```
-impl<K, V, Q: ?Sized, S> Index<&Q> for IndexMap<K, V, S>
+impl<K, V, Q, S, Idx> Index<&Q> for IndexMap<K, V, S, Idx>
 where
-    Q: Hash + Equivalent<K>,
+    Q: ?Sized + Hash + Equivalent<K>,
     K: Hash + Eq,
     S: BuildHasher,
+    Idx: Indexable,
 {
     type Output = V;
 
@@ -1279,11 +1290,12 @@ where
 /// map.insert("foo", 1);
 /// map["bar"] = 1; // panics!
 /// ```
-impl<K, V, Q: ?Sized, S> IndexMut<&Q> for IndexMap<K, V, S>
+impl<K, V, Q, S, Idx> IndexMut<&Q> for IndexMap<K, V, S, Idx>
 where
-    Q: Hash + Equivalent<K>,
+    Q: ?Sized + Hash + Equivalent<K>,
     K: Hash + Eq,
     S: BuildHasher,
+    Idx: Indexable,
 {
     /// Returns a mutable reference to the value corresponding to the supplied `key`.
     ///
@@ -1321,7 +1333,16 @@ where
 /// map.insert("foo", 1);
 /// println!("{:?}", map[10]); // panics!
 /// ```
-impl<K, V, S> Index<usize> for IndexMap<K, V, S> {
+///
+/// # Implementation note
+///
+/// Unfortunately, this can't be implemented for arbitrary `Idx: Indexable`,
+/// because a blanket `Index<Idx>` would overlap with `Index<&Q>` by key. So in
+/// addition to this primary implementation, there are implementations for all
+/// primitive unsigned integers: `Index<u32> for IndexMap<K, V, S, u32>`, etc.
+///
+/// As a downstream crate author, you may implement your own `Index<NewIndex>`.
+impl<K, V, S> Index<usize> for IndexMap<K, V, S, usize> {
     type Output = V;
 
     /// Returns a reference to the value at the supplied `index`.
@@ -1363,7 +1384,17 @@ impl<K, V, S> Index<usize> for IndexMap<K, V, S> {
 /// map.insert("foo", 1);
 /// map[10] = 1; // panics!
 /// ```
-impl<K, V, S> IndexMut<usize> for IndexMap<K, V, S> {
+///
+/// # Implementation note
+///
+/// Unfortunately, this can't be implemented for arbitrary `Idx: Indexable`,
+/// because a blanket `IndexMut<Idx>` would overlap with `IndexMut<&Q>` by key.
+/// So in addition to this primary implementation, there are implementations for
+/// all primitive unsigned integers:
+/// `IndexMut<u32> for IndexMap<K, V, S, u32>`, etc.
+///
+/// As a downstream crate author, you may implement your own `IndexMut<NewIndex>`.
+impl<K, V, S> IndexMut<usize> for IndexMap<K, V, S, usize> {
     /// Returns a mutable reference to the value at the supplied `index`.
     ///
     /// ***Panics*** if `index` is out of bounds.
@@ -1374,10 +1405,11 @@ impl<K, V, S> IndexMut<usize> for IndexMap<K, V, S> {
     }
 }
 
-impl<K, V, S> FromIterator<(K, V)> for IndexMap<K, V, S>
+impl<K, V, S, Idx> FromIterator<(K, V)> for IndexMap<K, V, S, Idx>
 where
     K: Hash + Eq,
     S: BuildHasher + Default,
+    Idx: Indexable,
 {
     /// Create an `IndexMap` from the sequence of key-value pairs in the
     /// iterable.
@@ -1394,7 +1426,7 @@ where
 }
 
 #[cfg(feature = "std")]
-impl<K, V, const N: usize> From<[(K, V); N]> for IndexMap<K, V, RandomState>
+impl<K, V, const N: usize> From<[(K, V); N]> for IndexMap<K, V, RandomState, usize>
 where
     K: Hash + Eq,
 {
@@ -1412,10 +1444,11 @@ where
     }
 }
 
-impl<K, V, S> Extend<(K, V)> for IndexMap<K, V, S>
+impl<K, V, S, Idx> Extend<(K, V)> for IndexMap<K, V, S, Idx>
 where
     K: Hash + Eq,
     S: BuildHasher,
+    Idx: Indexable,
 {
     /// Extend the map with all key-value pairs in the iterable.
     ///
@@ -1445,11 +1478,12 @@ where
     }
 }
 
-impl<'a, K, V, S> Extend<(&'a K, &'a V)> for IndexMap<K, V, S>
+impl<'a, K, V, S, Idx> Extend<(&'a K, &'a V)> for IndexMap<K, V, S, Idx>
 where
     K: Hash + Eq + Copy,
     V: Copy,
     S: BuildHasher,
+    Idx: Indexable,
 {
     /// Extend the map with all key-value pairs in the iterable.
     ///
@@ -1459,7 +1493,7 @@ where
     }
 }
 
-impl<K, V, S> Default for IndexMap<K, V, S>
+impl<K, V, S, Idx> Default for IndexMap<K, V, S, Idx>
 where
     S: Default,
 {
@@ -1469,14 +1503,15 @@ where
     }
 }
 
-impl<K, V1, S1, V2, S2> PartialEq<IndexMap<K, V2, S2>> for IndexMap<K, V1, S1>
+impl<K, V1, S1, V2, S2, Idx> PartialEq<IndexMap<K, V2, S2, Idx>> for IndexMap<K, V1, S1, Idx>
 where
     K: Hash + Eq,
     V1: PartialEq<V2>,
     S1: BuildHasher,
     S2: BuildHasher,
+    Idx: Indexable,
 {
-    fn eq(&self, other: &IndexMap<K, V2, S2>) -> bool {
+    fn eq(&self, other: &IndexMap<K, V2, S2, Idx>) -> bool {
         if self.len() != other.len() {
             return false;
         }
@@ -1486,11 +1521,12 @@ where
     }
 }
 
-impl<K, V, S> Eq for IndexMap<K, V, S>
+impl<K, V, S, Idx> Eq for IndexMap<K, V, S, Idx>
 where
     K: Eq + Hash,
     V: Eq,
     S: BuildHasher,
+    Idx: Indexable,
 {
 }
 
