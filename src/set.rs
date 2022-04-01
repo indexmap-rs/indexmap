@@ -607,8 +607,10 @@ where
     where
         F: FnMut(&T, &T) -> Ordering,
     {
+        let mut entries = self.into_entries();
+        entries.sort_by(move |a, b| cmp(&a.key, &b.key));
         IntoIter {
-            iter: self.map.sorted_by(move |a, _, b, _| cmp(a, b)).iter,
+            iter: entries.into_iter(),
         }
     }
 
@@ -638,11 +640,10 @@ where
     where
         F: FnMut(&T, &T) -> Ordering,
     {
+        let mut entries = self.into_entries();
+        entries.sort_unstable_by(move |a, b| cmp(&a.key, &b.key));
         IntoIter {
-            iter: self
-                .map
-                .sorted_unstable_by(move |a, _, b, _| cmp(a, b))
-                .iter,
+            iter: entries.into_iter(),
         }
     }
 
@@ -907,7 +908,7 @@ impl<T, S> IntoIterator for IndexSet<T, S> {
 
     fn into_iter(self) -> Self::IntoIter {
         IntoIter {
-            iter: self.map.into_iter().iter,
+            iter: self.into_entries().into_iter(),
         }
     }
 }
