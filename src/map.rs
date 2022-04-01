@@ -861,7 +861,7 @@ impl<K, V, S> IndexMap<K, V, S> {
 /// [`keys`]: struct.IndexMap.html#method.keys
 /// [`IndexMap`]: struct.IndexMap.html
 pub struct Keys<'a, K, V> {
-    pub(crate) iter: SliceIter<'a, Bucket<K, V>>,
+    iter: SliceIter<'a, Bucket<K, V>>,
 }
 
 impl<'a, K, V> Iterator for Keys<'a, K, V> {
@@ -1137,7 +1137,7 @@ impl<K: fmt::Debug, V: fmt::Debug> fmt::Debug for IterMut<'_, K, V> {
 /// [`into_iter`]: struct.IndexMap.html#method.into_iter
 /// [`IndexMap`]: struct.IndexMap.html
 pub struct IntoIter<K, V> {
-    pub(crate) iter: vec::IntoIter<Bucket<K, V>>,
+    iter: vec::IntoIter<Bucket<K, V>>,
 }
 
 impl<K, V> Iterator for IntoIter<K, V> {
