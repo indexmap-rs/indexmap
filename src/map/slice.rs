@@ -57,8 +57,6 @@ impl<K, V> Slice<K, V> {
     ///
     /// Valid indices are *0 <= index < self.len()*
     pub fn get_index_mut(&mut self, index: usize) -> Option<(&K, &mut V)> {
-        // NB: we're not returning `&mut K` like `IndexMap::get_index_mut`,
-        // because that was a mistake that should have required `MutableKeys`.
         self.entries.get_mut(index).map(Bucket::ref_mut)
     }
 
