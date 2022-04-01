@@ -1,5 +1,5 @@
 use super::{Bucket, Entries, IndexSet, Iter};
-use crate::util::{simplify_range, try_simplify_range};
+use crate::util::try_simplify_range;
 
 use core::cmp::Ordering;
 use core::fmt;
@@ -184,30 +184,9 @@ impl_index!(
     ops::RangeFull,
     ops::RangeInclusive<usize>,
     ops::RangeTo<usize>,
-    ops::RangeToInclusive<usize>
+    ops::RangeToInclusive<usize>,
+    (Bound<usize>, Bound<usize>)
 );
-
-// NB: with MSRV 1.53, we can forward `Bound` pairs to direct slice indexing like other ranges
-
-impl<T, S> Index<(Bound<usize>, Bound<usize>)> for IndexSet<T, S> {
-    type Output = Slice<T>;
-
-    fn index(&self, range: (Bound<usize>, Bound<usize>)) -> &Self::Output {
-        let entries = self.as_entries();
-        let range = simplify_range(range, entries.len());
-        Slice::from_slice(&entries[range])
-    }
-}
-
-impl<T> Index<(Bound<usize>, Bound<usize>)> for Slice<T> {
-    type Output = Self;
-
-    fn index(&self, range: (Bound<usize>, Bound<usize>)) -> &Self::Output {
-        let entries = &self.entries;
-        let range = simplify_range(range, entries.len());
-        Slice::from_slice(&entries[range])
-    }
-}
 
 #[cfg(test)]
 mod tests {
