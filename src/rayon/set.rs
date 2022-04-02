@@ -10,6 +10,7 @@ use rayon::iter::plumbing::{Consumer, ProducerCallback, UnindexedConsumer};
 use rayon::prelude::*;
 
 use crate::vec::Vec;
+use alloc::boxed::Box;
 use core::cmp::Ordering;
 use core::fmt;
 use core::hash::{BuildHasher, Hash};
@@ -23,6 +24,21 @@ type Bucket<T> = crate::Bucket<T, ()>;
 
 /// Requires crate feature `"rayon"`.
 impl<T, S> IntoParallelIterator for IndexSet<T, S>
+where
+    T: Send,
+{
+    type Item = T;
+    type Iter = IntoParIter<T>;
+
+    fn into_par_iter(self) -> Self::Iter {
+        IntoParIter {
+            entries: self.into_entries(),
+        }
+    }
+}
+
+/// Requires crate feature `"rayon"`.
+impl<T> IntoParallelIterator for Box<Slice<T>>
 where
     T: Send,
 {

@@ -12,6 +12,7 @@ use std::collections::hash_map::RandomState;
 
 use crate::util::try_simplify_range;
 use crate::vec::{self, Vec};
+use alloc::boxed::Box;
 use core::cmp::Ordering;
 use core::fmt;
 use core::hash::{BuildHasher, Hash};
@@ -661,6 +662,13 @@ impl<T, S> IndexSet<T, S> {
     /// Computes in **O(1)** time.
     pub fn as_slice(&self) -> &Slice<T> {
         Slice::from_slice(self.as_entries())
+    }
+
+    /// Converts into a boxed slice of all the values in the set.
+    ///
+    /// Note that this will drop the inner hash table and any excess capacity.
+    pub fn into_boxed_slice(self) -> Box<Slice<T>> {
+        Slice::from_boxed(self.into_entries().into_boxed_slice())
     }
 
     /// Get a value by index

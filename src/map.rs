@@ -17,6 +17,7 @@ use ::core::hash::{BuildHasher, Hash, Hasher};
 use ::core::iter::FusedIterator;
 use ::core::ops::{Index, IndexMut, RangeBounds};
 use ::core::slice::{Iter as SliceIter, IterMut as SliceIterMut};
+use alloc::boxed::Box;
 
 #[cfg(feature = "std")]
 use std::collections::hash_map::RandomState;
@@ -772,6 +773,13 @@ impl<K, V, S> IndexMap<K, V, S> {
     /// Computes in **O(1)** time.
     pub fn as_mut_slice(&mut self) -> &mut Slice<K, V> {
         Slice::from_mut_slice(self.as_entries_mut())
+    }
+
+    /// Converts into a boxed slice of all the key-value pairs in the map.
+    ///
+    /// Note that this will drop the inner hash table and any excess capacity.
+    pub fn into_boxed_slice(self) -> Box<Slice<K, V>> {
+        Slice::from_boxed(self.into_entries().into_boxed_slice())
     }
 
     /// Get a key-value pair by index

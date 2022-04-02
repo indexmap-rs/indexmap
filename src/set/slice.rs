@@ -1,6 +1,8 @@
-use super::{Bucket, Entries, IndexSet, Iter};
+use super::{Bucket, Entries, IndexSet, IntoIter, Iter};
 use crate::util::try_simplify_range;
 
+use alloc::boxed::Box;
+use alloc::vec::Vec;
 use core::cmp::Ordering;
 use core::fmt;
 use core::hash::{Hash, Hasher};
@@ -18,16 +20,28 @@ pub struct Slice<T> {
     pub(crate) entries: [Bucket<T>],
 }
 
+// SAFETY: `Slice<T>` is a transparent wrapper around `[Bucket<T>]`,
+// and reference lifetimes are bound together in function signatures.
 #[allow(unsafe_code)]
 impl<T> Slice<T> {
     pub(super) fn from_slice(entries: &[Bucket<T>]) -> &Self {
-        // SAFETY: `Slice<T>` is a transparent wrapper around `[Bucket<T>]`,
-        // and the lifetimes are bound together by this function's signature.
         unsafe { &*(entries as *const [Bucket<T>] as *const Self) }
+    }
+
+    pub(super) fn from_boxed(entries: Box<[Bucket<T>]>) -> Box<Self> {
+        unsafe { Box::from_raw(Box::into_raw(entries) as *mut Self) }
+    }
+
+    fn into_boxed(self: Box<Self>) -> Box<[Bucket<T>]> {
+        unsafe { Box::from_raw(Box::into_raw(self) as *mut [Bucket<T>]) }
     }
 }
 
 impl<T> Slice<T> {
+    pub(crate) fn into_entries(self: Box<Self>) -> Vec<Bucket<T>> {
+        self.into_boxed().into_vec()
+    }
+
     /// Return the number of elements in the set slice.
     pub fn len(&self) -> usize {
         self.entries.len()
@@ -105,6 +119,17 @@ impl<'a, T> IntoIterator for &'a Slice<T> {
 
     fn into_iter(self) -> Self::IntoIter {
         self.iter()
+    }
+}
+
+impl<T> IntoIterator for Box<Slice<T>> {
+    type IntoIter = IntoIter<T>;
+    type Item = T;
+
+    fn into_iter(self) -> Self::IntoIter {
+        IntoIter {
+            iter: self.into_entries().into_iter(),
+        }
     }
 }
 

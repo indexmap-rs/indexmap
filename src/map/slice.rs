@@ -1,6 +1,11 @@
-use super::{Bucket, Entries, IndexMap, Iter, IterMut, Keys, Values, ValuesMut};
+use super::{
+    Bucket, Entries, IndexMap, IntoIter, IntoKeys, IntoValues, Iter, IterMut, Keys, Values,
+    ValuesMut,
+};
 use crate::util::try_simplify_range;
 
+use alloc::boxed::Box;
+use alloc::vec::Vec;
 use core::cmp::Ordering;
 use core::fmt;
 use core::hash::{Hash, Hasher};
@@ -18,22 +23,32 @@ pub struct Slice<K, V> {
     pub(crate) entries: [Bucket<K, V>],
 }
 
+// SAFETY: `Slice<K, V>` is a transparent wrapper around `[Bucket<K, V>]`,
+// and reference lifetimes are bound together in function signatures.
 #[allow(unsafe_code)]
 impl<K, V> Slice<K, V> {
     pub(super) fn from_slice(entries: &[Bucket<K, V>]) -> &Self {
-        // SAFETY: `Slice<K, V>` is a transparent wrapper around `[Bucket<K, V>]`,
-        // and the lifetimes are bound together by this function's signature.
         unsafe { &*(entries as *const [Bucket<K, V>] as *const Self) }
     }
 
     pub(super) fn from_mut_slice(entries: &mut [Bucket<K, V>]) -> &mut Self {
-        // SAFETY: `Slice<K, V>` is a transparent wrapper around `[Bucket<K, V>]`,
-        // and the lifetimes are bound together by this function's signature.
         unsafe { &mut *(entries as *mut [Bucket<K, V>] as *mut Self) }
+    }
+
+    pub(super) fn from_boxed(entries: Box<[Bucket<K, V>]>) -> Box<Self> {
+        unsafe { Box::from_raw(Box::into_raw(entries) as *mut Self) }
+    }
+
+    fn into_boxed(self: Box<Self>) -> Box<[Bucket<K, V>]> {
+        unsafe { Box::from_raw(Box::into_raw(self) as *mut [Bucket<K, V>]) }
     }
 }
 
 impl<K, V> Slice<K, V> {
+    pub(crate) fn into_entries(self: Box<Self>) -> Vec<Bucket<K, V>> {
+        self.into_boxed().into_vec()
+    }
+
     /// Return the number of key-value pairs in the map slice.
     #[inline]
     pub fn len(&self) -> usize {
@@ -173,6 +188,13 @@ impl<K, V> Slice<K, V> {
         }
     }
 
+    /// Return an owning iterator over the keys of the map slice.
+    pub fn into_keys(self: Box<Self>) -> IntoKeys<K, V> {
+        IntoKeys {
+            iter: self.into_entries().into_iter(),
+        }
+    }
+
     /// Return an iterator over the values of the map slice.
     pub fn values(&self) -> Values<'_, K, V> {
         Values {
@@ -184,6 +206,13 @@ impl<K, V> Slice<K, V> {
     pub fn values_mut(&mut self) -> ValuesMut<'_, K, V> {
         ValuesMut {
             iter: self.entries.iter_mut(),
+        }
+    }
+
+    /// Return an owning iterator over the values of the map slice.
+    pub fn into_values(self: Box<Self>) -> IntoValues<K, V> {
+        IntoValues {
+            iter: self.into_entries().into_iter(),
         }
     }
 }
@@ -203,6 +232,17 @@ impl<'a, K, V> IntoIterator for &'a mut Slice<K, V> {
 
     fn into_iter(self) -> Self::IntoIter {
         self.iter_mut()
+    }
+}
+
+impl<K, V> IntoIterator for Box<Slice<K, V>> {
+    type IntoIter = IntoIter<K, V>;
+    type Item = (K, V);
+
+    fn into_iter(self) -> Self::IntoIter {
+        IntoIter {
+            iter: self.into_entries().into_iter(),
+        }
     }
 }
 
