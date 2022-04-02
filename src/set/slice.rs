@@ -139,6 +139,24 @@ impl<T> Default for &'_ Slice<T> {
     }
 }
 
+impl<T> Default for Box<Slice<T>> {
+    fn default() -> Self {
+        Slice::from_boxed(Box::default())
+    }
+}
+
+impl<T: Clone> Clone for Box<Slice<T>> {
+    fn clone(&self) -> Self {
+        Slice::from_boxed(self.entries.to_vec().into_boxed_slice())
+    }
+}
+
+impl<T: Copy> From<&Slice<T>> for Box<Slice<T>> {
+    fn from(slice: &Slice<T>) -> Self {
+        Slice::from_boxed(slice.entries.to_vec().into_boxed_slice())
+    }
+}
+
 impl<T: fmt::Debug> fmt::Debug for Slice<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_list().entries(self).finish()

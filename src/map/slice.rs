@@ -258,6 +258,24 @@ impl<K, V> Default for &'_ mut Slice<K, V> {
     }
 }
 
+impl<K, V> Default for Box<Slice<K, V>> {
+    fn default() -> Self {
+        Slice::from_boxed(Box::default())
+    }
+}
+
+impl<K: Clone, V: Clone> Clone for Box<Slice<K, V>> {
+    fn clone(&self) -> Self {
+        Slice::from_boxed(self.entries.to_vec().into_boxed_slice())
+    }
+}
+
+impl<K: Copy, V: Copy> From<&Slice<K, V>> for Box<Slice<K, V>> {
+    fn from(slice: &Slice<K, V>) -> Self {
+        Slice::from_boxed(slice.entries.to_vec().into_boxed_slice())
+    }
+}
+
 impl<K: fmt::Debug, V: fmt::Debug> fmt::Debug for Slice<K, V> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_list().entries(self).finish()
