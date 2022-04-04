@@ -153,7 +153,7 @@ impl<T: Clone> Clone for Box<Slice<T>> {
 
 impl<T: Copy> From<&Slice<T>> for Box<Slice<T>> {
     fn from(slice: &Slice<T>) -> Self {
-        Slice::from_boxed(slice.entries.to_vec().into_boxed_slice())
+        Slice::from_boxed(Box::from(&slice.entries))
     }
 }
 
