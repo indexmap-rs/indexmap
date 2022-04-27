@@ -44,7 +44,8 @@ fn equivalent<'a, K, V, Q: ?Sized + Equivalent<K>>(
 
 #[inline]
 fn erase_index(table: &mut RawTable<usize>, hash: HashValue, index: usize) {
-    table.erase_entry(hash.get(), move |&i| i == index);
+    let erased = table.erase_entry(hash.get(), move |&i| i == index);
+    debug_assert!(erased);
 }
 
 #[inline]
