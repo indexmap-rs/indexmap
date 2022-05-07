@@ -27,9 +27,9 @@ use core::fmt::{self, Formatter};
 use core::hash::{BuildHasher, Hash};
 use core::marker::PhantomData;
 
-use crate::IndexMap;
 use crate::map::Slice as MapSlice;
 use crate::set::Slice as SetSlice;
+use crate::IndexMap;
 
 /// Serializes a `map::Slice` as an ordered sequence.
 ///
