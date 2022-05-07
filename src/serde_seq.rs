@@ -36,7 +36,7 @@ use crate::IndexMap;
 /// This behaves like [`crate::serde_seq`] for `IndexMap`, serializing a sequence
 /// of `(key, value)` pairs, rather than as a map that might not preserve order.
 ///
-/// Requires crate feature `"serde"` or `"serde-1"`
+/// Requires crate feature `"serde"`
 impl<K, V> Serialize for MapSlice<K, V>
 where
     K: Serialize,
@@ -52,7 +52,7 @@ where
 
 /// Serializes a `set::Slice` as an ordered sequence.
 ///
-/// Requires crate feature `"serde"` or `"serde-1"`
+/// Requires crate feature `"serde"`
 impl<T> Serialize for SetSlice<T>
 where
     T: Serialize,
