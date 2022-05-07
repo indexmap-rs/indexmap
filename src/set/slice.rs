@@ -88,7 +88,7 @@ impl<T> Slice<T> {
     /// Returns the first value and the rest of the slice,
     /// or `None` if it is empty.
     pub fn split_first(&self) -> Option<(&T, &Self)> {
-        if let Some((first, rest)) = self.entries.split_first() {
+        if let [first, rest @ ..] = &self.entries {
             Some((&first.key, Self::from_slice(rest)))
         } else {
             None
@@ -98,7 +98,7 @@ impl<T> Slice<T> {
     /// Returns the last value and the rest of the slice,
     /// or `None` if it is empty.
     pub fn split_last(&self) -> Option<(&T, &Self)> {
-        if let Some((last, rest)) = self.entries.split_last() {
+        if let [rest @ .., last] = &self.entries {
             Some((&last.key, Self::from_slice(rest)))
         } else {
             None

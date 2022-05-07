@@ -130,7 +130,7 @@ impl<K, V> Slice<K, V> {
     /// Returns the first key-value pair and the rest of the slice,
     /// or `None` if it is empty.
     pub fn split_first(&self) -> Option<((&K, &V), &Self)> {
-        if let Some((first, rest)) = self.entries.split_first() {
+        if let [first, rest @ ..] = &self.entries {
             Some((first.refs(), Self::from_slice(rest)))
         } else {
             None
@@ -140,7 +140,7 @@ impl<K, V> Slice<K, V> {
     /// Returns the first key-value pair and the rest of the slice,
     /// with mutable access to the value, or `None` if it is empty.
     pub fn split_first_mut(&mut self) -> Option<((&K, &mut V), &mut Self)> {
-        if let Some((first, rest)) = self.entries.split_first_mut() {
+        if let [first, rest @ ..] = &mut self.entries {
             Some((first.ref_mut(), Self::from_mut_slice(rest)))
         } else {
             None
@@ -150,7 +150,7 @@ impl<K, V> Slice<K, V> {
     /// Returns the last key-value pair and the rest of the slice,
     /// or `None` if it is empty.
     pub fn split_last(&self) -> Option<((&K, &V), &Self)> {
-        if let Some((last, rest)) = self.entries.split_last() {
+        if let [rest @ .., last] = &self.entries {
             Some((last.refs(), Self::from_slice(rest)))
         } else {
             None
@@ -160,7 +160,7 @@ impl<K, V> Slice<K, V> {
     /// Returns the last key-value pair and the rest of the slice,
     /// with mutable access to the value, or `None` if it is empty.
     pub fn split_last_mut(&mut self) -> Option<((&K, &mut V), &mut Self)> {
-        if let Some((last, rest)) = self.entries.split_last_mut() {
+        if let [rest @ .., last] = &mut self.entries {
             Some((last.ref_mut(), Self::from_mut_slice(rest)))
         } else {
             None
