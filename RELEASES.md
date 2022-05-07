@@ -1,6 +1,6 @@
 - 2.0.0 (pending)
 
-  - **MSRV**: Rust 1.56 or later is now required.
+  - **MSRV**: Rust 1.56.1 or later is now required.
 
   - The `hashbrown` dependency has been updated to version 0.12.
 
@@ -18,6 +18,11 @@
 
   - The new `IndexMap::shrink_to` and `IndexSet::shrink_to` methods shrink
     the capacity with a lower bound.
+
+  - The new `map::Slice<K, V>` and `set::Slice<T>` offer a linear view of maps
+    and sets, behaving a lot like normal `[(K, V)]` and `[T]` slices. Notably,
+    comparison traits like `Eq` only consider items in order, rather than hash
+    lookups, and slices even implement `Hash`.
 
 - 1.8.1
 

@@ -2,7 +2,9 @@
 //! pairs is independent of the hash values of the keys.
 
 mod core;
+mod slice;
 
+pub use self::slice::Slice;
 pub use crate::mutable_keys::MutableKeys;
 
 #[cfg(feature = "rayon")]
@@ -15,13 +17,14 @@ use ::core::hash::{BuildHasher, Hash, Hasher};
 use ::core::iter::FusedIterator;
 use ::core::ops::{Index, IndexMut, RangeBounds};
 use ::core::slice::{Iter as SliceIter, IterMut as SliceIterMut};
+use alloc::boxed::Box;
 
 #[cfg(feature = "std")]
 use std::collections::hash_map::RandomState;
 
 use self::core::IndexMapCore;
 use crate::equivalent::Equivalent;
-use crate::util::third;
+use crate::util::{third, try_simplify_range};
 use crate::{Bucket, Entries, HashValue};
 
 pub use self::core::{Entry, OccupiedEntry, VacantEntry};
@@ -758,6 +761,27 @@ where
 }
 
 impl<K, V, S> IndexMap<K, V, S> {
+    /// Returns a slice of all the key-value pairs in the map.
+    ///
+    /// Computes in **O(1)** time.
+    pub fn as_slice(&self) -> &Slice<K, V> {
+        Slice::from_slice(self.as_entries())
+    }
+
+    /// Returns a mutable slice of all the key-value pairs in the map.
+    ///
+    /// Computes in **O(1)** time.
+    pub fn as_mut_slice(&mut self) -> &mut Slice<K, V> {
+        Slice::from_mut_slice(self.as_entries_mut())
+    }
+
+    /// Converts into a boxed slice of all the key-value pairs in the map.
+    ///
+    /// Note that this will drop the inner hash table and any excess capacity.
+    pub fn into_boxed_slice(self) -> Box<Slice<K, V>> {
+        Slice::from_boxed(self.into_entries().into_boxed_slice())
+    }
+
     /// Get a key-value pair by index
     ///
     /// Valid indices are *0 <= index < self.len()*
@@ -774,6 +798,28 @@ impl<K, V, S> IndexMap<K, V, S> {
     /// Computes in **O(1)** time.
     pub fn get_index_mut(&mut self, index: usize) -> Option<(&K, &mut V)> {
         self.as_entries_mut().get_mut(index).map(Bucket::ref_mut)
+    }
+
+    /// Returns a slice of key-value pairs in the given range of indices.
+    ///
+    /// Valid indices are *0 <= index < self.len()*
+    ///
+    /// Computes in **O(1)** time.
+    pub fn get_range<R: RangeBounds<usize>>(&self, range: R) -> Option<&Slice<K, V>> {
+        let entries = self.as_entries();
+        let range = try_simplify_range(range, entries.len())?;
+        entries.get(range).map(Slice::from_slice)
+    }
+
+    /// Returns a mutable slice of key-value pairs in the given range of indices.
+    ///
+    /// Valid indices are *0 <= index < self.len()*
+    ///
+    /// Computes in **O(1)** time.
+    pub fn get_range_mut<R: RangeBounds<usize>>(&mut self, range: R) -> Option<&mut Slice<K, V>> {
+        let entries = self.as_entries_mut();
+        let range = try_simplify_range(range, entries.len())?;
+        entries.get_mut(range).map(Slice::from_mut_slice)
     }
 
     /// Get the first key-value pair
@@ -846,7 +892,7 @@ impl<K, V, S> IndexMap<K, V, S> {
 /// [`keys`]: struct.IndexMap.html#method.keys
 /// [`IndexMap`]: struct.IndexMap.html
 pub struct Keys<'a, K, V> {
-    pub(crate) iter: SliceIter<'a, Bucket<K, V>>,
+    iter: SliceIter<'a, Bucket<K, V>>,
 }
 
 impl<'a, K, V> Iterator for Keys<'a, K, V> {
@@ -1045,6 +1091,13 @@ pub struct Iter<'a, K, V> {
     iter: SliceIter<'a, Bucket<K, V>>,
 }
 
+impl<'a, K, V> Iter<'a, K, V> {
+    /// Returns a slice of the remaining entries in the iterator.
+    pub fn as_slice(&self) -> &'a Slice<K, V> {
+        Slice::from_slice(self.iter.as_slice())
+    }
+}
+
 impl<'a, K, V> Iterator for Iter<'a, K, V> {
     type Item = (&'a K, &'a V);
 
@@ -1089,6 +1142,15 @@ pub struct IterMut<'a, K, V> {
     iter: SliceIterMut<'a, Bucket<K, V>>,
 }
 
+impl<'a, K, V> IterMut<'a, K, V> {
+    /// Returns a slice of the remaining entries in the iterator.
+    ///
+    /// To avoid creating `&mut` references that alias, this is forced to consume the iterator.
+    pub fn into_slice(self) -> &'a mut Slice<K, V> {
+        Slice::from_mut_slice(self.iter.into_slice())
+    }
+}
+
 impl<'a, K, V> Iterator for IterMut<'a, K, V> {
     type Item = (&'a K, &'a mut V);
 
@@ -1122,7 +1184,7 @@ impl<K: fmt::Debug, V: fmt::Debug> fmt::Debug for IterMut<'_, K, V> {
 /// [`into_iter`]: struct.IndexMap.html#method.into_iter
 /// [`IndexMap`]: struct.IndexMap.html
 pub struct IntoIter<K, V> {
-    pub(crate) iter: vec::IntoIter<Bucket<K, V>>,
+    iter: vec::IntoIter<Bucket<K, V>>,
 }
 
 impl<K, V> Iterator for IntoIter<K, V> {
