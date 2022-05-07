@@ -1,6 +1,6 @@
 - 1.9.0
 
-  - **MSRV**: Rust 1.56 or later is now required.
+  - **MSRV**: Rust 1.56.1 or later is now required.
 
   - The `hashbrown` dependency has been updated to version 0.12.
 
