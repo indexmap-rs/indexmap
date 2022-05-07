@@ -19,6 +19,11 @@
   - The new `IndexMap::shrink_to` and `IndexSet::shrink_to` methods shrink
     the capacity with a lower bound.
 
+  - The new `map::Slice<K, V>` and `set::Slice<T>` offer a linear view of maps
+    and sets, behaving a lot like normal `[(K, V)]` and `[T]` slices. Notably,
+    comparison traits like `Eq` only consider items in order, rather than hash
+    lookups, and slices even implement `Hash`.
+
 - 1.8.1
 
   - The new `IndexSet::replace_full` will return the index of the item along
