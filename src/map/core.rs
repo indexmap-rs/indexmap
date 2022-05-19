@@ -399,6 +399,7 @@ impl<K, V> IndexMapCore<K, V> {
     where
         F: FnMut(&mut K, &mut V) -> bool,
     {
+        // FIXME: This could use Vec::retain_mut with MSRV 1.61.
         // Like Vec::retain in self.entries, but with mutable K and V.
         // We swap-shift all the items we want to keep, truncate the rest,
         // then rebuild the raw hash table with the new indexes.
