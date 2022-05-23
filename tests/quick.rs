@@ -217,8 +217,12 @@ quickcheck_limit! {
         })
     }
 
-    fn swap_indices(vec: Vec<u8>, a: usize, b: usize) -> TestResult {
+    // Use `u8` test indices so quickcheck is less likely to go out of bounds.
+    fn swap_indices(vec: Vec<u8>, a: u8, b: u8) -> TestResult {
         let mut set = IndexSet::<u8>::from_iter(vec);
+        let a = usize::from(a);
+        let b = usize::from(b);
+
         if a >= set.len() || b >= set.len() {
             return TestResult::discard();
         }
@@ -236,8 +240,12 @@ quickcheck_limit! {
         TestResult::passed()
     }
 
-    fn move_index(vec: Vec<u8>, from: usize, to: usize) -> TestResult {
+    // Use `u8` test indices so quickcheck is less likely to go out of bounds.
+    fn move_index(vec: Vec<u8>, from: u8, to: u8) -> TestResult {
         let mut set = IndexSet::<u8>::from_iter(vec);
+        let from = usize::from(from);
+        let to = usize::from(to);
+
         if from >= set.len() || to >= set.len() {
             return TestResult::discard();
         }
