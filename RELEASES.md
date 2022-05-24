@@ -9,6 +9,10 @@
   - The new `IndexMap::shrink_to` and `IndexSet::shrink_to` methods shrink
     the capacity with a lower bound.
 
+  - The new `IndexMap::move_index` and `IndexSet::move_index` methods change
+    the position of an item from one index to another, shifting the items
+    between to accommodate the move.
+
 - 1.8.2
 
   - Bump the `rustc-rayon` dependency, for compiler use only.
