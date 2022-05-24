@@ -216,6 +216,53 @@ quickcheck_limit! {
             map[&key] == value && map[i] == value
         })
     }
+
+    // Use `u8` test indices so quickcheck is less likely to go out of bounds.
+    fn swap_indices(vec: Vec<u8>, a: u8, b: u8) -> TestResult {
+        let mut set = IndexSet::<u8>::from_iter(vec);
+        let a = usize::from(a);
+        let b = usize::from(b);
+
+        if a >= set.len() || b >= set.len() {
+            return TestResult::discard();
+        }
+
+        let mut vec = Vec::from_iter(set.iter().cloned());
+        vec.swap(a, b);
+
+        set.swap_indices(a, b);
+
+        // Check both iteration order and hash lookups
+        assert!(set.iter().eq(vec.iter()));
+        assert!(vec.iter().enumerate().all(|(i, x)| {
+            set.get_index_of(x) == Some(i)
+        }));
+        TestResult::passed()
+    }
+
+    // Use `u8` test indices so quickcheck is less likely to go out of bounds.
+    fn move_index(vec: Vec<u8>, from: u8, to: u8) -> TestResult {
+        let mut set = IndexSet::<u8>::from_iter(vec);
+        let from = usize::from(from);
+        let to = usize::from(to);
+
+        if from >= set.len() || to >= set.len() {
+            return TestResult::discard();
+        }
+
+        let mut vec = Vec::from_iter(set.iter().cloned());
+        let x = vec.remove(from);
+        vec.insert(to, x);
+
+        set.move_index(from, to);
+
+        // Check both iteration order and hash lookups
+        assert!(set.iter().eq(vec.iter()));
+        assert!(vec.iter().enumerate().all(|(i, x)| {
+            set.get_index_of(x) == Some(i)
+        }));
+        TestResult::passed()
+    }
 }
 
 use crate::Op::*;

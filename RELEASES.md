@@ -19,6 +19,10 @@
   - The new `IndexMap::shrink_to` and `IndexSet::shrink_to` methods shrink
     the capacity with a lower bound.
 
+  - The new `IndexMap::move_index` and `IndexSet::move_index` methods change
+    the position of an item from one index to another, shifting the items
+    between to accommodate the move.
+
   - The new `map::Slice<K, V>` and `set::Slice<T>` offer a linear view of maps
     and sets, behaving a lot like normal `[(K, V)]` and `[T]` slices. Notably,
     comparison traits like `Eq` only consider items in order, rather than hash
