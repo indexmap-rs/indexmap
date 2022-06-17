@@ -16,7 +16,7 @@ jobs:
     strategy:
       matrix:
         include:
-          - rust: 1.49.0 # MSRV
+          - rust: 1.56.1 # MSRV
             features:
           - rust: stable
             features: serde
@@ -59,7 +59,7 @@ jobs:
     strategy:
       matrix:
         include:
-          - rust: 1.49.0
+          - rust: 1.56.1
             target: thumbv6m-none-eabi
           - rust: stable
             target: thumbv6m-none-eabi
