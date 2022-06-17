@@ -1,9 +1,5 @@
 - 2.0.0 (pending)
 
-  - **MSRV**: Rust 1.56.1 or later is now required.
-
-  - The `hashbrown` dependency has been updated to version 0.12.
-
   - The `"std"` feature is no longer auto-detected. It is included in the
     default feature set, or else can be enabled like any other Cargo feature.
 
@@ -14,6 +10,17 @@
     the key part from `&mut K` to `&K`. There is also a new alternative
     `MutableKeys::get_index_mut2` to access the former behavior.
 
+  - The new `map::Slice<K, V>` and `set::Slice<T>` offer a linear view of maps
+    and sets, behaving a lot like normal `[(K, V)]` and `[T]` slices. Notably,
+    comparison traits like `Eq` only consider items in order, rather than hash
+    lookups, and slices even implement `Hash`.
+
+- 1.9.0
+
+  - **MSRV**: Rust 1.56.1 or later is now required.
+
+  - The `hashbrown` dependency has been updated to version 0.12.
+
   - `IterMut` and `ValuesMut` now implement `Debug`.
 
   - The new `IndexMap::shrink_to` and `IndexSet::shrink_to` methods shrink
@@ -23,10 +30,9 @@
     the position of an item from one index to another, shifting the items
     between to accommodate the move.
 
-  - The new `map::Slice<K, V>` and `set::Slice<T>` offer a linear view of maps
-    and sets, behaving a lot like normal `[(K, V)]` and `[T]` slices. Notably,
-    comparison traits like `Eq` only consider items in order, rather than hash
-    lookups, and slices even implement `Hash`.
+- 1.8.2
+
+  - Bump the `rustc-rayon` dependency, for compiler use only.
 
 - 1.8.1
 
