@@ -52,4 +52,4 @@ which is roughly:
 
 # Recent Changes
 
-See [RELEASES.md](https://github.com/bluss/indexmap/blob/master/README.md).
+See [RELEASES.md](https://github.com/bluss/indexmap/blob/master/RELEASES.md).
