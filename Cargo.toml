@@ -9,7 +9,7 @@ license = "Apache-2.0 OR MIT"
 description = "A hash table with consistent order and fast iteration."
 keywords = ["hashmap", "no_std"]
 categories = ["data-structures", "no-std"]
-rust-version = "1.56.1"
+rust-version = "1.56"
 
 [lib]
 bench = false
