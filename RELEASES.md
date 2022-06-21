@@ -15,6 +15,12 @@
     comparison traits like `Eq` only consider items in order, rather than hash
     lookups, and slices even implement `Hash`.
 
+- 1.9.1
+
+  - The MSRV now allows Rust 1.56.0 as well. However, currently `hashbrown`
+    0.12.1 requires 1.56.1, so users on 1.56.0 should downgrade that to 0.12.0
+    until there is a later published version relaxing its requirement.
+
 - 1.9.0
 
   - **MSRV**: Rust 1.56.1 or later is now required.
