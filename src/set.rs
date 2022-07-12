@@ -1,10 +1,12 @@
 //! A hash set implemented using `IndexMap`
 
+mod iter;
 mod slice;
 
 #[cfg(test)]
 mod tests;
 
+pub use self::iter::{Difference, Drain, Intersection, IntoIter, Iter, SymmetricDifference, Union};
 pub use self::slice::Slice;
 
 #[cfg(feature = "rayon")]
@@ -14,14 +16,12 @@ pub use crate::rayon::set as rayon;
 use std::collections::hash_map::RandomState;
 
 use crate::util::try_simplify_range;
-use crate::vec::{self, Vec};
 use alloc::boxed::Box;
+use alloc::vec::Vec;
 use core::cmp::Ordering;
 use core::fmt;
 use core::hash::{BuildHasher, Hash};
-use core::iter::{Chain, FusedIterator};
 use core::ops::{BitAnd, BitOr, BitXor, Index, RangeBounds, Sub};
-use core::slice::Iter as SliceIter;
 
 use super::{Entries, Equivalent, IndexMap};
 
@@ -200,9 +200,7 @@ impl<T, S> IndexSet<T, S> {
 
     /// Return an iterator over the values of the set, in their order
     pub fn iter(&self) -> Iter<'_, T> {
-        Iter {
-            iter: self.map.as_entries().iter(),
-        }
+        Iter::new(self.as_entries())
     }
 
     /// Remove all elements in the set, while preserving its capacity.
@@ -236,9 +234,7 @@ impl<T, S> IndexSet<T, S> {
     where
         R: RangeBounds<usize>,
     {
-        Drain {
-            iter: self.map.core.drain(range),
-        }
+        Drain::new(self.map.core.drain(range))
     }
 
     /// Splits the collection into two at the given index.
@@ -325,10 +321,7 @@ where
     where
         S2: BuildHasher,
     {
-        Difference {
-            iter: self.iter(),
-            other,
-        }
+        Difference::new(self, other)
     }
 
     /// Return an iterator over the values that are in `self` or `other`,
@@ -343,9 +336,7 @@ where
     where
         S2: BuildHasher,
     {
-        SymmetricDifference {
-            iter: self.difference(other).chain(other.difference(self)),
-        }
+        SymmetricDifference::new(self, other)
     }
 
     /// Return an iterator over the values that are in both `self` and `other`.
@@ -355,10 +346,7 @@ where
     where
         S2: BuildHasher,
     {
-        Intersection {
-            iter: self.iter(),
-            other,
-        }
+        Intersection::new(self, other)
     }
 
     /// Return an iterator over all values that are in `self` or `other`.
@@ -369,9 +357,7 @@ where
     where
         S2: BuildHasher,
     {
-        Union {
-            iter: self.iter().chain(other.difference(self)),
-        }
+        Union::new(self, other)
     }
 
     /// Return `true` if an equivalent to `value` exists in the set.
@@ -613,9 +599,7 @@ where
     {
         let mut entries = self.into_entries();
         entries.sort_by(move |a, b| cmp(&a.key, &b.key));
-        IntoIter {
-            iter: entries.into_iter(),
-        }
+        IntoIter::new(entries)
     }
 
     /// Sort the set's values by their default ordering.
@@ -646,9 +630,7 @@ where
     {
         let mut entries = self.into_entries();
         entries.sort_unstable_by(move |a, b| cmp(&a.key, &b.key));
-        IntoIter {
-            iter: entries.into_iter(),
-        }
+        IntoIter::new(entries)
     }
 
     /// Reverses the order of the set’s values in place.
@@ -795,148 +777,6 @@ impl<T, S> Index<usize> for IndexSet<T, S> {
     }
 }
 
-/// An owning iterator over the items of a `IndexSet`.
-///
-/// This `struct` is created by the [`into_iter`] method on [`IndexSet`]
-/// (provided by the `IntoIterator` trait). See its documentation for more.
-///
-/// [`IndexSet`]: struct.IndexSet.html
-/// [`into_iter`]: struct.IndexSet.html#method.into_iter
-pub struct IntoIter<T> {
-    iter: vec::IntoIter<Bucket<T>>,
-}
-
-impl<T> Iterator for IntoIter<T> {
-    type Item = T;
-
-    iterator_methods!(Bucket::key);
-}
-
-impl<T> DoubleEndedIterator for IntoIter<T> {
-    double_ended_iterator_methods!(Bucket::key);
-}
-
-impl<T> ExactSizeIterator for IntoIter<T> {
-    fn len(&self) -> usize {
-        self.iter.len()
-    }
-}
-
-impl<T> FusedIterator for IntoIter<T> {}
-
-impl<T: fmt::Debug> fmt::Debug for IntoIter<T> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let iter = self.iter.as_slice().iter().map(Bucket::key_ref);
-        f.debug_list().entries(iter).finish()
-    }
-}
-
-/// An iterator over the items of a `IndexSet`.
-///
-/// This `struct` is created by the [`iter`] method on [`IndexSet`].
-/// See its documentation for more.
-///
-/// [`IndexSet`]: struct.IndexSet.html
-/// [`iter`]: struct.IndexSet.html#method.iter
-pub struct Iter<'a, T> {
-    iter: SliceIter<'a, Bucket<T>>,
-}
-
-impl<'a, T> Iter<'a, T> {
-    /// Returns a slice of the remaining entries in the iterator.
-    pub fn as_slice(&self) -> &'a Slice<T> {
-        Slice::from_slice(self.iter.as_slice())
-    }
-}
-
-impl<'a, T> Iterator for Iter<'a, T> {
-    type Item = &'a T;
-
-    iterator_methods!(Bucket::key_ref);
-}
-
-impl<T> DoubleEndedIterator for Iter<'_, T> {
-    double_ended_iterator_methods!(Bucket::key_ref);
-}
-
-impl<T> ExactSizeIterator for Iter<'_, T> {
-    fn len(&self) -> usize {
-        self.iter.len()
-    }
-}
-
-impl<T> FusedIterator for Iter<'_, T> {}
-
-impl<T> Clone for Iter<'_, T> {
-    fn clone(&self) -> Self {
-        Iter {
-            iter: self.iter.clone(),
-        }
-    }
-}
-
-impl<T: fmt::Debug> fmt::Debug for Iter<'_, T> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_list().entries(self.clone()).finish()
-    }
-}
-
-/// A draining iterator over the items of a `IndexSet`.
-///
-/// This `struct` is created by the [`drain`] method on [`IndexSet`].
-/// See its documentation for more.
-///
-/// [`IndexSet`]: struct.IndexSet.html
-/// [`drain`]: struct.IndexSet.html#method.drain
-pub struct Drain<'a, T> {
-    iter: vec::Drain<'a, Bucket<T>>,
-}
-
-impl<T> Iterator for Drain<'_, T> {
-    type Item = T;
-
-    iterator_methods!(Bucket::key);
-}
-
-impl<T> DoubleEndedIterator for Drain<'_, T> {
-    double_ended_iterator_methods!(Bucket::key);
-}
-
-impl<T> ExactSizeIterator for Drain<'_, T> {
-    fn len(&self) -> usize {
-        self.iter.len()
-    }
-}
-
-impl<T> FusedIterator for Drain<'_, T> {}
-
-impl<T: fmt::Debug> fmt::Debug for Drain<'_, T> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let iter = self.iter.as_slice().iter().map(Bucket::key_ref);
-        f.debug_list().entries(iter).finish()
-    }
-}
-
-impl<'a, T, S> IntoIterator for &'a IndexSet<T, S> {
-    type Item = &'a T;
-    type IntoIter = Iter<'a, T>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        self.iter()
-    }
-}
-
-impl<T, S> IntoIterator for IndexSet<T, S> {
-    type Item = T;
-    type IntoIter = IntoIter<T>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        IntoIter {
-            iter: self.into_entries().into_iter(),
-        }
-    }
-}
-
 impl<T, S> FromIterator<T> for IndexSet<T, S>
 where
     T: Hash + Eq,
@@ -1052,310 +892,6 @@ where
         S2: BuildHasher,
     {
         other.is_subset(self)
-    }
-}
-
-/// A lazy iterator producing elements in the difference of `IndexSet`s.
-///
-/// This `struct` is created by the [`difference`] method on [`IndexSet`].
-/// See its documentation for more.
-///
-/// [`IndexSet`]: struct.IndexSet.html
-/// [`difference`]: struct.IndexSet.html#method.difference
-pub struct Difference<'a, T, S> {
-    iter: Iter<'a, T>,
-    other: &'a IndexSet<T, S>,
-}
-
-impl<'a, T, S> Iterator for Difference<'a, T, S>
-where
-    T: Eq + Hash,
-    S: BuildHasher,
-{
-    type Item = &'a T;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        while let Some(item) = self.iter.next() {
-            if !self.other.contains(item) {
-                return Some(item);
-            }
-        }
-        None
-    }
-
-    fn size_hint(&self) -> (usize, Option<usize>) {
-        (0, self.iter.size_hint().1)
-    }
-}
-
-impl<T, S> DoubleEndedIterator for Difference<'_, T, S>
-where
-    T: Eq + Hash,
-    S: BuildHasher,
-{
-    fn next_back(&mut self) -> Option<Self::Item> {
-        while let Some(item) = self.iter.next_back() {
-            if !self.other.contains(item) {
-                return Some(item);
-            }
-        }
-        None
-    }
-}
-
-impl<T, S> FusedIterator for Difference<'_, T, S>
-where
-    T: Eq + Hash,
-    S: BuildHasher,
-{
-}
-
-impl<T, S> Clone for Difference<'_, T, S> {
-    fn clone(&self) -> Self {
-        Difference {
-            iter: self.iter.clone(),
-            ..*self
-        }
-    }
-}
-
-impl<T, S> fmt::Debug for Difference<'_, T, S>
-where
-    T: fmt::Debug + Eq + Hash,
-    S: BuildHasher,
-{
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_list().entries(self.clone()).finish()
-    }
-}
-
-/// A lazy iterator producing elements in the intersection of `IndexSet`s.
-///
-/// This `struct` is created by the [`intersection`] method on [`IndexSet`].
-/// See its documentation for more.
-///
-/// [`IndexSet`]: struct.IndexSet.html
-/// [`intersection`]: struct.IndexSet.html#method.intersection
-pub struct Intersection<'a, T, S> {
-    iter: Iter<'a, T>,
-    other: &'a IndexSet<T, S>,
-}
-
-impl<'a, T, S> Iterator for Intersection<'a, T, S>
-where
-    T: Eq + Hash,
-    S: BuildHasher,
-{
-    type Item = &'a T;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        while let Some(item) = self.iter.next() {
-            if self.other.contains(item) {
-                return Some(item);
-            }
-        }
-        None
-    }
-
-    fn size_hint(&self) -> (usize, Option<usize>) {
-        (0, self.iter.size_hint().1)
-    }
-}
-
-impl<T, S> DoubleEndedIterator for Intersection<'_, T, S>
-where
-    T: Eq + Hash,
-    S: BuildHasher,
-{
-    fn next_back(&mut self) -> Option<Self::Item> {
-        while let Some(item) = self.iter.next_back() {
-            if self.other.contains(item) {
-                return Some(item);
-            }
-        }
-        None
-    }
-}
-
-impl<T, S> FusedIterator for Intersection<'_, T, S>
-where
-    T: Eq + Hash,
-    S: BuildHasher,
-{
-}
-
-impl<T, S> Clone for Intersection<'_, T, S> {
-    fn clone(&self) -> Self {
-        Intersection {
-            iter: self.iter.clone(),
-            ..*self
-        }
-    }
-}
-
-impl<T, S> fmt::Debug for Intersection<'_, T, S>
-where
-    T: fmt::Debug + Eq + Hash,
-    S: BuildHasher,
-{
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_list().entries(self.clone()).finish()
-    }
-}
-
-/// A lazy iterator producing elements in the symmetric difference of `IndexSet`s.
-///
-/// This `struct` is created by the [`symmetric_difference`] method on
-/// [`IndexSet`]. See its documentation for more.
-///
-/// [`IndexSet`]: struct.IndexSet.html
-/// [`symmetric_difference`]: struct.IndexSet.html#method.symmetric_difference
-pub struct SymmetricDifference<'a, T, S1, S2> {
-    iter: Chain<Difference<'a, T, S2>, Difference<'a, T, S1>>,
-}
-
-impl<'a, T, S1, S2> Iterator for SymmetricDifference<'a, T, S1, S2>
-where
-    T: Eq + Hash,
-    S1: BuildHasher,
-    S2: BuildHasher,
-{
-    type Item = &'a T;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        self.iter.next()
-    }
-
-    fn size_hint(&self) -> (usize, Option<usize>) {
-        self.iter.size_hint()
-    }
-
-    fn fold<B, F>(self, init: B, f: F) -> B
-    where
-        F: FnMut(B, Self::Item) -> B,
-    {
-        self.iter.fold(init, f)
-    }
-}
-
-impl<T, S1, S2> DoubleEndedIterator for SymmetricDifference<'_, T, S1, S2>
-where
-    T: Eq + Hash,
-    S1: BuildHasher,
-    S2: BuildHasher,
-{
-    fn next_back(&mut self) -> Option<Self::Item> {
-        self.iter.next_back()
-    }
-
-    fn rfold<B, F>(self, init: B, f: F) -> B
-    where
-        F: FnMut(B, Self::Item) -> B,
-    {
-        self.iter.rfold(init, f)
-    }
-}
-
-impl<T, S1, S2> FusedIterator for SymmetricDifference<'_, T, S1, S2>
-where
-    T: Eq + Hash,
-    S1: BuildHasher,
-    S2: BuildHasher,
-{
-}
-
-impl<T, S1, S2> Clone for SymmetricDifference<'_, T, S1, S2> {
-    fn clone(&self) -> Self {
-        SymmetricDifference {
-            iter: self.iter.clone(),
-        }
-    }
-}
-
-impl<T, S1, S2> fmt::Debug for SymmetricDifference<'_, T, S1, S2>
-where
-    T: fmt::Debug + Eq + Hash,
-    S1: BuildHasher,
-    S2: BuildHasher,
-{
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_list().entries(self.clone()).finish()
-    }
-}
-
-/// A lazy iterator producing elements in the union of `IndexSet`s.
-///
-/// This `struct` is created by the [`union`] method on [`IndexSet`].
-/// See its documentation for more.
-///
-/// [`IndexSet`]: struct.IndexSet.html
-/// [`union`]: struct.IndexSet.html#method.union
-pub struct Union<'a, T, S> {
-    iter: Chain<Iter<'a, T>, Difference<'a, T, S>>,
-}
-
-impl<'a, T, S> Iterator for Union<'a, T, S>
-where
-    T: Eq + Hash,
-    S: BuildHasher,
-{
-    type Item = &'a T;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        self.iter.next()
-    }
-
-    fn size_hint(&self) -> (usize, Option<usize>) {
-        self.iter.size_hint()
-    }
-
-    fn fold<B, F>(self, init: B, f: F) -> B
-    where
-        F: FnMut(B, Self::Item) -> B,
-    {
-        self.iter.fold(init, f)
-    }
-}
-
-impl<T, S> DoubleEndedIterator for Union<'_, T, S>
-where
-    T: Eq + Hash,
-    S: BuildHasher,
-{
-    fn next_back(&mut self) -> Option<Self::Item> {
-        self.iter.next_back()
-    }
-
-    fn rfold<B, F>(self, init: B, f: F) -> B
-    where
-        F: FnMut(B, Self::Item) -> B,
-    {
-        self.iter.rfold(init, f)
-    }
-}
-
-impl<T, S> FusedIterator for Union<'_, T, S>
-where
-    T: Eq + Hash,
-    S: BuildHasher,
-{
-}
-
-impl<T, S> Clone for Union<'_, T, S> {
-    fn clone(&self) -> Self {
-        Union {
-            iter: self.iter.clone(),
-        }
-    }
-}
-
-impl<T, S> fmt::Debug for Union<'_, T, S>
-where
-    T: fmt::Debug + Eq + Hash,
-    S: BuildHasher,
-{
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_list().entries(self.clone()).finish()
     }
 }
 
