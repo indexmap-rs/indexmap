@@ -169,51 +169,37 @@ impl<K, V> Slice<K, V> {
 
     /// Return an iterator over the key-value pairs of the map slice.
     pub fn iter(&self) -> Iter<'_, K, V> {
-        Iter {
-            iter: self.entries.iter(),
-        }
+        Iter::new(&self.entries)
     }
 
     /// Return an iterator over the key-value pairs of the map slice.
     pub fn iter_mut(&mut self) -> IterMut<'_, K, V> {
-        IterMut {
-            iter: self.entries.iter_mut(),
-        }
+        IterMut::new(&mut self.entries)
     }
 
     /// Return an iterator over the keys of the map slice.
     pub fn keys(&self) -> Keys<'_, K, V> {
-        Keys {
-            iter: self.entries.iter(),
-        }
+        Keys::new(&self.entries)
     }
 
     /// Return an owning iterator over the keys of the map slice.
     pub fn into_keys(self: Box<Self>) -> IntoKeys<K, V> {
-        IntoKeys {
-            iter: self.into_entries().into_iter(),
-        }
+        IntoKeys::new(self.into_entries())
     }
 
     /// Return an iterator over the values of the map slice.
     pub fn values(&self) -> Values<'_, K, V> {
-        Values {
-            iter: self.entries.iter(),
-        }
+        Values::new(&self.entries)
     }
 
     /// Return an iterator over mutable references to the the values of the map slice.
     pub fn values_mut(&mut self) -> ValuesMut<'_, K, V> {
-        ValuesMut {
-            iter: self.entries.iter_mut(),
-        }
+        ValuesMut::new(&mut self.entries)
     }
 
     /// Return an owning iterator over the values of the map slice.
     pub fn into_values(self: Box<Self>) -> IntoValues<K, V> {
-        IntoValues {
-            iter: self.into_entries().into_iter(),
-        }
+        IntoValues::new(self.into_entries())
     }
 }
 
@@ -240,9 +226,7 @@ impl<K, V> IntoIterator for Box<Slice<K, V>> {
     type Item = (K, V);
 
     fn into_iter(self) -> Self::IntoIter {
-        IntoIter {
-            iter: self.into_entries().into_iter(),
-        }
+        IntoIter::new(self.into_entries())
     }
 }
 

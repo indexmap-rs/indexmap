@@ -237,7 +237,7 @@ impl<T, S> IndexSet<T, S> {
         R: RangeBounds<usize>,
     {
         Drain {
-            iter: self.map.drain(range).iter,
+            iter: self.map.core.drain(range),
         }
     }
 
