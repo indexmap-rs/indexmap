@@ -107,9 +107,7 @@ impl<T> Slice<T> {
 
     /// Return an iterator over the values of the set slice.
     pub fn iter(&self) -> Iter<'_, T> {
-        Iter {
-            iter: self.entries.iter(),
-        }
+        Iter::new(&self.entries)
     }
 }
 
@@ -127,9 +125,7 @@ impl<T> IntoIterator for Box<Slice<T>> {
     type Item = T;
 
     fn into_iter(self) -> Self::IntoIter {
-        IntoIter {
-            iter: self.into_entries().into_iter(),
-        }
+        IntoIter::new(self.into_entries())
     }
 }
 

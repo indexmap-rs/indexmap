@@ -2,22 +2,28 @@
 //! pairs is independent of the hash values of the keys.
 
 mod core;
+mod iter;
 mod slice;
 
+#[cfg(test)]
+mod tests;
+
+pub use self::core::{Entry, OccupiedEntry, VacantEntry};
+pub use self::iter::{
+    Drain, IntoIter, IntoKeys, IntoValues, Iter, IterMut, Keys, Values, ValuesMut,
+};
 pub use self::slice::Slice;
 pub use crate::mutable_keys::MutableKeys;
 
 #[cfg(feature = "rayon")]
 pub use crate::rayon::map as rayon;
 
-use crate::vec::{self, Vec};
 use ::core::cmp::Ordering;
 use ::core::fmt;
 use ::core::hash::{BuildHasher, Hash, Hasher};
-use ::core::iter::FusedIterator;
 use ::core::ops::{Index, IndexMut, RangeBounds};
-use ::core::slice::{Iter as SliceIter, IterMut as SliceIterMut};
 use alloc::boxed::Box;
+use alloc::vec::Vec;
 
 #[cfg(feature = "std")]
 use std::collections::hash_map::RandomState;
@@ -26,8 +32,6 @@ use self::core::IndexMapCore;
 use crate::equivalent::Equivalent;
 use crate::util::{third, try_simplify_range};
 use crate::{Bucket, Entries, HashValue};
-
-pub use self::core::{Entry, OccupiedEntry, VacantEntry};
 
 /// A hash table where the iteration order of the key-value pairs is independent
 /// of the hash values of the keys.
@@ -217,52 +221,38 @@ impl<K, V, S> IndexMap<K, V, S> {
 
     /// Return an iterator over the key-value pairs of the map, in their order
     pub fn iter(&self) -> Iter<'_, K, V> {
-        Iter {
-            iter: self.as_entries().iter(),
-        }
+        Iter::new(self.as_entries())
     }
 
     /// Return an iterator over the key-value pairs of the map, in their order
     pub fn iter_mut(&mut self) -> IterMut<'_, K, V> {
-        IterMut {
-            iter: self.as_entries_mut().iter_mut(),
-        }
+        IterMut::new(self.as_entries_mut())
     }
 
     /// Return an iterator over the keys of the map, in their order
     pub fn keys(&self) -> Keys<'_, K, V> {
-        Keys {
-            iter: self.as_entries().iter(),
-        }
+        Keys::new(self.as_entries())
     }
 
     /// Return an owning iterator over the keys of the map, in their order
     pub fn into_keys(self) -> IntoKeys<K, V> {
-        IntoKeys {
-            iter: self.into_entries().into_iter(),
-        }
+        IntoKeys::new(self.into_entries())
     }
 
     /// Return an iterator over the values of the map, in their order
     pub fn values(&self) -> Values<'_, K, V> {
-        Values {
-            iter: self.as_entries().iter(),
-        }
+        Values::new(self.as_entries())
     }
 
     /// Return an iterator over mutable references to the values of the map,
     /// in their order
     pub fn values_mut(&mut self) -> ValuesMut<'_, K, V> {
-        ValuesMut {
-            iter: self.as_entries_mut().iter_mut(),
-        }
+        ValuesMut::new(self.as_entries_mut())
     }
 
     /// Return an owning iterator over the values of the map, in their order
     pub fn into_values(self) -> IntoValues<K, V> {
-        IntoValues {
-            iter: self.into_entries().into_iter(),
-        }
+        IntoValues::new(self.into_entries())
     }
 
     /// Remove all key-value pairs in the map, while preserving its capacity.
@@ -296,9 +286,7 @@ impl<K, V, S> IndexMap<K, V, S> {
     where
         R: RangeBounds<usize>,
     {
-        Drain {
-            iter: self.core.drain(range),
-        }
+        Drain::new(self.core.drain(range))
     }
 
     /// Splits the collection into two at the given index.
@@ -701,9 +689,7 @@ where
     {
         let mut entries = self.into_entries();
         entries.sort_by(move |a, b| cmp(&a.key, &a.value, &b.key, &b.value));
-        IntoIter {
-            iter: entries.into_iter(),
-        }
+        IntoIter::new(entries)
     }
 
     /// Sort the map's key-value pairs by the default ordering of the keys, but
@@ -747,9 +733,7 @@ where
     {
         let mut entries = self.into_entries();
         entries.sort_unstable_by(move |a, b| cmp(&a.key, &a.value, &b.key, &b.value));
-        IntoIter {
-            iter: entries.into_iter(),
-        }
+        IntoIter::new(entries)
     }
 
     /// Reverses the order of the map’s key-value pairs in place.
@@ -894,396 +878,6 @@ impl<K, V, S> IndexMap<K, V, S> {
     /// ***Panics*** if `a` or `b` are out of bounds.
     pub fn swap_indices(&mut self, a: usize, b: usize) {
         self.core.swap_indices(a, b)
-    }
-}
-
-/// An iterator over the keys of a `IndexMap`.
-///
-/// This `struct` is created by the [`keys`] method on [`IndexMap`]. See its
-/// documentation for more.
-///
-/// [`keys`]: struct.IndexMap.html#method.keys
-/// [`IndexMap`]: struct.IndexMap.html
-pub struct Keys<'a, K, V> {
-    iter: SliceIter<'a, Bucket<K, V>>,
-}
-
-impl<'a, K, V> Iterator for Keys<'a, K, V> {
-    type Item = &'a K;
-
-    iterator_methods!(Bucket::key_ref);
-}
-
-impl<K, V> DoubleEndedIterator for Keys<'_, K, V> {
-    double_ended_iterator_methods!(Bucket::key_ref);
-}
-
-impl<K, V> ExactSizeIterator for Keys<'_, K, V> {
-    fn len(&self) -> usize {
-        self.iter.len()
-    }
-}
-
-impl<K, V> FusedIterator for Keys<'_, K, V> {}
-
-// FIXME(#26925) Remove in favor of `#[derive(Clone)]`
-impl<K, V> Clone for Keys<'_, K, V> {
-    fn clone(&self) -> Self {
-        Keys {
-            iter: self.iter.clone(),
-        }
-    }
-}
-
-impl<K: fmt::Debug, V> fmt::Debug for Keys<'_, K, V> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_list().entries(self.clone()).finish()
-    }
-}
-
-/// An owning iterator over the keys of a `IndexMap`.
-///
-/// This `struct` is created by the [`into_keys`] method on [`IndexMap`].
-/// See its documentation for more.
-///
-/// [`IndexMap`]: struct.IndexMap.html
-/// [`into_keys`]: struct.IndexMap.html#method.into_keys
-pub struct IntoKeys<K, V> {
-    iter: vec::IntoIter<Bucket<K, V>>,
-}
-
-impl<K, V> Iterator for IntoKeys<K, V> {
-    type Item = K;
-
-    iterator_methods!(Bucket::key);
-}
-
-impl<K, V> DoubleEndedIterator for IntoKeys<K, V> {
-    double_ended_iterator_methods!(Bucket::key);
-}
-
-impl<K, V> ExactSizeIterator for IntoKeys<K, V> {
-    fn len(&self) -> usize {
-        self.iter.len()
-    }
-}
-
-impl<K, V> FusedIterator for IntoKeys<K, V> {}
-
-impl<K: fmt::Debug, V> fmt::Debug for IntoKeys<K, V> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let iter = self.iter.as_slice().iter().map(Bucket::key_ref);
-        f.debug_list().entries(iter).finish()
-    }
-}
-
-/// An iterator over the values of a `IndexMap`.
-///
-/// This `struct` is created by the [`values`] method on [`IndexMap`]. See its
-/// documentation for more.
-///
-/// [`values`]: struct.IndexMap.html#method.values
-/// [`IndexMap`]: struct.IndexMap.html
-pub struct Values<'a, K, V> {
-    iter: SliceIter<'a, Bucket<K, V>>,
-}
-
-impl<'a, K, V> Iterator for Values<'a, K, V> {
-    type Item = &'a V;
-
-    iterator_methods!(Bucket::value_ref);
-}
-
-impl<K, V> DoubleEndedIterator for Values<'_, K, V> {
-    double_ended_iterator_methods!(Bucket::value_ref);
-}
-
-impl<K, V> ExactSizeIterator for Values<'_, K, V> {
-    fn len(&self) -> usize {
-        self.iter.len()
-    }
-}
-
-impl<K, V> FusedIterator for Values<'_, K, V> {}
-
-// FIXME(#26925) Remove in favor of `#[derive(Clone)]`
-impl<K, V> Clone for Values<'_, K, V> {
-    fn clone(&self) -> Self {
-        Values {
-            iter: self.iter.clone(),
-        }
-    }
-}
-
-impl<K, V: fmt::Debug> fmt::Debug for Values<'_, K, V> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_list().entries(self.clone()).finish()
-    }
-}
-
-/// A mutable iterator over the values of a `IndexMap`.
-///
-/// This `struct` is created by the [`values_mut`] method on [`IndexMap`]. See its
-/// documentation for more.
-///
-/// [`values_mut`]: struct.IndexMap.html#method.values_mut
-/// [`IndexMap`]: struct.IndexMap.html
-pub struct ValuesMut<'a, K, V> {
-    iter: SliceIterMut<'a, Bucket<K, V>>,
-}
-
-impl<'a, K, V> Iterator for ValuesMut<'a, K, V> {
-    type Item = &'a mut V;
-
-    iterator_methods!(Bucket::value_mut);
-}
-
-impl<K, V> DoubleEndedIterator for ValuesMut<'_, K, V> {
-    double_ended_iterator_methods!(Bucket::value_mut);
-}
-
-impl<K, V> ExactSizeIterator for ValuesMut<'_, K, V> {
-    fn len(&self) -> usize {
-        self.iter.len()
-    }
-}
-
-impl<K, V> FusedIterator for ValuesMut<'_, K, V> {}
-
-impl<K, V: fmt::Debug> fmt::Debug for ValuesMut<'_, K, V> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let iter = self.iter.as_slice().iter().map(Bucket::value_ref);
-        f.debug_list().entries(iter).finish()
-    }
-}
-
-/// An owning iterator over the values of a `IndexMap`.
-///
-/// This `struct` is created by the [`into_values`] method on [`IndexMap`].
-/// See its documentation for more.
-///
-/// [`IndexMap`]: struct.IndexMap.html
-/// [`into_values`]: struct.IndexMap.html#method.into_values
-pub struct IntoValues<K, V> {
-    iter: vec::IntoIter<Bucket<K, V>>,
-}
-
-impl<K, V> Iterator for IntoValues<K, V> {
-    type Item = V;
-
-    iterator_methods!(Bucket::value);
-}
-
-impl<K, V> DoubleEndedIterator for IntoValues<K, V> {
-    double_ended_iterator_methods!(Bucket::value);
-}
-
-impl<K, V> ExactSizeIterator for IntoValues<K, V> {
-    fn len(&self) -> usize {
-        self.iter.len()
-    }
-}
-
-impl<K, V> FusedIterator for IntoValues<K, V> {}
-
-impl<K, V: fmt::Debug> fmt::Debug for IntoValues<K, V> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let iter = self.iter.as_slice().iter().map(Bucket::value_ref);
-        f.debug_list().entries(iter).finish()
-    }
-}
-
-/// An iterator over the entries of a `IndexMap`.
-///
-/// This `struct` is created by the [`iter`] method on [`IndexMap`]. See its
-/// documentation for more.
-///
-/// [`iter`]: struct.IndexMap.html#method.iter
-/// [`IndexMap`]: struct.IndexMap.html
-pub struct Iter<'a, K, V> {
-    iter: SliceIter<'a, Bucket<K, V>>,
-}
-
-impl<'a, K, V> Iter<'a, K, V> {
-    /// Returns a slice of the remaining entries in the iterator.
-    pub fn as_slice(&self) -> &'a Slice<K, V> {
-        Slice::from_slice(self.iter.as_slice())
-    }
-}
-
-impl<'a, K, V> Iterator for Iter<'a, K, V> {
-    type Item = (&'a K, &'a V);
-
-    iterator_methods!(Bucket::refs);
-}
-
-impl<K, V> DoubleEndedIterator for Iter<'_, K, V> {
-    double_ended_iterator_methods!(Bucket::refs);
-}
-
-impl<K, V> ExactSizeIterator for Iter<'_, K, V> {
-    fn len(&self) -> usize {
-        self.iter.len()
-    }
-}
-
-impl<K, V> FusedIterator for Iter<'_, K, V> {}
-
-// FIXME(#26925) Remove in favor of `#[derive(Clone)]`
-impl<K, V> Clone for Iter<'_, K, V> {
-    fn clone(&self) -> Self {
-        Iter {
-            iter: self.iter.clone(),
-        }
-    }
-}
-
-impl<K: fmt::Debug, V: fmt::Debug> fmt::Debug for Iter<'_, K, V> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_list().entries(self.clone()).finish()
-    }
-}
-
-/// A mutable iterator over the entries of a `IndexMap`.
-///
-/// This `struct` is created by the [`iter_mut`] method on [`IndexMap`]. See its
-/// documentation for more.
-///
-/// [`iter_mut`]: struct.IndexMap.html#method.iter_mut
-/// [`IndexMap`]: struct.IndexMap.html
-pub struct IterMut<'a, K, V> {
-    iter: SliceIterMut<'a, Bucket<K, V>>,
-}
-
-impl<'a, K, V> IterMut<'a, K, V> {
-    /// Returns a slice of the remaining entries in the iterator.
-    ///
-    /// To avoid creating `&mut` references that alias, this is forced to consume the iterator.
-    pub fn into_slice(self) -> &'a mut Slice<K, V> {
-        Slice::from_mut_slice(self.iter.into_slice())
-    }
-}
-
-impl<'a, K, V> Iterator for IterMut<'a, K, V> {
-    type Item = (&'a K, &'a mut V);
-
-    iterator_methods!(Bucket::ref_mut);
-}
-
-impl<K, V> DoubleEndedIterator for IterMut<'_, K, V> {
-    double_ended_iterator_methods!(Bucket::ref_mut);
-}
-
-impl<K, V> ExactSizeIterator for IterMut<'_, K, V> {
-    fn len(&self) -> usize {
-        self.iter.len()
-    }
-}
-
-impl<K, V> FusedIterator for IterMut<'_, K, V> {}
-
-impl<K: fmt::Debug, V: fmt::Debug> fmt::Debug for IterMut<'_, K, V> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let iter = self.iter.as_slice().iter().map(Bucket::refs);
-        f.debug_list().entries(iter).finish()
-    }
-}
-
-/// An owning iterator over the entries of a `IndexMap`.
-///
-/// This `struct` is created by the [`into_iter`] method on [`IndexMap`]
-/// (provided by the `IntoIterator` trait). See its documentation for more.
-///
-/// [`into_iter`]: struct.IndexMap.html#method.into_iter
-/// [`IndexMap`]: struct.IndexMap.html
-pub struct IntoIter<K, V> {
-    iter: vec::IntoIter<Bucket<K, V>>,
-}
-
-impl<K, V> Iterator for IntoIter<K, V> {
-    type Item = (K, V);
-
-    iterator_methods!(Bucket::key_value);
-}
-
-impl<K, V> DoubleEndedIterator for IntoIter<K, V> {
-    double_ended_iterator_methods!(Bucket::key_value);
-}
-
-impl<K, V> ExactSizeIterator for IntoIter<K, V> {
-    fn len(&self) -> usize {
-        self.iter.len()
-    }
-}
-
-impl<K, V> FusedIterator for IntoIter<K, V> {}
-
-impl<K: fmt::Debug, V: fmt::Debug> fmt::Debug for IntoIter<K, V> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let iter = self.iter.as_slice().iter().map(Bucket::refs);
-        f.debug_list().entries(iter).finish()
-    }
-}
-
-/// A draining iterator over the entries of a `IndexMap`.
-///
-/// This `struct` is created by the [`drain`] method on [`IndexMap`]. See its
-/// documentation for more.
-///
-/// [`drain`]: struct.IndexMap.html#method.drain
-/// [`IndexMap`]: struct.IndexMap.html
-pub struct Drain<'a, K, V> {
-    pub(crate) iter: vec::Drain<'a, Bucket<K, V>>,
-}
-
-impl<K, V> Iterator for Drain<'_, K, V> {
-    type Item = (K, V);
-
-    iterator_methods!(Bucket::key_value);
-}
-
-impl<K, V> DoubleEndedIterator for Drain<'_, K, V> {
-    double_ended_iterator_methods!(Bucket::key_value);
-}
-
-impl<K, V> ExactSizeIterator for Drain<'_, K, V> {
-    fn len(&self) -> usize {
-        self.iter.len()
-    }
-}
-
-impl<K, V> FusedIterator for Drain<'_, K, V> {}
-
-impl<K: fmt::Debug, V: fmt::Debug> fmt::Debug for Drain<'_, K, V> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let iter = self.iter.as_slice().iter().map(Bucket::refs);
-        f.debug_list().entries(iter).finish()
-    }
-}
-
-impl<'a, K, V, S> IntoIterator for &'a IndexMap<K, V, S> {
-    type Item = (&'a K, &'a V);
-    type IntoIter = Iter<'a, K, V>;
-    fn into_iter(self) -> Self::IntoIter {
-        self.iter()
-    }
-}
-
-impl<'a, K, V, S> IntoIterator for &'a mut IndexMap<K, V, S> {
-    type Item = (&'a K, &'a mut V);
-    type IntoIter = IterMut<'a, K, V>;
-    fn into_iter(self) -> Self::IntoIter {
-        self.iter_mut()
-    }
-}
-
-impl<K, V, S> IntoIterator for IndexMap<K, V, S> {
-    type Item = (K, V);
-    type IntoIter = IntoIter<K, V>;
-    fn into_iter(self) -> Self::IntoIter {
-        IntoIter {
-            iter: self.into_entries().into_iter(),
-        }
     }
 }
 
@@ -1567,428 +1161,4 @@ where
     V: Eq,
     S: BuildHasher,
 {
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use std::string::String;
-
-    #[test]
-    fn it_works() {
-        let mut map = IndexMap::new();
-        assert_eq!(map.is_empty(), true);
-        map.insert(1, ());
-        map.insert(1, ());
-        assert_eq!(map.len(), 1);
-        assert!(map.get(&1).is_some());
-        assert_eq!(map.is_empty(), false);
-    }
-
-    #[test]
-    fn new() {
-        let map = IndexMap::<String, String>::new();
-        println!("{:?}", map);
-        assert_eq!(map.capacity(), 0);
-        assert_eq!(map.len(), 0);
-        assert_eq!(map.is_empty(), true);
-    }
-
-    #[test]
-    fn insert() {
-        let insert = [0, 4, 2, 12, 8, 7, 11, 5];
-        let not_present = [1, 3, 6, 9, 10];
-        let mut map = IndexMap::with_capacity(insert.len());
-
-        for (i, &elt) in insert.iter().enumerate() {
-            assert_eq!(map.len(), i);
-            map.insert(elt, elt);
-            assert_eq!(map.len(), i + 1);
-            assert_eq!(map.get(&elt), Some(&elt));
-            assert_eq!(map[&elt], elt);
-        }
-        println!("{:?}", map);
-
-        for &elt in &not_present {
-            assert!(map.get(&elt).is_none());
-        }
-    }
-
-    #[test]
-    fn insert_full() {
-        let insert = vec![9, 2, 7, 1, 4, 6, 13];
-        let present = vec![1, 6, 2];
-        let mut map = IndexMap::with_capacity(insert.len());
-
-        for (i, &elt) in insert.iter().enumerate() {
-            assert_eq!(map.len(), i);
-            let (index, existing) = map.insert_full(elt, elt);
-            assert_eq!(existing, None);
-            assert_eq!(Some(index), map.get_full(&elt).map(|x| x.0));
-            assert_eq!(map.len(), i + 1);
-        }
-
-        let len = map.len();
-        for &elt in &present {
-            let (index, existing) = map.insert_full(elt, elt);
-            assert_eq!(existing, Some(elt));
-            assert_eq!(Some(index), map.get_full(&elt).map(|x| x.0));
-            assert_eq!(map.len(), len);
-        }
-    }
-
-    #[test]
-    fn insert_2() {
-        let mut map = IndexMap::with_capacity(16);
-
-        let mut keys = vec![];
-        keys.extend(0..16);
-        keys.extend(if cfg!(miri) { 32..64 } else { 128..267 });
-
-        for &i in &keys {
-            let old_map = map.clone();
-            map.insert(i, ());
-            for key in old_map.keys() {
-                if map.get(key).is_none() {
-                    println!("old_map: {:?}", old_map);
-                    println!("map: {:?}", map);
-                    panic!("did not find {} in map", key);
-                }
-            }
-        }
-
-        for &i in &keys {
-            assert!(map.get(&i).is_some(), "did not find {}", i);
-        }
-    }
-
-    #[test]
-    fn insert_order() {
-        let insert = [0, 4, 2, 12, 8, 7, 11, 5, 3, 17, 19, 22, 23];
-        let mut map = IndexMap::new();
-
-        for &elt in &insert {
-            map.insert(elt, ());
-        }
-
-        assert_eq!(map.keys().count(), map.len());
-        assert_eq!(map.keys().count(), insert.len());
-        for (a, b) in insert.iter().zip(map.keys()) {
-            assert_eq!(a, b);
-        }
-        for (i, k) in (0..insert.len()).zip(map.keys()) {
-            assert_eq!(map.get_index(i).unwrap().0, k);
-        }
-    }
-
-    #[test]
-    fn grow() {
-        let insert = [0, 4, 2, 12, 8, 7, 11];
-        let not_present = [1, 3, 6, 9, 10];
-        let mut map = IndexMap::with_capacity(insert.len());
-
-        for (i, &elt) in insert.iter().enumerate() {
-            assert_eq!(map.len(), i);
-            map.insert(elt, elt);
-            assert_eq!(map.len(), i + 1);
-            assert_eq!(map.get(&elt), Some(&elt));
-            assert_eq!(map[&elt], elt);
-        }
-
-        println!("{:?}", map);
-        for &elt in &insert {
-            map.insert(elt * 10, elt);
-        }
-        for &elt in &insert {
-            map.insert(elt * 100, elt);
-        }
-        for (i, &elt) in insert.iter().cycle().enumerate().take(100) {
-            map.insert(elt * 100 + i as i32, elt);
-        }
-        println!("{:?}", map);
-        for &elt in &not_present {
-            assert!(map.get(&elt).is_none());
-        }
-    }
-
-    #[test]
-    fn reserve() {
-        let mut map = IndexMap::<usize, usize>::new();
-        assert_eq!(map.capacity(), 0);
-        map.reserve(100);
-        let capacity = map.capacity();
-        assert!(capacity >= 100);
-        for i in 0..capacity {
-            assert_eq!(map.len(), i);
-            map.insert(i, i * i);
-            assert_eq!(map.len(), i + 1);
-            assert_eq!(map.capacity(), capacity);
-            assert_eq!(map.get(&i), Some(&(i * i)));
-        }
-        map.insert(capacity, std::usize::MAX);
-        assert_eq!(map.len(), capacity + 1);
-        assert!(map.capacity() > capacity);
-        assert_eq!(map.get(&capacity), Some(&std::usize::MAX));
-    }
-
-    #[test]
-    fn shrink_to_fit() {
-        let mut map = IndexMap::<usize, usize>::new();
-        assert_eq!(map.capacity(), 0);
-        for i in 0..100 {
-            assert_eq!(map.len(), i);
-            map.insert(i, i * i);
-            assert_eq!(map.len(), i + 1);
-            assert!(map.capacity() >= i + 1);
-            assert_eq!(map.get(&i), Some(&(i * i)));
-            map.shrink_to_fit();
-            assert_eq!(map.len(), i + 1);
-            assert_eq!(map.capacity(), i + 1);
-            assert_eq!(map.get(&i), Some(&(i * i)));
-        }
-    }
-
-    #[test]
-    fn remove() {
-        let insert = [0, 4, 2, 12, 8, 7, 11, 5, 3, 17, 19, 22, 23];
-        let mut map = IndexMap::new();
-
-        for &elt in &insert {
-            map.insert(elt, elt);
-        }
-
-        assert_eq!(map.keys().count(), map.len());
-        assert_eq!(map.keys().count(), insert.len());
-        for (a, b) in insert.iter().zip(map.keys()) {
-            assert_eq!(a, b);
-        }
-
-        let remove_fail = [99, 77];
-        let remove = [4, 12, 8, 7];
-
-        for &key in &remove_fail {
-            assert!(map.swap_remove_full(&key).is_none());
-        }
-        println!("{:?}", map);
-        for &key in &remove {
-            //println!("{:?}", map);
-            let index = map.get_full(&key).unwrap().0;
-            assert_eq!(map.swap_remove_full(&key), Some((index, key, key)));
-        }
-        println!("{:?}", map);
-
-        for key in &insert {
-            assert_eq!(map.get(key).is_some(), !remove.contains(key));
-        }
-        assert_eq!(map.len(), insert.len() - remove.len());
-        assert_eq!(map.keys().count(), insert.len() - remove.len());
-    }
-
-    #[test]
-    fn remove_to_empty() {
-        let mut map = indexmap! { 0 => 0, 4 => 4, 5 => 5 };
-        map.swap_remove(&5).unwrap();
-        map.swap_remove(&4).unwrap();
-        map.swap_remove(&0).unwrap();
-        assert!(map.is_empty());
-    }
-
-    #[test]
-    fn swap_remove_index() {
-        let insert = [0, 4, 2, 12, 8, 7, 11, 5, 3, 17, 19, 22, 23];
-        let mut map = IndexMap::new();
-
-        for &elt in &insert {
-            map.insert(elt, elt * 2);
-        }
-
-        let mut vector = insert.to_vec();
-        let remove_sequence = &[3, 3, 10, 4, 5, 4, 3, 0, 1];
-
-        // check that the same swap remove sequence on vec and map
-        // have the same result.
-        for &rm in remove_sequence {
-            let out_vec = vector.swap_remove(rm);
-            let (out_map, _) = map.swap_remove_index(rm).unwrap();
-            assert_eq!(out_vec, out_map);
-        }
-        assert_eq!(vector.len(), map.len());
-        for (a, b) in vector.iter().zip(map.keys()) {
-            assert_eq!(a, b);
-        }
-    }
-
-    #[test]
-    fn partial_eq_and_eq() {
-        let mut map_a = IndexMap::new();
-        map_a.insert(1, "1");
-        map_a.insert(2, "2");
-        let mut map_b = map_a.clone();
-        assert_eq!(map_a, map_b);
-        map_b.swap_remove(&1);
-        assert_ne!(map_a, map_b);
-
-        let map_c: IndexMap<_, String> = map_b.into_iter().map(|(k, v)| (k, v.into())).collect();
-        assert_ne!(map_a, map_c);
-        assert_ne!(map_c, map_a);
-    }
-
-    #[test]
-    fn extend() {
-        let mut map = IndexMap::new();
-        map.extend(vec![(&1, &2), (&3, &4)]);
-        map.extend(vec![(5, 6)]);
-        assert_eq!(
-            map.into_iter().collect::<Vec<_>>(),
-            vec![(1, 2), (3, 4), (5, 6)]
-        );
-    }
-
-    #[test]
-    fn entry() {
-        let mut map = IndexMap::new();
-
-        map.insert(1, "1");
-        map.insert(2, "2");
-        {
-            let e = map.entry(3);
-            assert_eq!(e.index(), 2);
-            let e = e.or_insert("3");
-            assert_eq!(e, &"3");
-        }
-
-        let e = map.entry(2);
-        assert_eq!(e.index(), 1);
-        assert_eq!(e.key(), &2);
-        match e {
-            Entry::Occupied(ref e) => assert_eq!(e.get(), &"2"),
-            Entry::Vacant(_) => panic!(),
-        }
-        assert_eq!(e.or_insert("4"), &"2");
-    }
-
-    #[test]
-    fn entry_and_modify() {
-        let mut map = IndexMap::new();
-
-        map.insert(1, "1");
-        map.entry(1).and_modify(|x| *x = "2");
-        assert_eq!(Some(&"2"), map.get(&1));
-
-        map.entry(2).and_modify(|x| *x = "doesn't exist");
-        assert_eq!(None, map.get(&2));
-    }
-
-    #[test]
-    fn entry_or_default() {
-        let mut map = IndexMap::new();
-
-        #[derive(Debug, PartialEq)]
-        enum TestEnum {
-            DefaultValue,
-            NonDefaultValue,
-        }
-
-        impl Default for TestEnum {
-            fn default() -> Self {
-                TestEnum::DefaultValue
-            }
-        }
-
-        map.insert(1, TestEnum::NonDefaultValue);
-        assert_eq!(&mut TestEnum::NonDefaultValue, map.entry(1).or_default());
-
-        assert_eq!(&mut TestEnum::DefaultValue, map.entry(2).or_default());
-    }
-
-    #[test]
-    fn occupied_entry_key() {
-        // These keys match hash and equality, but their addresses are distinct.
-        let (k1, k2) = (&mut 1, &mut 1);
-        let k1_ptr = k1 as *const i32;
-        let k2_ptr = k2 as *const i32;
-        assert_ne!(k1_ptr, k2_ptr);
-
-        let mut map = IndexMap::new();
-        map.insert(k1, "value");
-        match map.entry(k2) {
-            Entry::Occupied(ref e) => {
-                // `OccupiedEntry::key` should reference the key in the map,
-                // not the key that was used to find the entry.
-                let ptr = *e.key() as *const i32;
-                assert_eq!(ptr, k1_ptr);
-                assert_ne!(ptr, k2_ptr);
-            }
-            Entry::Vacant(_) => panic!(),
-        }
-    }
-
-    #[test]
-    fn keys() {
-        let vec = vec![(1, 'a'), (2, 'b'), (3, 'c')];
-        let map: IndexMap<_, _> = vec.into_iter().collect();
-        let keys: Vec<_> = map.keys().copied().collect();
-        assert_eq!(keys.len(), 3);
-        assert!(keys.contains(&1));
-        assert!(keys.contains(&2));
-        assert!(keys.contains(&3));
-    }
-
-    #[test]
-    fn into_keys() {
-        let vec = vec![(1, 'a'), (2, 'b'), (3, 'c')];
-        let map: IndexMap<_, _> = vec.into_iter().collect();
-        let keys: Vec<i32> = map.into_keys().collect();
-        assert_eq!(keys.len(), 3);
-        assert!(keys.contains(&1));
-        assert!(keys.contains(&2));
-        assert!(keys.contains(&3));
-    }
-
-    #[test]
-    fn values() {
-        let vec = vec![(1, 'a'), (2, 'b'), (3, 'c')];
-        let map: IndexMap<_, _> = vec.into_iter().collect();
-        let values: Vec<_> = map.values().copied().collect();
-        assert_eq!(values.len(), 3);
-        assert!(values.contains(&'a'));
-        assert!(values.contains(&'b'));
-        assert!(values.contains(&'c'));
-    }
-
-    #[test]
-    fn values_mut() {
-        let vec = vec![(1, 1), (2, 2), (3, 3)];
-        let mut map: IndexMap<_, _> = vec.into_iter().collect();
-        for value in map.values_mut() {
-            *value *= 2
-        }
-        let values: Vec<_> = map.values().copied().collect();
-        assert_eq!(values.len(), 3);
-        assert!(values.contains(&2));
-        assert!(values.contains(&4));
-        assert!(values.contains(&6));
-    }
-
-    #[test]
-    fn into_values() {
-        let vec = vec![(1, 'a'), (2, 'b'), (3, 'c')];
-        let map: IndexMap<_, _> = vec.into_iter().collect();
-        let values: Vec<char> = map.into_values().collect();
-        assert_eq!(values.len(), 3);
-        assert!(values.contains(&'a'));
-        assert!(values.contains(&'b'));
-        assert!(values.contains(&'c'));
-    }
-
-    #[test]
-    #[cfg(feature = "std")]
-    fn from_array() {
-        let map = IndexMap::from([(1, 2), (3, 4)]);
-        let mut expected = IndexMap::new();
-        expected.insert(1, 2);
-        expected.insert(3, 4);
-
-        assert_eq!(map, expected)
-    }
 }
