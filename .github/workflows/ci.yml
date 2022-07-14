@@ -32,12 +32,10 @@ jobs:
             bench: test build benchmarks
 
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@master
         with:
-          profile: minimal
           toolchain: ${{ matrix.rust }}
-          override: true
       - name: Tests
         run: |
           cargo build --verbose --features "${{ matrix.features }}"
@@ -63,12 +61,10 @@ jobs:
             target: thumbv6m-none-eabi
 
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@master
         with:
-          profile: minimal
           toolchain: ${{ matrix.rust }}
-          override: true
           target: ${{ matrix.target }}
       - name: Tests
         run: |
@@ -77,32 +73,18 @@ jobs:
 
   clippy:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        rust:
-          - beta
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@beta
         with:
-          profile: minimal
-          toolchain: ${{ matrix.rust }}
-          override: true
           components: clippy
       - run: cargo clippy
 
   miri:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        rust:
-          - nightly
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@nightly
         with:
-          profile: minimal
-          toolchain: ${{ matrix.rust }}
-          override: true
           components: miri
       - run: cargo miri test
