@@ -477,6 +477,52 @@ where
         }
     }
 
+    pub fn get_many_mut<'a, 'b, Q: ?Sized, const N: usize>(
+        &'a mut self,
+        keys: [&'b Q; N],
+    ) -> Option<[&'a mut V; N]>
+    where
+        Q: Hash + Equivalent<K>,
+    {
+        let indices = keys.map(|key| self.get_index_of(key));
+        if indices.iter().any(Option::is_none) {
+            return None;
+        }
+        let indices = indices.map(Option::unwrap);
+
+        // SAFETY: Can't allow duplicate indices as we would return several mutable refs to the same data
+        for i in 0..N {
+            let idx = indices[i];
+            if indices[i + 1..N].contains(&idx) {
+                return None;
+            }
+        }
+
+        // Replace with MaybeUninit::uninit_array when that is stable
+        // SAFETY: Creating MaybeUninit from uninit is always safe
+        #[allow(unsafe_code)]
+        let mut out: [std::mem::MaybeUninit<&'a mut V>; N] =
+            unsafe { std::mem::MaybeUninit::uninit().assume_init() };
+
+        let entries = self.as_entries_mut();
+        for (elem, idx) in out.iter_mut().zip(indices) {
+            let v: &mut V = &mut entries[idx].value;
+            // SAFETY: As we know that each index is unique, it is OK to discard the mutable
+            // borrow lifetime of v, we will never mutably borrow an element twice.
+            // The pointer is valid and aligned as we get it from MaybeUninit.
+            #[allow(unsafe_code)]
+            unsafe { std::ptr::write(elem.as_mut_ptr(), &mut *(v as *mut V)) };
+        }
+
+        // Can't transmute a const-sized array:
+        // https://github.com/rust-lang/rust/issues/61956
+        // This is the workaround.
+        // SAFETY: This is fine as the references all are from unique entries that we own and all of
+        // them have been properly initialized by the above loop.
+        #[allow(unsafe_code)]
+        Some(unsafe { std::mem::transmute_copy::<_, [&'a mut V; N]>(&out) })
+    }
+
     /// Remove the key-value pair equivalent to `key` and return
     /// its value.
     ///

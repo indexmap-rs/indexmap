@@ -418,3 +418,64 @@ fn from_array() {
 
     assert_eq!(map, expected)
 }
+
+#[test]
+fn many_mut_empty() {
+    let mut map: IndexMap<u32, u32> = IndexMap::default();
+    assert!(map.get_many_mut([&0, &1, &2, &3]).is_none());
+}
+
+#[test]
+fn many_mut_single_fail() {
+    let mut map: IndexMap<u32, u32> = IndexMap::default();
+    map.insert(1, 10);
+    assert!(map.get_many_mut([&0]).is_none());
+}
+
+#[test]
+fn many_mut_single_success() {
+    let mut map: IndexMap<u32, u32> = IndexMap::default();
+    map.insert(1, 10);
+    assert_eq!(map.get_many_mut([&1]), Some([&mut 10]));
+}
+
+#[test]
+fn many_mut_multi_success() {
+    let mut map: IndexMap<u32, u32> = IndexMap::default();
+    map.insert(1, 10);
+    map.insert(1123, 100);
+    map.insert(321, 20);
+    map.insert(1337, 30);
+    assert_eq!(map.get_many_mut([&1, &1123]), Some([&mut 10, &mut 100]));
+    assert_eq!(map.get_many_mut([&1, &1337]), Some([&mut 10, &mut 30]));
+    assert_eq!(
+        map.get_many_mut([&1337, &321, &1, &1123]),
+        Some([&mut 30, &mut 20, &mut 10, &mut 100])
+    );
+}
+
+#[test]
+fn many_mut_multi_fail_missing() {
+    let mut map: IndexMap<u32, u32> = IndexMap::default();
+    map.insert(1, 10);
+    map.insert(1123, 100);
+    map.insert(321, 20);
+    map.insert(1337, 30);
+    assert_eq!(map.get_many_mut([&121, &1123]), None);
+    assert_eq!(map.get_many_mut([&1, &1337, &56]), None);
+    assert_eq!(map.get_many_mut([&1337, &123, &321, &1, &1123]), None);
+}
+
+#[test]
+fn many_mut_multi_fail_duplicate() {
+    let mut map: IndexMap<u32, u32> = IndexMap::default();
+    map.insert(1, 10);
+    map.insert(1123, 100);
+    map.insert(321, 20);
+    map.insert(1337, 30);
+    assert_eq!(map.get_many_mut([&1, &1]), None);
+    assert_eq!(
+        map.get_many_mut([&1337, &123, &321, &1337, &1, &1123]),
+        None
+    );
+}
