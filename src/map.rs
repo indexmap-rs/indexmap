@@ -790,6 +790,37 @@ where
         }
     }
 
+    /// Return the values for `N` keys. If any key is missing a value, or there
+    /// are duplicate keys, `None` is returned.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let mut map = indexmap::IndexMap::from([(1, 'a'), (3, 'b'), (2, 'c')]);
+    /// assert_eq!(map.get_disjoint_mut([&2, &1]), Some([&mut 'c', &mut 'a']));
+    /// ```
+    pub fn get_disjoint_mut<Q, const N: usize>(&mut self, keys: [&Q; N]) -> Option<[&mut V; N]>
+    where
+        Q: Hash + Equivalent<K> + ?Sized,
+    {
+        let len = self.len();
+        let indices = keys.map(|key| self.get_index_of(key));
+
+        // Handle out-of-bounds indices with panic as this is an internal error in get_index_of.
+        for idx in indices {
+            let idx = idx?;
+            debug_assert!(
+                idx < len,
+                "Index is out of range! Got '{}' but length is '{}'",
+                idx,
+                len
+            );
+        }
+        let indices = indices.map(Option::unwrap);
+        let entries = self.get_disjoint_indices_mut(indices)?;
+        Some(entries.map(|(_key, value)| value))
+    }
+
     /// Remove the key-value pair equivalent to `key` and return
     /// its value.
     ///
@@ -1194,6 +1225,44 @@ impl<K, V, S> IndexMap<K, V, S> {
             return None;
         }
         Some(IndexedEntry::new(&mut self.core, index))
+    }
+
+    /// Get an array of `N` key-value pairs by `N` indices
+    ///
+    /// Valid indices are *0 <= index < self.len()* and each index needs to be unique.
+    ///
+    /// Computes in **O(1)** time.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let mut map = indexmap::IndexMap::from([(1, 'a'), (3, 'b'), (2, 'c')]);
+    /// assert_eq!(map.get_disjoint_indices_mut([2, 0]), Some([(&2, &mut 'c'), (&1, &mut 'a')]));
+    /// ```
+    pub fn get_disjoint_indices_mut<const N: usize>(
+        &mut self,
+        indices: [usize; N],
+    ) -> Option<[(&K, &mut V); N]> {
+        // SAFETY: Can't allow duplicate indices as we would return several mutable refs to the same data.
+        let len = self.len();
+        for i in 0..N {
+            let idx = indices[i];
+            if idx >= len || indices[i + 1..N].contains(&idx) {
+                return None;
+            }
+        }
+
+        let entries_ptr = self.as_entries_mut().as_mut_ptr();
+        let out = indices.map(|i| {
+            // SAFETY: The base pointer is valid as it comes from a slice and the deref is always
+            // in-bounds as we've already checked the indices above.
+            #[allow(unsafe_code)]
+            unsafe {
+                (*(entries_ptr.add(i))).ref_mut()
+            }
+        });
+
+        Some(out)
     }
 
     /// Returns a slice of key-value pairs in the given range of indices.
