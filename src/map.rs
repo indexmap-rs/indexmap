@@ -498,29 +498,16 @@ where
             }
         }
 
-        // Replace with MaybeUninit::uninit_array when that is stable
-        // SAFETY: Creating MaybeUninit from uninit is always safe
-        #[allow(unsafe_code)]
-        let mut out: [std::mem::MaybeUninit<&'a mut V>; N] =
-            unsafe { std::mem::MaybeUninit::uninit().assume_init() };
-
         let entries = self.as_entries_mut();
-        for (elem, idx) in out.iter_mut().zip(indices) {
-            let v: &mut V = &mut entries[idx].value;
-            // SAFETY: As we know that each index is unique, it is OK to discard the mutable
-            // borrow lifetime of v, we will never mutably borrow an element twice.
-            // The pointer is valid and aligned as we get it from MaybeUninit.
+        let out = indices.map(|i| {
+            // SAFETY: OK to discard mutable borrow lifetime as each index is unique
             #[allow(unsafe_code)]
-            unsafe { std::ptr::write(elem.as_mut_ptr(), &mut *(v as *mut V)) };
-        }
+            unsafe {
+                &mut *(&mut entries[i].value as *mut V)
+            }
+        });
 
-        // Can't transmute a const-sized array:
-        // https://github.com/rust-lang/rust/issues/61956
-        // This is the workaround.
-        // SAFETY: This is fine as the references all are from unique entries that we own and all of
-        // them have been properly initialized by the above loop.
-        #[allow(unsafe_code)]
-        Some(unsafe { std::mem::transmute_copy::<_, [&'a mut V; N]>(&out) })
+        Some(out)
     }
 
     /// Remove the key-value pair equivalent to `key` and return
