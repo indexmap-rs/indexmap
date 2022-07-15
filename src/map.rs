@@ -499,9 +499,10 @@ where
         // Handle out-of-bounds indices with panic as this is an internal error in get_index_of.
         for idx in indices {
             let idx = idx?;
-            if idx >= len {
-                panic!("Index is out of range! Got '{idx}' but length is '{len}'")
-            }
+            debug_assert!(
+                idx < len,
+                "Index is out of range! Got '{idx}' but length is '{len}'"
+            );
         }
         let indices = indices.map(Option::unwrap);
         let entries = self.get_many_index_mut(indices)?;
