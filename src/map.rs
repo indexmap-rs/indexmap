@@ -832,7 +832,6 @@ impl<K, V, S> IndexMap<K, V, S> {
         indices: [usize; N],
     ) -> Option<[(&K, &mut V); N]> {
         // SAFETY: Can't allow duplicate indices as we would return several mutable refs to the same data.
-        // Additionally, handle out-of-bounds indices (internal error in get_index_of) with panic.
         let len = self.len();
         for i in 0..N {
             let idx = indices[i];

@@ -479,3 +479,11 @@ fn many_mut_multi_fail_duplicate() {
         None
     );
 }
+
+#[test]
+fn many_index_mut_fail_oob() {
+    let mut map: IndexMap<u32, u32> = IndexMap::default();
+    map.insert(1, 10);
+    map.insert(321, 20);
+    assert_eq!(map.get_many_index_mut([1, 3]), None);
+}
