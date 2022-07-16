@@ -501,7 +501,9 @@ where
             let idx = idx?;
             debug_assert!(
                 idx < len,
-                "Index is out of range! Got '{idx}' but length is '{len}'"
+                "Index is out of range! Got '{}' but length is '{}'",
+                idx,
+                len
             );
         }
         let indices = indices.map(Option::unwrap);
