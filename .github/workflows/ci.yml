@@ -12,9 +12,9 @@ env:
 
 jobs:
   tests:
-    runs-on: ubuntu-latest
     strategy:
       matrix:
+        os: [ubuntu-latest]
         include:
           - rust: 1.56.0 # MSRV
             features:
@@ -30,6 +30,13 @@ jobs:
             features:
           - rust: nightly
             bench: test build benchmarks
+          - rust: nightly
+            features: debugger_visualizer
+          - rust: nightly
+            features: debugger_visualizer
+            os: windows-latest
+
+    runs-on: ${{ matrix.os }}
 
     steps:
       - uses: actions/checkout@v3
@@ -46,6 +53,10 @@ jobs:
         if: matrix.features == 'serde'
         run: |
           cargo test --verbose -p test-serde
+      - name: Tests (debugger_visualizer)
+        if: matrix.features == 'debugger_visualizer'
+        run: |
+          cargo test --verbose --test debugger_visualizer --features "${{ matrix.features }}" -- --test-threads=1
       - name: Test run benchmarks
         if: matrix.bench != ''
         run: cargo test -v --benches

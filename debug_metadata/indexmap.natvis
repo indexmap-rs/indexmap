@@ -1,0 +1,29 @@
+<AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
+  <Type Name="indexmap::set::IndexSet&lt;*,*&gt;">
+    <DisplayString>{{ len={map.core.entries.len} }}</DisplayString>
+    <Expand>
+      <ExpandedItem>map</ExpandedItem>
+    </Expand>
+  </Type>
+  <Type Name="indexmap::map::IndexMap&lt;*,*,*&gt;">
+    <DisplayString>{{ len={core.entries.len} }}</DisplayString>
+    <Expand>
+      <ExpandedItem>core.entries</ExpandedItem>
+    </Expand>
+  </Type>
+  <Type Name="indexmap::Bucket&lt;*,tuple$&lt;&gt;&gt;">
+    <DisplayString>{key}</DisplayString>
+    <Expand>
+      <Item Name="[key]">key</Item>
+      <Item Name="[hash]">hash.__0,d</Item>
+    </Expand>
+  </Type>
+  <Type Name="indexmap::Bucket&lt;*,*&gt;">
+    <DisplayString>{{ key={key}, value={value} }}</DisplayString>
+    <Expand>
+      <Item Name="[key]">key</Item>
+      <Item Name="[value]">value</Item>
+      <Item Name="[hash]">hash.__0,d</Item>
+    </Expand>
+  </Type>
+</AutoVisualizer>
