@@ -9,7 +9,7 @@ license = "Apache-2.0 OR MIT"
 description = "A hash table with consistent order and fast iteration."
 keywords = ["hashmap", "no_std"]
 categories = ["data-structures", "no-std"]
-rust-version = "1.56"
+rust-version = "1.61"
 
 [lib]
 bench = false
@@ -23,7 +23,7 @@ rayon = { version = "1.4.1", optional = true }
 rustc-rayon = { version = "0.4", optional = true }
 
 [dependencies.hashbrown]
-version = "0.12"
+version = "0.13"
 default-features = false
 features = ["raw"]
 

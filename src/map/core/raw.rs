@@ -26,7 +26,7 @@ pub(super) struct DebugIndices<'a>(pub &'a RawTable<usize>);
 impl fmt::Debug for DebugIndices<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         // SAFETY: we're not letting any of the buckets escape this function
-        let indices = unsafe { self.0.iter().map(|raw_bucket| raw_bucket.read()) };
+        let indices = unsafe { self.0.iter().map(|raw_bucket| *raw_bucket.as_ref()) };
         f.debug_list().entries(indices).finish()
     }
 }
@@ -38,10 +38,10 @@ impl<K, V> IndexMapCore<K, V> {
         unsafe {
             let offset = end - start;
             for bucket in self.indices.iter() {
-                let i = bucket.read();
-                if i >= end {
-                    bucket.write(i - offset);
-                } else if i >= start {
+                let i = bucket.as_mut();
+                if *i >= end {
+                    *i -= offset;
+                } else if *i >= start {
                     self.indices.erase(bucket);
                 }
             }
@@ -92,8 +92,8 @@ impl<K, V> IndexMapCore<K, V> {
         unsafe {
             let raw_bucket_a = self.find_index(a);
             let raw_bucket_b = self.find_index(b);
-            raw_bucket_a.write(b);
-            raw_bucket_b.write(a);
+            *raw_bucket_a.as_mut() = b;
+            *raw_bucket_b.as_mut() = a;
         }
         self.entries.swap(a, b);
     }
@@ -151,7 +151,7 @@ impl<'a, K, V> OccupiedEntry<'a, K, V> {
     #[inline]
     pub fn index(&self) -> usize {
         // SAFETY: we have &mut map keep keeping the bucket stable
-        unsafe { self.raw_bucket.read() }
+        unsafe { *self.raw_bucket.as_ref() }
     }
 
     /// Converts into a mutable reference to the entry's value in the map,
