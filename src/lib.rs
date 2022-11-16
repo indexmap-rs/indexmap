@@ -191,3 +191,58 @@ trait Entries {
     where
         F: FnOnce(&mut [Self::Entry]);
 }
+
+/// The error type for `try_reserve` methods.
+#[derive(Clone, PartialEq, Eq, Debug)]
+pub struct TryReserveError {
+    kind: TryReserveErrorKind,
+}
+
+#[derive(Clone, PartialEq, Eq, Debug)]
+enum TryReserveErrorKind {
+    // The standard library's kind is currently opaque to us, otherwise we could unify this.
+    Std(alloc::collections::TryReserveError),
+    CapacityOverflow,
+    AllocError { layout: alloc::alloc::Layout },
+}
+
+// These are not `From` so we don't expose them in our public API.
+impl TryReserveError {
+    fn from_alloc(error: alloc::collections::TryReserveError) -> Self {
+        Self {
+            kind: TryReserveErrorKind::Std(error),
+        }
+    }
+
+    fn from_hashbrown(error: hashbrown::TryReserveError) -> Self {
+        Self {
+            kind: match error {
+                hashbrown::TryReserveError::CapacityOverflow => {
+                    TryReserveErrorKind::CapacityOverflow
+                }
+                hashbrown::TryReserveError::AllocError { layout } => {
+                    TryReserveErrorKind::AllocError { layout }
+                }
+            },
+        }
+    }
+}
+
+impl core::fmt::Display for TryReserveError {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        let reason = match &self.kind {
+            TryReserveErrorKind::Std(e) => return core::fmt::Display::fmt(e, f),
+            TryReserveErrorKind::CapacityOverflow => {
+                " because the computed capacity exceeded the collection's maximum"
+            }
+            TryReserveErrorKind::AllocError { .. } => {
+                " because the memory allocator returned an error"
+            }
+        };
+        f.write_str("memory allocation failed")?;
+        f.write_str(reason)
+    }
+}
+
+#[cfg(feature = "std")]
+impl std::error::Error for TryReserveError {}

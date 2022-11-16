@@ -283,6 +283,15 @@ fn reserve() {
 }
 
 #[test]
+fn try_reserve() {
+    let mut set = IndexSet::<usize>::new();
+    assert_eq!(set.capacity(), 0);
+    assert_eq!(set.try_reserve(100), Ok(()));
+    assert!(set.capacity() >= 100);
+    assert!(set.try_reserve(usize::MAX).is_err());
+}
+
+#[test]
 fn shrink_to_fit() {
     let mut set = IndexSet::<usize>::new();
     assert_eq!(set.capacity(), 0);
