@@ -1,5 +1,7 @@
 - 2.0.0 (pending)
 
+  - **MSRV**: Rust 1.61.0 or later is now required.
+
   - The `"std"` feature is no longer auto-detected. It is included in the
     default feature set, or else can be enabled like any other Cargo feature.
 
@@ -14,6 +16,8 @@
     and sets, behaving a lot like normal `[(K, V)]` and `[T]` slices. Notably,
     comparison traits like `Eq` only consider items in order, rather than hash
     lookups, and slices even implement `Hash`.
+
+  - The `hashbrown` dependency has been updated to version 0.13.
 
 - 1.9.1
 
