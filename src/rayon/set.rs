@@ -572,6 +572,17 @@ where
         entries.par_sort_unstable_by(move |a, b| cmp(&a.key, &b.key));
         IntoParIter { entries }
     }
+
+    /// Sort the set’s values in place and in parallel, using a key extraction function.
+    pub fn par_sort_by_cached_key<K, F>(&mut self, sort_key: F)
+    where
+        K: Ord + Send,
+        F: Fn(&T) -> K + Sync,
+    {
+        self.with_entries(move |entries| {
+            entries.par_sort_by_cached_key(move |a| sort_key(&a.key));
+        });
+    }
 }
 
 /// Requires crate feature `"rayon"`.
