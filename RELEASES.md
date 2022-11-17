@@ -17,9 +17,6 @@
     comparison traits like `Eq` only consider items in order, rather than hash
     lookups, and slices even implement `Hash`.
 
-  - `IndexMap` and `IndexSet` both implement `arbitrary::Arbitrary<'_>` and
-    `quickcheck::Arbitrary` if those optional dependency features are enabled.
-
   - `IndexMap` and `IndexSet` now have `sort_by_cached_key` and
     `par_sort_by_cached_key` methods which perform stable sorts in place
     using a key extraction function.
@@ -30,6 +27,11 @@
     raw hash table still follows its own rules for capacity and load factor.
 
   - The `hashbrown` dependency has been updated to version 0.13.
+
+- 1.9.2
+
+  - `IndexMap` and `IndexSet` both implement `arbitrary::Arbitrary<'_>` and
+    `quickcheck::Arbitrary` if those optional dependency features are enabled.
 
 - 1.9.1
 
