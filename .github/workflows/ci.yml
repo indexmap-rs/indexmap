@@ -19,11 +19,15 @@ jobs:
           - rust: 1.56.0 # MSRV
             features:
           - rust: stable
-            features: serde
+            features: arbitrary
+          - rust: stable
+            features: quickcheck
           - rust: stable
             features: rayon
           - rust: stable
             features: rustc-rayon
+          - rust: stable
+            features: serde
           - rust: stable
             features: std
           - rust: beta
