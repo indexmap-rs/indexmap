@@ -31,7 +31,7 @@ use std::collections::hash_map::RandomState;
 use self::core::IndexMapCore;
 use crate::equivalent::Equivalent;
 use crate::util::{third, try_simplify_range};
-use crate::{Bucket, Entries, HashValue};
+use crate::{Bucket, Entries, HashValue, TryReserveError};
 
 /// A hash table where the iteration order of the key-value pairs is independent
 /// of the hash values of the keys.
@@ -317,6 +317,37 @@ where
     /// Computes in **O(n)** time.
     pub fn reserve(&mut self, additional: usize) {
         self.core.reserve(additional);
+    }
+
+    /// Reserve capacity for `additional` more key-value pairs, without over-allocating.
+    ///
+    /// Unlike `reserve`, this does not deliberately over-allocate the entry capacity to avoid
+    /// frequent re-allocations. However, the underlying data structures may still have internal
+    /// capacity requirements, and the allocator itself may give more space than requested, so this
+    /// cannot be relied upon to be precisely minimal.
+    ///
+    /// Computes in **O(n)** time.
+    pub fn reserve_exact(&mut self, additional: usize) {
+        self.core.reserve_exact(additional);
+    }
+
+    /// Try to reserve capacity for `additional` more key-value pairs.
+    ///
+    /// Computes in **O(n)** time.
+    pub fn try_reserve(&mut self, additional: usize) -> Result<(), TryReserveError> {
+        self.core.try_reserve(additional)
+    }
+
+    /// Try to reserve capacity for `additional` more key-value pairs, without over-allocating.
+    ///
+    /// Unlike `try_reserve`, this does not deliberately over-allocate the entry capacity to avoid
+    /// frequent re-allocations. However, the underlying data structures may still have internal
+    /// capacity requirements, and the allocator itself may give more space than requested, so this
+    /// cannot be relied upon to be precisely minimal.
+    ///
+    /// Computes in **O(n)** time.
+    pub fn try_reserve_exact(&mut self, additional: usize) -> Result<(), TryReserveError> {
+        self.core.try_reserve_exact(additional)
     }
 
     /// Shrink the capacity of the map as much as possible.

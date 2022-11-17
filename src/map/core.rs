@@ -12,9 +12,9 @@ mod raw;
 use hashbrown::raw::RawTable;
 
 use crate::vec::{Drain, Vec};
-use core::cmp;
+use crate::TryReserveError;
 use core::fmt;
-use core::mem::replace;
+use core::mem;
 use core::ops::RangeBounds;
 
 use crate::equivalent::Equivalent;
@@ -62,18 +62,18 @@ where
     V: Clone,
 {
     fn clone(&self) -> Self {
-        let indices = self.indices.clone();
-        let mut entries = Vec::with_capacity(indices.capacity());
-        entries.clone_from(&self.entries);
-        IndexMapCore { indices, entries }
+        let mut new = Self::new();
+        new.clone_from(self);
+        new
     }
 
     fn clone_from(&mut self, other: &Self) {
         let hasher = get_hash(&other.entries);
         self.indices.clone_from_with_hasher(&other.indices, hasher);
         if self.entries.capacity() < other.entries.len() {
-            // If we must resize, match the indices capacity
-            self.reserve_entries();
+            // If we must resize, match the indices capacity.
+            let additional = other.entries.len() - self.entries.len();
+            self.reserve_entries(additional);
         }
         self.entries.clone_from(&other.entries);
     }
@@ -120,6 +120,9 @@ impl<K, V> Entries for IndexMapCore<K, V> {
 }
 
 impl<K, V> IndexMapCore<K, V> {
+    /// The maximum capacity before the `entries` allocation would exceed `isize::MAX`.
+    const MAX_ENTRIES_CAPACITY: usize = (isize::MAX as usize) / mem::size_of::<Bucket<K, V>>();
+
     #[inline]
     pub(crate) const fn new() -> Self {
         IndexMapCore {
@@ -143,7 +146,7 @@ impl<K, V> IndexMapCore<K, V> {
 
     #[inline]
     pub(crate) fn capacity(&self) -> usize {
-        cmp::min(self.indices.capacity(), self.entries.capacity())
+        Ord::min(self.indices.capacity(), self.entries.capacity())
     }
 
     pub(crate) fn clear(&mut self) {
@@ -193,13 +196,65 @@ impl<K, V> IndexMapCore<K, V> {
     /// Reserve capacity for `additional` more key-value pairs.
     pub(crate) fn reserve(&mut self, additional: usize) {
         self.indices.reserve(additional, get_hash(&self.entries));
-        self.reserve_entries();
+        // Only grow entries if necessary, since we also round up capacity.
+        if additional > self.entries.capacity() - self.entries.len() {
+            self.reserve_entries(additional);
+        }
     }
 
-    /// Reserve entries capacity to match the indices
-    fn reserve_entries(&mut self) {
-        let additional = self.indices.capacity() - self.entries.len();
+    /// Reserve entries capacity, rounded up to match the indices
+    fn reserve_entries(&mut self, additional: usize) {
+        // Use a soft-limit on the maximum capacity, but if the caller explicitly
+        // requested more, do it and let them have the resulting panic.
+        let new_capacity = Ord::min(self.indices.capacity(), Self::MAX_ENTRIES_CAPACITY);
+        let try_add = new_capacity - self.entries.len();
+        if try_add > additional && self.entries.try_reserve_exact(try_add).is_ok() {
+            return;
+        }
         self.entries.reserve_exact(additional);
+    }
+
+    /// Reserve capacity for `additional` more key-value pairs, without over-allocating.
+    pub(crate) fn reserve_exact(&mut self, additional: usize) {
+        self.indices.reserve(additional, get_hash(&self.entries));
+        self.entries.reserve_exact(additional);
+    }
+
+    /// Try to reserve capacity for `additional` more key-value pairs.
+    pub(crate) fn try_reserve(&mut self, additional: usize) -> Result<(), TryReserveError> {
+        self.indices
+            .try_reserve(additional, get_hash(&self.entries))
+            .map_err(TryReserveError::from_hashbrown)?;
+        // Only grow entries if necessary, since we also round up capacity.
+        if additional > self.entries.capacity() - self.entries.len() {
+            self.try_reserve_entries(additional)
+        } else {
+            Ok(())
+        }
+    }
+
+    /// Try to reserve entries capacity, rounded up to match the indices
+    fn try_reserve_entries(&mut self, additional: usize) -> Result<(), TryReserveError> {
+        // Use a soft-limit on the maximum capacity, but if the caller explicitly
+        // requested more, do it and let them have the resulting error.
+        let new_capacity = Ord::min(self.indices.capacity(), Self::MAX_ENTRIES_CAPACITY);
+        let try_add = new_capacity - self.entries.len();
+        if try_add > additional && self.entries.try_reserve_exact(try_add).is_ok() {
+            return Ok(());
+        }
+        self.entries
+            .try_reserve_exact(additional)
+            .map_err(TryReserveError::from_alloc)
+    }
+
+    /// Try to reserve capacity for `additional` more key-value pairs, without over-allocating.
+    pub(crate) fn try_reserve_exact(&mut self, additional: usize) -> Result<(), TryReserveError> {
+        self.indices
+            .try_reserve(additional, get_hash(&self.entries))
+            .map_err(TryReserveError::from_hashbrown)?;
+        self.entries
+            .try_reserve_exact(additional)
+            .map_err(TryReserveError::from_alloc)
     }
 
     /// Shrink the capacity of the map with a lower bound
@@ -228,7 +283,7 @@ impl<K, V> IndexMapCore<K, V> {
         if i == self.entries.capacity() {
             // Reserve our own capacity synced to the indices,
             // rather than letting `Vec::push` just double it.
-            self.reserve_entries();
+            self.reserve_entries(1);
         }
         self.entries.push(Bucket { hash, key, value });
         i
@@ -248,7 +303,7 @@ impl<K, V> IndexMapCore<K, V> {
         K: Eq,
     {
         match self.get_index_of(hash, &key) {
-            Some(i) => (i, Some(replace(&mut self.entries[i].value, value))),
+            Some(i) => (i, Some(mem::replace(&mut self.entries[i].value, value))),
             None => (self.push(hash, key, value), None),
         }
     }
@@ -601,7 +656,7 @@ pub use self::raw::OccupiedEntry;
 impl<K, V> OccupiedEntry<'_, K, V> {
     /// Sets the value of the entry to `value`, and returns the entry's old value.
     pub fn insert(&mut self, value: V) -> V {
-        replace(self.get_mut(), value)
+        mem::replace(self.get_mut(), value)
     }
 
     /// Remove the key, value pair stored in the map for this entry, and return the value.

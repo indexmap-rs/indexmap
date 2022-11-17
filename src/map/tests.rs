@@ -159,6 +159,15 @@ fn reserve() {
 }
 
 #[test]
+fn try_reserve() {
+    let mut map = IndexMap::<usize, usize>::new();
+    assert_eq!(map.capacity(), 0);
+    assert_eq!(map.try_reserve(100), Ok(()));
+    assert!(map.capacity() >= 100);
+    assert!(map.try_reserve(usize::MAX).is_err());
+}
+
+#[test]
 fn shrink_to_fit() {
     let mut map = IndexMap::<usize, usize>::new();
     assert_eq!(map.capacity(), 0);
