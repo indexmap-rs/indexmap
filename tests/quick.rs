@@ -452,6 +452,12 @@ quickcheck_limit! {
         assert_sorted_by_key(map, |t| t.1);
     }
 
+    fn sort_3(keyvals: Large<Vec<(i8, i8)>>) -> () {
+        let mut map: IndexMap<_, _> = IndexMap::from_iter(keyvals.to_vec());
+        map.sort_by_cached_key(|&k, _| std::cmp::Reverse(k));
+        assert_sorted_by_key(map, |t| std::cmp::Reverse(t.0));
+    }
+
     fn reverse(keyvals: Large<Vec<(i8, i8)>>) -> () {
         let mut map: IndexMap<_, _> = IndexMap::from_iter(keyvals.to_vec());
 

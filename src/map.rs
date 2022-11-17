@@ -736,6 +736,24 @@ where
         IntoIter::new(entries)
     }
 
+    /// Sort the map’s key-value pairs in place using a sort-key extraction function.
+    ///
+    /// During sorting, the function is called at most once per entry, by using temporary storage
+    /// to remember the results of its evaluation. The order of calls to the function is
+    /// unspecified and may change between versions of `indexmap` or the standard library.
+    ///
+    /// Computes in **O(m n + n log n + c)** time () and **O(n)** space, where the function is
+    /// **O(m)**, *n* is the length of the map, and *c* the capacity. The sort is stable.
+    pub fn sort_by_cached_key<T, F>(&mut self, mut sort_key: F)
+    where
+        T: Ord,
+        F: FnMut(&K, &V) -> T,
+    {
+        self.with_entries(move |entries| {
+            entries.sort_by_cached_key(move |a| sort_key(&a.key, &a.value));
+        });
+    }
+
     /// Reverses the order of the map’s key-value pairs in place.
     ///
     /// Computes in **O(n)** time and **O(1)** space.

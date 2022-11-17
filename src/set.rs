@@ -633,6 +633,24 @@ where
         IntoIter::new(entries)
     }
 
+    /// Sort the set’s values in place using a key extraction function.
+    ///
+    /// During sorting, the function is called at most once per entry, by using temporary storage
+    /// to remember the results of its evaluation. The order of calls to the function is
+    /// unspecified and may change between versions of `indexmap` or the standard library.
+    ///
+    /// Computes in **O(m n + n log n + c)** time () and **O(n)** space, where the function is
+    /// **O(m)**, *n* is the length of the map, and *c* the capacity. The sort is stable.
+    pub fn sort_by_cached_key<K, F>(&mut self, mut sort_key: F)
+    where
+        K: Ord,
+        F: FnMut(&T) -> K,
+    {
+        self.with_entries(move |entries| {
+            entries.sort_by_cached_key(move |a| sort_key(&a.key));
+        });
+    }
+
     /// Reverses the order of the set’s values in place.
     ///
     /// Computes in **O(n)** time and **O(1)** space.
