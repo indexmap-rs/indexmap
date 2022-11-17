@@ -17,6 +17,9 @@
     comparison traits like `Eq` only consider items in order, rather than hash
     lookups, and slices even implement `Hash`.
 
+  - `IndexMap` and `IndexSet` both implement `arbitrary::Arbitrary<'_>` and
+    `quickcheck::Arbitrary` if those optional dependency features are enabled.
+
   - The `hashbrown` dependency has been updated to version 0.13.
 
 - 1.9.1
