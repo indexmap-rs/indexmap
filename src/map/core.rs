@@ -196,7 +196,10 @@ impl<K, V> IndexMapCore<K, V> {
     /// Reserve capacity for `additional` more key-value pairs.
     pub(crate) fn reserve(&mut self, additional: usize) {
         self.indices.reserve(additional, get_hash(&self.entries));
-        self.reserve_entries(additional);
+        // Only grow entries if necessary, since we also round up capacity.
+        if additional > self.entries.capacity() - self.entries.len() {
+            self.reserve_entries(additional);
+        }
     }
 
     /// Reserve entries capacity, rounded up to match the indices
@@ -222,7 +225,12 @@ impl<K, V> IndexMapCore<K, V> {
         self.indices
             .try_reserve(additional, get_hash(&self.entries))
             .map_err(TryReserveError::from_hashbrown)?;
-        self.try_reserve_entries(additional)
+        // Only grow entries if necessary, since we also round up capacity.
+        if additional > self.entries.capacity() - self.entries.len() {
+            self.try_reserve_entries(additional)
+        } else {
+            Ok(())
+        }
     }
 
     /// Try to reserve entries capacity, rounded up to match the indices
