@@ -24,6 +24,11 @@
     `par_sort_by_cached_key` methods which perform stable sorts in place
     using a key extraction function.
 
+  - `IndexMap` and `IndexSet` now have `reserve_exact`, `try_reserve`, and
+    `try_reserve_exact` methods that correspond to the same methods on `Vec`.
+    However, exactness only applies to the direct capacity for items, while the
+    raw hash table still follows its own rules for capacity and load factor.
+
   - The `hashbrown` dependency has been updated to version 0.13.
 
 - 1.9.1
