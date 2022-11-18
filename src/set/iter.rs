@@ -5,6 +5,7 @@ use core::fmt;
 use core::hash::{BuildHasher, Hash};
 use core::iter::{Chain, FusedIterator};
 use core::slice::Iter as SliceIter;
+use core::slice::IterMut as SliceIterMut;
 
 impl<'a, T, S> IntoIterator for &'a IndexSet<T, S> {
     type Item = &'a T;
@@ -77,6 +78,55 @@ impl<T> Clone for Iter<'_, T> {
 impl<T: fmt::Debug> fmt::Debug for Iter<'_, T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_list().entries(self.clone()).finish()
+    }
+}
+
+/// A mutable iterator over the items of a `IndexSet`.
+///
+/// This `struct` is created by the [`iter_mut`] method on [`IndexSet`].
+/// See its documentation for more.
+///
+/// [`IndexSet`]: struct.IndexSet.html
+/// [`iter_mut`]: struct.IndexSet.html#method.iter_mut
+pub struct IterMut<'a, T> {
+    iter: SliceIterMut<'a, Bucket<T>>,
+}
+
+impl<'a, T> IterMut<'a, T> {
+    pub(super) fn new(entries: &'a mut [Bucket<T>]) -> Self {
+        Self {
+            iter: entries.iter_mut(),
+        }
+    }
+
+    /// Returns a slice of the remaining entries in the iterator.
+    pub fn as_slice(&'a self) -> &'a Slice<T> {
+        Slice::from_slice(self.iter.as_slice())
+    }
+}
+
+impl<'a, T> Iterator for IterMut<'a, T> {
+    type Item = &'a mut T;
+
+    iterator_methods!(Bucket::key_mut);
+}
+
+impl<T> DoubleEndedIterator for IterMut<'_, T> {
+    double_ended_iterator_methods!(Bucket::key_mut);
+}
+
+impl<T> ExactSizeIterator for IterMut<'_, T> {
+    fn len(&self) -> usize {
+        self.iter.len()
+    }
+}
+
+impl<T> FusedIterator for IterMut<'_, T> {}
+
+impl<T: fmt::Debug> fmt::Debug for IterMut<'_, T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let iter = self.iter.as_slice().iter().map(Bucket::refs);
+        f.debug_list().entries(iter).finish()
     }
 }
 

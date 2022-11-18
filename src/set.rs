@@ -6,7 +6,7 @@ mod slice;
 #[cfg(test)]
 mod tests;
 
-pub use self::iter::{Difference, Drain, Intersection, IntoIter, Iter, SymmetricDifference, Union};
+pub use self::iter::{Difference, Drain, Intersection, IntoIter, Iter, IterMut, SymmetricDifference, Union};
 pub use self::slice::Slice;
 
 #[cfg(feature = "rayon")]
@@ -202,6 +202,11 @@ impl<T, S> IndexSet<T, S> {
     /// Return an iterator over the values of the set, in their order
     pub fn iter(&self) -> Iter<'_, T> {
         Iter::new(self.as_entries())
+    }
+
+    /// Return a mutable iterator over the values of the set, in their order
+    pub fn iter_mut(&mut self) -> IterMut<'_, T> {
+        IterMut::new( self.as_entries_mut())
     }
 
     /// Remove all elements in the set, while preserving its capacity.

@@ -156,6 +156,9 @@ impl<K, V> Bucket<K, V> {
     fn key_ref(&self) -> &K {
         &self.key
     }
+    fn key_mut(&mut self) -> &mut K {
+        &mut self.key
+    }
     fn value_ref(&self) -> &V {
         &self.value
     }
