@@ -108,6 +108,11 @@ impl<'a, K, V> IterMut<'a, K, V> {
     }
 
     /// Returns a slice of the remaining entries in the iterator.
+    pub fn as_slice(&self) -> &Slice<K, V> {
+        Slice::from_slice(self.iter.as_slice())
+    }
+
+    /// Returns a mutable slice of the remaining entries in the iterator.
     ///
     /// To avoid creating `&mut` references that alias, this is forced to consume the iterator.
     pub fn into_slice(self) -> &'a mut Slice<K, V> {
@@ -157,6 +162,16 @@ impl<K, V> IntoIter<K, V> {
             iter: entries.into_iter(),
         }
     }
+
+    /// Returns a slice of the remaining entries in the iterator.
+    pub fn as_slice(&self) -> &Slice<K, V> {
+        Slice::from_slice(self.iter.as_slice())
+    }
+
+    /// Returns a mutable slice of the remaining entries in the iterator.
+    pub fn as_mut_slice(&mut self) -> &mut Slice<K, V> {
+        Slice::from_mut_slice(self.iter.as_mut_slice())
+    }
 }
 
 impl<K, V> Iterator for IntoIter<K, V> {
@@ -198,6 +213,11 @@ pub struct Drain<'a, K, V> {
 impl<'a, K, V> Drain<'a, K, V> {
     pub(super) fn new(iter: vec::Drain<'a, Bucket<K, V>>) -> Self {
         Self { iter }
+    }
+
+    /// Returns a slice of the remaining entries in the iterator.
+    pub fn as_slice(&self) -> &Slice<K, V> {
+        Slice::from_slice(self.iter.as_slice())
     }
 }
 

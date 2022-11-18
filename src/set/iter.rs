@@ -97,6 +97,11 @@ impl<T> IntoIter<T> {
             iter: entries.into_iter(),
         }
     }
+
+    /// Returns a slice of the remaining entries in the iterator.
+    pub fn as_slice(&self) -> &Slice<T> {
+        Slice::from_slice(self.iter.as_slice())
+    }
 }
 
 impl<T> Iterator for IntoIter<T> {
@@ -138,6 +143,11 @@ pub struct Drain<'a, T> {
 impl<'a, T> Drain<'a, T> {
     pub(super) fn new(iter: vec::Drain<'a, Bucket<T>>) -> Self {
         Self { iter }
+    }
+
+    /// Returns a slice of the remaining entries in the iterator.
+    pub fn as_slice(&self) -> &Slice<T> {
+        Slice::from_slice(self.iter.as_slice())
     }
 }
 
