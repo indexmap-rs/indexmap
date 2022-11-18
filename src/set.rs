@@ -196,6 +196,13 @@ impl<T, S> IndexSet<T, S> {
         }
     }
 
+    /// Return a mutable iterator over the values of the set, in their order
+    pub fn iter_mut(&mut self) -> IterMut<'_, T> {
+        IterMut {
+            iter: self.map.as_entries_mut().iter_mut(),
+        }
+    }
+
     /// Remove all elements in the set, while preserving its capacity.
     ///
     /// Computes in **O(n)** time.
@@ -837,6 +844,42 @@ impl<T> Clone for Iter<'_, T> {
 impl<T: fmt::Debug> fmt::Debug for Iter<'_, T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_list().entries(self.clone()).finish()
+    }
+}
+
+/// A mutable iterator over the items of a `IndexSet`.
+///
+/// This `struct` is created by the [`iter_mut`] method on [`IndexSet`].
+/// See its documentation for more.
+///
+/// [`IndexSet`]: struct.IndexSet.html
+/// [`iter_mut`]: struct.IndexSet.html#method.iter_mut
+pub struct IterMut<'a, T> {
+    iter: slice::IterMut<'a, Bucket<T>>,
+}
+
+impl<'a, T> Iterator for IterMut<'a, T> {
+    type Item = &'a mut T;
+
+    iterator_methods!(Bucket::key_mut);
+}
+
+impl<T> DoubleEndedIterator for IterMut<'_, T> {
+    double_ended_iterator_methods!(Bucket::key_mut);
+}
+
+impl<T> ExactSizeIterator for IterMut<'_, T> {
+    fn len(&self) -> usize {
+        self.iter.len()
+    }
+}
+
+impl<T> FusedIterator for IterMut<'_, T> {}
+
+impl<T: fmt::Debug> fmt::Debug for IterMut<'_, T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let iter = self.iter.as_slice().iter().map(Bucket::refs);
+        f.debug_list().entries(iter).finish()
     }
 }
 
