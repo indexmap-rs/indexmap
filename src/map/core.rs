@@ -502,25 +502,9 @@ impl<K, V> IndexMapCore<K, V> {
     where
         F: FnMut(&mut K, &mut V) -> bool,
     {
-        // FIXME: This could use Vec::retain_mut with MSRV 1.61.
-        // Like Vec::retain in self.entries, but with mutable K and V.
-        // We swap-shift all the items we want to keep, truncate the rest,
-        // then rebuild the raw hash table with the new indexes.
-        let len = self.entries.len();
-        let mut n_deleted = 0;
-        for i in 0..len {
-            let will_keep = {
-                let entry = &mut self.entries[i];
-                keep(&mut entry.key, &mut entry.value)
-            };
-            if !will_keep {
-                n_deleted += 1;
-            } else if n_deleted > 0 {
-                self.entries.swap(i - n_deleted, i);
-            }
-        }
-        if n_deleted > 0 {
-            self.entries.truncate(len - n_deleted);
+        self.entries
+            .retain_mut(|entry| keep(&mut entry.key, &mut entry.value));
+        if self.entries.len() < self.indices.len() {
             self.rebuild_hash_table();
         }
     }
