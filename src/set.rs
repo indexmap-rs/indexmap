@@ -644,7 +644,7 @@ where
         self.map.sort_unstable_keys()
     }
 
-    /// Sort the set's values in place using the comparison funtion `cmp`.
+    /// Sort the set's values in place using the comparison function `cmp`.
     ///
     /// Computes in **O(n log n)** time. The sort is unstable.
     pub fn sort_unstable_by<F>(&mut self, mut cmp: F)

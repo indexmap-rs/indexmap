@@ -394,7 +394,7 @@ impl<K, V> IndexMapCore<K, V> {
     pub(super) fn move_index(&mut self, from: usize, to: usize) {
         let from_hash = self.entries[from].hash;
         if from != to {
-            // Use a sentinal index so other indices don't collide.
+            // Use a sentinel index so other indices don't collide.
             update_index(&mut self.indices, from_hash, from, usize::MAX);
 
             // Update all other indices and rotate the entry positions.
@@ -406,7 +406,7 @@ impl<K, V> IndexMapCore<K, V> {
                 self.entries[to..=from].rotate_right(1);
             }
 
-            // Change the sentinal index to its final position.
+            // Change the sentinel index to its final position.
             update_index(&mut self.indices, from_hash, usize::MAX, to);
         }
     }
