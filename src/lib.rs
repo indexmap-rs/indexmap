@@ -14,7 +14,7 @@
 //! [`IndexSet`]: set/struct.IndexSet.html
 //!
 //!
-//! ### Feature Highlights
+//! ### Highlights
 //!
 //! [`IndexMap`] and [`IndexSet`] are drop-in compatible with the std `HashMap`
 //! and `HashSet`, but they also have some features of note:
@@ -25,6 +25,28 @@
 //!   between borrowed and owned versions of keys.
 //! - The [`MutableKeys`][map::MutableKeys] trait, which gives opt-in mutable
 //!   access to hash map keys.
+//!
+//! ### Feature Flags
+//!
+//! To reduce the amount of compiled code in the crate by default, certain
+//! features are gated behind [feature flags]. These allow you to opt in to (or
+//! out of) functionality. Below is a list of the features available in this
+//! crate.
+//!
+//! * `std`: Enables features which require the Rust standard library. For more
+//!   information see the section on [`no_std`].
+//! * `rayon`: Enables parallel iteration and other parallel methods.
+//! * `serde`: Adds implementations for [`Serialize`] and [`Deserialize`]
+//!   to [`IndexMap`] and [`IndexSet`]. Alternative implementations for
+//!   (de)serializing [`IndexMap`] as an ordered sequence are available in the
+//!   [`serde_seq`] module.
+//!
+//! _Note: only the `std` feature is enabled by default._
+//!
+//! [feature flags]: https://doc.rust-lang.org/cargo/reference/manifest.html#the-features-section
+//! [`no_std`]: #no-standard-library-targets
+//! [`Serialize`]: `::serde::Serialize`
+//! [`Deserialize`]: `::serde::Deserialize`
 //!
 //! ### Alternate Hashers
 //!
