@@ -17,8 +17,8 @@
 //!     // ...
 //! }
 //! ```
-//!
-//! Requires crate feature `"serde"`
+
+#![cfg_attr(docsrs, doc(cfg(feature = "serde")))]
 
 use serde::de::{Deserialize, Deserializer, SeqAccess, Visitor};
 use serde::ser::{Serialize, Serializer};
@@ -35,8 +35,6 @@ use crate::IndexMap;
 ///
 /// This behaves like [`crate::serde_seq`] for `IndexMap`, serializing a sequence
 /// of `(key, value)` pairs, rather than as a map that might not preserve order.
-///
-/// Requires crate feature `"serde"`
 impl<K, V> Serialize for MapSlice<K, V>
 where
     K: Serialize,
@@ -51,8 +49,6 @@ where
 }
 
 /// Serializes a `set::Slice` as an ordered sequence.
-///
-/// Requires crate feature `"serde"`
 impl<T> Serialize for SetSlice<T>
 where
     T: Serialize,
@@ -79,8 +75,6 @@ where
 ///     // ...
 /// }
 /// ```
-///
-/// Requires crate feature `"serde"`
 pub fn serialize<K, V, S, T>(map: &IndexMap<K, V, S>, serializer: T) -> Result<T::Ok, T::Error>
 where
     K: Serialize + Hash + Eq,
@@ -135,8 +129,6 @@ where
 ///     // ...
 /// }
 /// ```
-///
-/// Requires crate feature `"serde"`
 pub fn deserialize<'de, D, K, V, S>(deserializer: D) -> Result<IndexMap<K, V, S>, D::Error>
 where
     D: Deserializer<'de>,

@@ -2,8 +2,8 @@
 //!
 //! You will rarely need to interact with this module directly unless you need to name one of the
 //! iterator types.
-//!
-//! Requires crate feature `"rayon"`.
+
+#![cfg_attr(docsrs, doc(cfg(feature = "rayon")))]
 
 use super::collect;
 use rayon::iter::plumbing::{Consumer, ProducerCallback, UnindexedConsumer};
@@ -22,7 +22,7 @@ use crate::IndexSet;
 
 type Bucket<T> = crate::Bucket<T, ()>;
 
-/// Requires crate feature `"rayon"`.
+#[cfg_attr(docsrs, doc(cfg(feature = "rayon")))]
 impl<T, S> IntoParallelIterator for IndexSet<T, S>
 where
     T: Send,
@@ -37,7 +37,7 @@ where
     }
 }
 
-/// Requires crate feature `"rayon"`.
+#[cfg_attr(docsrs, doc(cfg(feature = "rayon")))]
 impl<T> IntoParallelIterator for Box<Slice<T>>
 where
     T: Send,
@@ -80,7 +80,7 @@ impl<T: Send> IndexedParallelIterator for IntoParIter<T> {
     indexed_parallel_iterator_methods!(Bucket::key);
 }
 
-/// Requires crate feature `"rayon"`.
+#[cfg_attr(docsrs, doc(cfg(feature = "rayon")))]
 impl<'a, T, S> IntoParallelIterator for &'a IndexSet<T, S>
 where
     T: Sync,
@@ -95,7 +95,7 @@ where
     }
 }
 
-/// Requires crate feature `"rayon"`.
+#[cfg_attr(docsrs, doc(cfg(feature = "rayon")))]
 impl<'a, T> IntoParallelIterator for &'a Slice<T>
 where
     T: Sync,
@@ -144,7 +144,7 @@ impl<T: Sync> IndexedParallelIterator for ParIter<'_, T> {
     indexed_parallel_iterator_methods!(Bucket::key_ref);
 }
 
-/// Requires crate feature `"rayon"`.
+#[cfg_attr(docsrs, doc(cfg(feature = "rayon")))]
 impl<'a, T, S> ParallelDrainRange<usize> for &'a mut IndexSet<T, S>
 where
     T: Send,
@@ -585,7 +585,7 @@ where
     }
 }
 
-/// Requires crate feature `"rayon"`.
+#[cfg_attr(docsrs, doc(cfg(feature = "rayon")))]
 impl<T, S> FromParallelIterator<T> for IndexSet<T, S>
 where
     T: Eq + Hash + Send,
@@ -605,7 +605,7 @@ where
     }
 }
 
-/// Requires crate feature `"rayon"`.
+#[cfg_attr(docsrs, doc(cfg(feature = "rayon")))]
 impl<T, S> ParallelExtend<T> for IndexSet<T, S>
 where
     T: Eq + Hash + Send,
@@ -621,7 +621,7 @@ where
     }
 }
 
-/// Requires crate feature `"rayon"`.
+#[cfg_attr(docsrs, doc(cfg(feature = "rayon")))]
 impl<'a, T: 'a, S> ParallelExtend<&'a T> for IndexSet<T, S>
 where
     T: Copy + Eq + Hash + Send + Sync,

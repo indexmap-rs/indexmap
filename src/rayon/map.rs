@@ -2,8 +2,8 @@
 //!
 //! You will rarely need to interact with this module directly unless you need to name one of the
 //! iterator types.
-//!
-//! Requires crate feature `"rayon"`
+
+#![cfg_attr(docsrs, doc(cfg(feature = "rayon")))]
 
 use super::collect;
 use rayon::iter::plumbing::{Consumer, ProducerCallback, UnindexedConsumer};
@@ -21,7 +21,6 @@ use crate::Bucket;
 use crate::Entries;
 use crate::IndexMap;
 
-/// Requires crate feature `"rayon"`.
 impl<K, V, S> IntoParallelIterator for IndexMap<K, V, S>
 where
     K: Send,
@@ -37,7 +36,6 @@ where
     }
 }
 
-/// Requires crate feature `"rayon"`.
 impl<K, V> IntoParallelIterator for Box<Slice<K, V>>
 where
     K: Send,
@@ -81,7 +79,6 @@ impl<K: Send, V: Send> IndexedParallelIterator for IntoParIter<K, V> {
     indexed_parallel_iterator_methods!(Bucket::key_value);
 }
 
-/// Requires crate feature `"rayon"`.
 impl<'a, K, V, S> IntoParallelIterator for &'a IndexMap<K, V, S>
 where
     K: Sync,
@@ -97,7 +94,6 @@ where
     }
 }
 
-/// Requires crate feature `"rayon"`.
 impl<'a, K, V> IntoParallelIterator for &'a Slice<K, V>
 where
     K: Sync,
@@ -147,7 +143,6 @@ impl<K: Sync, V: Sync> IndexedParallelIterator for ParIter<'_, K, V> {
     indexed_parallel_iterator_methods!(Bucket::refs);
 }
 
-/// Requires crate feature `"rayon"`.
 impl<'a, K, V, S> IntoParallelIterator for &'a mut IndexMap<K, V, S>
 where
     K: Sync + Send,
@@ -163,7 +158,6 @@ where
     }
 }
 
-/// Requires crate feature `"rayon"`.
 impl<'a, K, V> IntoParallelIterator for &'a mut Slice<K, V>
 where
     K: Sync + Send,
@@ -207,7 +201,6 @@ impl<K: Sync + Send, V: Send> IndexedParallelIterator for ParIterMut<'_, K, V> {
     indexed_parallel_iterator_methods!(Bucket::ref_mut);
 }
 
-/// Requires crate feature `"rayon"`.
 impl<'a, K, V, S> ParallelDrainRange<usize> for &'a mut IndexMap<K, V, S>
 where
     K: Send,
@@ -395,7 +388,6 @@ impl<K: Sync, V: Sync> IndexedParallelIterator for ParValues<'_, K, V> {
     indexed_parallel_iterator_methods!(Bucket::value_ref);
 }
 
-/// Requires crate feature `"rayon"`.
 impl<K, V, S> IndexMap<K, V, S>
 where
     K: Send,
@@ -412,7 +404,6 @@ where
     }
 }
 
-/// Requires crate feature `"rayon"`.
 impl<K, V> Slice<K, V>
 where
     K: Send,
@@ -546,7 +537,6 @@ impl<K: Send, V: Send> IndexedParallelIterator for ParValuesMut<'_, K, V> {
     indexed_parallel_iterator_methods!(Bucket::value_mut);
 }
 
-/// Requires crate feature `"rayon"`.
 impl<K, V, S> FromParallelIterator<(K, V)> for IndexMap<K, V, S>
 where
     K: Eq + Hash + Send,
@@ -567,7 +557,6 @@ where
     }
 }
 
-/// Requires crate feature `"rayon"`.
 impl<K, V, S> ParallelExtend<(K, V)> for IndexMap<K, V, S>
 where
     K: Eq + Hash + Send,
@@ -584,7 +573,6 @@ where
     }
 }
 
-/// Requires crate feature `"rayon"`.
 impl<'a, K: 'a, V: 'a, S> ParallelExtend<(&'a K, &'a V)> for IndexMap<K, V, S>
 where
     K: Copy + Eq + Hash + Send + Sync,

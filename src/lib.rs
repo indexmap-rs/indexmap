@@ -76,6 +76,8 @@
 //!
 //! [def]: map/struct.IndexMap.html#impl-Default
 
+#![cfg_attr(docsrs, feature(doc_cfg))]
+
 extern crate alloc;
 
 #[cfg(feature = "std")]
@@ -92,6 +94,7 @@ mod mutable_keys;
 #[cfg(feature = "serde")]
 mod serde;
 #[cfg(feature = "serde")]
+#[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
 pub mod serde_seq;
 mod util;
 
@@ -245,4 +248,5 @@ impl core::fmt::Display for TryReserveError {
 }
 
 #[cfg(feature = "std")]
+#[cfg_attr(docsrs, doc(cfg(feature = "std")))]
 impl std::error::Error for TryReserveError {}

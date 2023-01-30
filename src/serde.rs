@@ -1,3 +1,5 @@
+#![cfg_attr(docsrs, doc(cfg(feature = "serde")))]
+
 use serde::de::value::{MapDeserializer, SeqDeserializer};
 use serde::de::{
     Deserialize, Deserializer, Error, IntoDeserializer, MapAccess, SeqAccess, Visitor,
@@ -10,7 +12,6 @@ use core::marker::PhantomData;
 
 use crate::IndexMap;
 
-/// Requires crate feature `"serde"`
 impl<K, V, S> Serialize for IndexMap<K, V, S>
 where
     K: Serialize + Hash + Eq,
@@ -54,7 +55,6 @@ where
     }
 }
 
-/// Requires crate feature `"serde"`
 impl<'de, K, V, S> Deserialize<'de> for IndexMap<K, V, S>
 where
     K: Deserialize<'de> + Eq + Hash,
@@ -85,7 +85,6 @@ where
 
 use crate::IndexSet;
 
-/// Requires crate feature `"serde"`
 impl<T, S> Serialize for IndexSet<T, S>
 where
     T: Serialize + Hash + Eq,
@@ -127,7 +126,6 @@ where
     }
 }
 
-/// Requires crate feature `"serde"`
 impl<'de, T, S> Deserialize<'de> for IndexSet<T, S>
 where
     T: Deserialize<'de> + Eq + Hash,

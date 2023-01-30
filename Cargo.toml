@@ -53,7 +53,8 @@ no-dev-version = true
 tag-name = "{{version}}"
 
 [package.metadata.docs.rs]
-features = ["arbitrary", "quickcheck", "serde", "rayon"]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
 
 [workspace]
 members = ["test-nostd", "test-serde"]
