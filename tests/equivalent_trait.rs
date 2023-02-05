@@ -16,13 +16,13 @@ where
     }
 }
 
-impl<A, B, X> Equivalent<X> for Pair<A, B>
+impl<A, B, X> Equivalent<X> for &Pair<A, B>
 where
     Pair<A, B>: PartialEq<X>,
     A: Hash + Eq,
     B: Hash + Eq,
 {
-    fn equivalent(&self, other: &X) -> bool {
+    fn equivalent(self, other: &X) -> bool {
         *self == *other
     }
 }

@@ -12,16 +12,16 @@ use core::borrow::Borrow;
 /// The implementor **must** hash like `K`, if it is hashable.
 pub trait Equivalent<K: ?Sized> {
     /// Compare self to `key` and return `true` if they are equal.
-    fn equivalent(&self, key: &K) -> bool;
+    fn equivalent(self, key: &K) -> bool;
 }
 
-impl<Q: ?Sized, K: ?Sized> Equivalent<K> for Q
+impl<Q: ?Sized, K: ?Sized> Equivalent<K> for &Q
 where
     Q: Eq,
     K: Borrow<Q>,
 {
     #[inline]
-    fn equivalent(&self, key: &K) -> bool {
+    fn equivalent(self, key: &K) -> bool {
         *self == *key.borrow()
     }
 }

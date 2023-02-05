@@ -17,9 +17,8 @@ use core::fmt;
 use core::mem;
 use core::ops::RangeBounds;
 
-use crate::equivalent::Equivalent;
 use crate::util::simplify_range;
-use crate::{Bucket, Entries, HashValue};
+use crate::{Bucket, Entries, Equivalent, HashValue};
 
 /// Core of the map that does not depend on S
 pub(crate) struct IndexMapCore<K, V> {
@@ -35,8 +34,8 @@ fn get_hash<K, V>(entries: &[Bucket<K, V>]) -> impl Fn(&usize) -> u64 + '_ {
 }
 
 #[inline]
-fn equivalent<'a, K, V, Q: ?Sized + Equivalent<K>>(
-    key: &'a Q,
+fn equivalent<'a, K, V, Q: Copy + Equivalent<K> + 'a>(
+    key: Q,
     entries: &'a [Bucket<K, V>],
 ) -> impl Fn(&usize) -> bool + 'a {
     move |&i| Q::equivalent(key, &entries[i].key)
@@ -290,9 +289,9 @@ impl<K, V> IndexMapCore<K, V> {
     }
 
     /// Return the index in `entries` where an equivalent key can be found
-    pub(crate) fn get_index_of<Q>(&self, hash: HashValue, key: &Q) -> Option<usize>
+    pub(crate) fn get_index_of<Q>(&self, hash: HashValue, key: Q) -> Option<usize>
     where
-        Q: ?Sized + Equivalent<K>,
+        Q: Copy + Equivalent<K>,
     {
         let eq = equivalent(key, &self.entries);
         self.indices.get(hash.get(), eq).copied()
@@ -309,9 +308,9 @@ impl<K, V> IndexMapCore<K, V> {
     }
 
     /// Remove an entry by shifting all entries that follow it
-    pub(crate) fn shift_remove_full<Q>(&mut self, hash: HashValue, key: &Q) -> Option<(usize, K, V)>
+    pub(crate) fn shift_remove_full<Q>(&mut self, hash: HashValue, key: Q) -> Option<(usize, K, V)>
     where
-        Q: ?Sized + Equivalent<K>,
+        Q: Copy + Equivalent<K>,
     {
         let eq = equivalent(key, &self.entries);
         match self.indices.remove_entry(hash.get(), eq) {
@@ -412,9 +411,9 @@ impl<K, V> IndexMapCore<K, V> {
     }
 
     /// Remove an entry by swapping it with the last
-    pub(crate) fn swap_remove_full<Q>(&mut self, hash: HashValue, key: &Q) -> Option<(usize, K, V)>
+    pub(crate) fn swap_remove_full<Q>(&mut self, hash: HashValue, key: Q) -> Option<(usize, K, V)>
     where
-        Q: ?Sized + Equivalent<K>,
+        Q: Copy + Equivalent<K>,
     {
         let eq = equivalent(key, &self.entries);
         match self.indices.remove_entry(hash.get(), eq) {
