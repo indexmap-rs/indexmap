@@ -34,7 +34,7 @@ fn get_hash<K, V>(entries: &[Bucket<K, V>]) -> impl Fn(&usize) -> u64 + '_ {
 }
 
 #[inline]
-fn equivalent<'a, K, V, Q: Copy + Equivalent<K> + 'a>(
+fn equivalent<'a, K, V, Q: Equivalent<K> + 'a>(
     key: Q,
     entries: &'a [Bucket<K, V>],
 ) -> impl Fn(&usize) -> bool + 'a {
@@ -291,7 +291,7 @@ impl<K, V> IndexMapCore<K, V> {
     /// Return the index in `entries` where an equivalent key can be found
     pub(crate) fn get_index_of<Q>(&self, hash: HashValue, key: Q) -> Option<usize>
     where
-        Q: Copy + Equivalent<K>,
+        Q: Equivalent<K>,
     {
         let eq = equivalent(key, &self.entries);
         self.indices.get(hash.get(), eq).copied()
@@ -310,7 +310,7 @@ impl<K, V> IndexMapCore<K, V> {
     /// Remove an entry by shifting all entries that follow it
     pub(crate) fn shift_remove_full<Q>(&mut self, hash: HashValue, key: Q) -> Option<(usize, K, V)>
     where
-        Q: Copy + Equivalent<K>,
+        Q: Equivalent<K>,
     {
         let eq = equivalent(key, &self.entries);
         match self.indices.remove_entry(hash.get(), eq) {
@@ -413,7 +413,7 @@ impl<K, V> IndexMapCore<K, V> {
     /// Remove an entry by swapping it with the last
     pub(crate) fn swap_remove_full<Q>(&mut self, hash: HashValue, key: Q) -> Option<(usize, K, V)>
     where
-        Q: Copy + Equivalent<K>,
+        Q: Equivalent<K>,
     {
         let eq = equivalent(key, &self.entries);
         match self.indices.remove_entry(hash.get(), eq) {

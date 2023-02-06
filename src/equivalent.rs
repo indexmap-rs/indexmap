@@ -10,7 +10,7 @@ use core::borrow::Borrow;
 /// # Contract
 ///
 /// The implementor **must** hash like `K`, if it is hashable.
-pub trait Equivalent<K: ?Sized> {
+pub trait Equivalent<K: ?Sized>: Copy {
     /// Compare self to `key` and return `true` if they are equal.
     fn equivalent(self, key: &K) -> bool;
 }

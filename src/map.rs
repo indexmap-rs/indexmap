@@ -418,7 +418,7 @@ where
     /// Computes in **O(1)** time (average).
     pub fn contains_key<Q>(&self, key: Q) -> bool
     where
-        Q: Copy + Hash + Equivalent<K>,
+        Q: Hash + Equivalent<K>,
     {
         self.get_index_of(key).is_some()
     }
@@ -429,7 +429,7 @@ where
     /// Computes in **O(1)** time (average).
     pub fn get<Q>(&self, key: Q) -> Option<&V>
     where
-        Q: Copy + Hash + Equivalent<K>,
+        Q: Hash + Equivalent<K>,
     {
         if let Some(i) = self.get_index_of(key) {
             let entry = &self.as_entries()[i];
@@ -445,7 +445,7 @@ where
     /// Computes in **O(1)** time (average).
     pub fn get_key_value<Q>(&self, key: Q) -> Option<(&K, &V)>
     where
-        Q: Copy + Hash + Equivalent<K>,
+        Q: Hash + Equivalent<K>,
     {
         if let Some(i) = self.get_index_of(key) {
             let entry = &self.as_entries()[i];
@@ -458,7 +458,7 @@ where
     /// Return item index, key and value
     pub fn get_full<Q>(&self, key: Q) -> Option<(usize, &K, &V)>
     where
-        Q: Copy + Hash + Equivalent<K>,
+        Q: Hash + Equivalent<K>,
     {
         if let Some(i) = self.get_index_of(key) {
             let entry = &self.as_entries()[i];
@@ -473,7 +473,7 @@ where
     /// Computes in **O(1)** time (average).
     pub fn get_index_of<Q>(&self, key: Q) -> Option<usize>
     where
-        Q: Copy + Hash + Equivalent<K>,
+        Q: Hash + Equivalent<K>,
     {
         if self.is_empty() {
             None
@@ -485,7 +485,7 @@ where
 
     pub fn get_mut<Q>(&mut self, key: Q) -> Option<&mut V>
     where
-        Q: Copy + Hash + Equivalent<K>,
+        Q: Hash + Equivalent<K>,
     {
         if let Some(i) = self.get_index_of(key) {
             let entry = &mut self.as_entries_mut()[i];
@@ -497,7 +497,7 @@ where
 
     pub fn get_full_mut<Q>(&mut self, key: Q) -> Option<(usize, &K, &mut V)>
     where
-        Q: Copy + Hash + Equivalent<K>,
+        Q: Hash + Equivalent<K>,
     {
         if let Some(i) = self.get_index_of(key) {
             let entry = &mut self.as_entries_mut()[i];
@@ -517,7 +517,7 @@ where
     /// Computes in **O(1)** time (average).
     pub fn remove<Q>(&mut self, key: Q) -> Option<V>
     where
-        Q: Copy + Hash + Equivalent<K>,
+        Q: Hash + Equivalent<K>,
     {
         self.swap_remove(key)
     }
@@ -531,7 +531,7 @@ where
     /// Computes in **O(1)** time (average).
     pub fn remove_entry<Q>(&mut self, key: Q) -> Option<(K, V)>
     where
-        Q: Copy + Hash + Equivalent<K>,
+        Q: Hash + Equivalent<K>,
     {
         self.swap_remove_entry(key)
     }
@@ -548,7 +548,7 @@ where
     /// Computes in **O(1)** time (average).
     pub fn swap_remove<Q>(&mut self, key: Q) -> Option<V>
     where
-        Q: Copy + Hash + Equivalent<K>,
+        Q: Hash + Equivalent<K>,
     {
         self.swap_remove_full(key).map(third)
     }
@@ -564,7 +564,7 @@ where
     /// Computes in **O(1)** time (average).
     pub fn swap_remove_entry<Q>(&mut self, key: Q) -> Option<(K, V)>
     where
-        Q: Copy + Hash + Equivalent<K>,
+        Q: Hash + Equivalent<K>,
     {
         match self.swap_remove_full(key) {
             Some((_, key, value)) => Some((key, value)),
@@ -584,7 +584,7 @@ where
     /// Computes in **O(1)** time (average).
     pub fn swap_remove_full<Q>(&mut self, key: Q) -> Option<(usize, K, V)>
     where
-        Q: Copy + Hash + Equivalent<K>,
+        Q: Hash + Equivalent<K>,
     {
         if self.is_empty() {
             return None;
@@ -605,7 +605,7 @@ where
     /// Computes in **O(n)** time (average).
     pub fn shift_remove<Q>(&mut self, key: Q) -> Option<V>
     where
-        Q: Copy + Hash + Equivalent<K>,
+        Q: Hash + Equivalent<K>,
     {
         self.shift_remove_full(key).map(third)
     }
@@ -621,7 +621,7 @@ where
     /// Computes in **O(n)** time (average).
     pub fn shift_remove_entry<Q>(&mut self, key: Q) -> Option<(K, V)>
     where
-        Q: Copy + Hash + Equivalent<K>,
+        Q: Hash + Equivalent<K>,
     {
         match self.shift_remove_full(key) {
             Some((_, key, value)) => Some((key, value)),
@@ -641,7 +641,7 @@ where
     /// Computes in **O(n)** time (average).
     pub fn shift_remove_full<Q>(&mut self, key: Q) -> Option<(usize, K, V)>
     where
-        Q: Copy + Hash + Equivalent<K>,
+        Q: Hash + Equivalent<K>,
     {
         if self.is_empty() {
             return None;

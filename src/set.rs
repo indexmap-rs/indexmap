@@ -397,7 +397,7 @@ where
     /// Computes in **O(1)** time (average).
     pub fn contains<Q>(&self, value: Q) -> bool
     where
-        Q: Copy + Hash + Equivalent<T>,
+        Q: Hash + Equivalent<T>,
     {
         self.map.contains_key(value)
     }
@@ -408,7 +408,7 @@ where
     /// Computes in **O(1)** time (average).
     pub fn get<Q>(&self, value: Q) -> Option<&T>
     where
-        Q: Copy + Hash + Equivalent<T>,
+        Q: Hash + Equivalent<T>,
     {
         self.map.get_key_value(value).map(|(x, &())| x)
     }
@@ -416,7 +416,7 @@ where
     /// Return item index and value
     pub fn get_full<Q>(&self, value: Q) -> Option<(usize, &T)>
     where
-        Q: Copy + Hash + Equivalent<T>,
+        Q: Hash + Equivalent<T>,
     {
         self.map.get_full(value).map(|(i, x, &())| (i, x))
     }
@@ -424,7 +424,7 @@ where
     /// Return item index, if it exists in the set
     pub fn get_index_of<Q>(&self, value: Q) -> Option<usize>
     where
-        Q: Copy + Hash + Equivalent<T>,
+        Q: Hash + Equivalent<T>,
     {
         self.map.get_index_of(value)
     }
@@ -464,7 +464,7 @@ where
     /// Computes in **O(1)** time (average).
     pub fn remove<Q>(&mut self, value: Q) -> bool
     where
-        Q: Copy + Hash + Equivalent<T>,
+        Q: Hash + Equivalent<T>,
     {
         self.swap_remove(value)
     }
@@ -480,7 +480,7 @@ where
     /// Computes in **O(1)** time (average).
     pub fn swap_remove<Q>(&mut self, value: Q) -> bool
     where
-        Q: Copy + Hash + Equivalent<T>,
+        Q: Hash + Equivalent<T>,
     {
         self.map.swap_remove(value).is_some()
     }
@@ -496,7 +496,7 @@ where
     /// Computes in **O(n)** time (average).
     pub fn shift_remove<Q>(&mut self, value: Q) -> bool
     where
-        Q: Copy + Hash + Equivalent<T>,
+        Q: Hash + Equivalent<T>,
     {
         self.map.shift_remove(value).is_some()
     }
@@ -511,7 +511,7 @@ where
     /// Computes in **O(1)** time (average).
     pub fn take<Q>(&mut self, value: Q) -> Option<T>
     where
-        Q: Copy + Hash + Equivalent<T>,
+        Q: Hash + Equivalent<T>,
     {
         self.swap_take(value)
     }
@@ -528,7 +528,7 @@ where
     /// Computes in **O(1)** time (average).
     pub fn swap_take<Q>(&mut self, value: Q) -> Option<T>
     where
-        Q: Copy + Hash + Equivalent<T>,
+        Q: Hash + Equivalent<T>,
     {
         self.map.swap_remove_entry(value).map(|(x, ())| x)
     }
@@ -545,7 +545,7 @@ where
     /// Computes in **O(n)** time (average).
     pub fn shift_take<Q>(&mut self, value: Q) -> Option<T>
     where
-        Q: Copy + Hash + Equivalent<T>,
+        Q: Hash + Equivalent<T>,
     {
         self.map.shift_remove_entry(value).map(|(x, ())| x)
     }
@@ -559,7 +559,7 @@ where
     /// Return `None` if `value` was not in the set.
     pub fn swap_remove_full<Q>(&mut self, value: Q) -> Option<(usize, T)>
     where
-        Q: Copy + Hash + Equivalent<T>,
+        Q: Hash + Equivalent<T>,
     {
         self.map.swap_remove_full(value).map(|(i, x, ())| (i, x))
     }
@@ -573,7 +573,7 @@ where
     /// Return `None` if `value` was not in the set.
     pub fn shift_remove_full<Q>(&mut self, value: Q) -> Option<(usize, T)>
     where
-        Q: Copy + Hash + Equivalent<T>,
+        Q: Hash + Equivalent<T>,
     {
         self.map.shift_remove_full(value).map(|(i, x, ())| (i, x))
     }
