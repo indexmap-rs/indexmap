@@ -1,5 +1,6 @@
 use indexmap::indexmap;
 use indexmap::Equivalent;
+use indexmap::IndexMap;
 
 use std::hash::Hash;
 
@@ -50,4 +51,33 @@ fn test_string_str() {
     assert!(map.contains_key("a"));
     assert!(!map.contains_key("z"));
     assert_eq!(map.swap_remove("b"), Some(2));
+}
+
+#[derive(Copy, Clone)]
+struct BytesAsStringRef<'a>(&'a [u8]);
+
+impl<'a> std::hash::Hash for BytesAsStringRef<'a> {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        // We have to hash exactly like a string, or else lookups will fail
+        if let Ok(s) = std::str::from_utf8(self.0) {
+            s.hash(state);
+        }
+        // else doesn't matter -- it can't be equivalent to a string anyway
+    }
+}
+
+impl<'a> Equivalent<String> for BytesAsStringRef<'a> {
+    fn equivalent(self, key: &String) -> bool {
+        self.0 == key.as_bytes()
+    }
+}
+
+#[test]
+fn test_bytes_as_str() {
+    let mut im: IndexMap<String, i32> = IndexMap::new();
+    assert_eq!(im.get("123"), None);
+    assert_eq!(im.get(BytesAsStringRef(b"123")), None);
+    im.insert(String::from("123"), 123);
+    assert_eq!(im.get("123"), Some(&123));
+    assert_eq!(im.get(BytesAsStringRef(b"123")), Some(&123));
 }
