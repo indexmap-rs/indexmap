@@ -5,6 +5,10 @@ mod core;
 mod iter;
 mod slice;
 
+#[cfg(feature = "serde")]
+#[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
+pub mod serde_seq;
+
 #[cfg(test)]
 mod tests;
 

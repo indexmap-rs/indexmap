@@ -77,7 +77,7 @@ fn test_serde_seq_map() {
     #[derive(Debug, Deserialize, Serialize)]
     #[serde(transparent)]
     struct SeqIndexMap {
-        #[serde(with = "indexmap::serde_seq")]
+        #[serde(with = "indexmap::map::serde_seq")]
         map: IndexMap<i32, i32>,
     }
 
