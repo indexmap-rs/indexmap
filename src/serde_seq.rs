@@ -18,8 +18,6 @@
 //! }
 //! ```
 
-#![cfg_attr(docsrs, doc(cfg(feature = "serde")))]
-
 use serde::de::{Deserialize, Deserializer, SeqAccess, Visitor};
 use serde::ser::{Serialize, Serializer};
 

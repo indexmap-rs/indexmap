@@ -114,6 +114,7 @@ mod macros;
 mod equivalent;
 mod mutable_keys;
 #[cfg(feature = "serde")]
+#[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
 mod serde;
 #[cfg(feature = "serde")]
 #[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
@@ -126,6 +127,7 @@ pub mod set;
 // Placed after `map` and `set` so new `rayon` methods on the types
 // are documented after the "normal" methods.
 #[cfg(feature = "rayon")]
+#[cfg_attr(docsrs, doc(cfg(feature = "rayon")))]
 mod rayon;
 
 #[cfg(feature = "rustc-rayon")]
