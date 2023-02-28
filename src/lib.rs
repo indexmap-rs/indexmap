@@ -39,7 +39,7 @@
 //! * `serde`: Adds implementations for [`Serialize`] and [`Deserialize`]
 //!   to [`IndexMap`] and [`IndexSet`]. Alternative implementations for
 //!   (de)serializing [`IndexMap`] as an ordered sequence are available in the
-//!   [`serde_seq`] module.
+//!   [`map::serde_seq`] module.
 //!
 //! _Note: only the `std` feature is enabled by default._
 //!
