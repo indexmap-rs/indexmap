@@ -28,6 +28,9 @@
 
   - The `hashbrown` dependency has been updated to version 0.13.
 
+  - The `serde_seq` module has been moved from the crate root to below the
+    `map` module.
+
 - 1.9.2
 
   - `IndexMap` and `IndexSet` both implement `arbitrary::Arbitrary<'_>` and
