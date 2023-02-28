@@ -54,6 +54,7 @@ tag-name = "{{version}}"
 
 [package.metadata.docs.rs]
 features = ["arbitrary", "quickcheck", "serde", "rayon"]
+rustdoc-args = ["--cfg", "docsrs"]
 
 [workspace]
 members = ["test-nostd", "test-serde"]

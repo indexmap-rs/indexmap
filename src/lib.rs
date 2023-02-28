@@ -14,7 +14,7 @@
 //! [`IndexSet`]: set/struct.IndexSet.html
 //!
 //!
-//! ### Feature Highlights
+//! ### Highlights
 //!
 //! [`IndexMap`] and [`IndexSet`] are drop-in compatible with the std `HashMap`
 //! and `HashSet`, but they also have some features of note:
@@ -25,6 +25,34 @@
 //!   between borrowed and owned versions of keys.
 //! - The [`MutableKeys`][map::MutableKeys] trait, which gives opt-in mutable
 //!   access to hash map keys.
+//!
+//! ### Feature Flags
+//!
+//! To reduce the amount of compiled code in the crate by default, certain
+//! features are gated behind [feature flags]. These allow you to opt in to (or
+//! out of) functionality. Below is a list of the features available in this
+//! crate.
+//!
+//! * `std`: Enables features which require the Rust standard library. For more
+//!   information see the section on [`no_std`].
+//! * `rayon`: Enables parallel iteration and other parallel methods.
+//! * `serde`: Adds implementations for [`Serialize`] and [`Deserialize`]
+//!   to [`IndexMap`] and [`IndexSet`]. Alternative implementations for
+//!   (de)serializing [`IndexMap`] as an ordered sequence are available in the
+//!   [`map::serde_seq`] module.
+//! * `arbitrary`: Adds implementations for the [`arbitrary::Arbitrary`] trait
+//!   to [`IndexMap`] and [`IndexSet`].
+//! * `quickcheck`: Adds implementations for the [`quickcheck::Arbitrary`] trait
+//!   to [`IndexMap`] and [`IndexSet`].
+//!
+//! _Note: only the `std` feature is enabled by default._
+//!
+//! [feature flags]: https://doc.rust-lang.org/cargo/reference/manifest.html#the-features-section
+//! [`no_std`]: #no-standard-library-targets
+//! [`Serialize`]: `::serde::Serialize`
+//! [`Deserialize`]: `::serde::Deserialize`
+//! [`arbitrary::Arbitrary`]: `::arbitrary::Arbitrary`
+//! [`quickcheck::Arbitrary`]: `::quickcheck::Arbitrary`
 //!
 //! ### Alternate Hashers
 //!
@@ -76,6 +104,8 @@
 //!
 //! [def]: map/struct.IndexMap.html#impl-Default
 
+#![cfg_attr(docsrs, feature(doc_cfg))]
+
 extern crate alloc;
 
 #[cfg(feature = "std")]
@@ -90,9 +120,8 @@ mod macros;
 mod equivalent;
 mod mutable_keys;
 #[cfg(feature = "serde")]
+#[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
 mod serde;
-#[cfg(feature = "serde")]
-pub mod serde_seq;
 mod util;
 
 pub mod map;
@@ -101,6 +130,7 @@ pub mod set;
 // Placed after `map` and `set` so new `rayon` methods on the types
 // are documented after the "normal" methods.
 #[cfg(feature = "rayon")]
+#[cfg_attr(docsrs, doc(cfg(feature = "rayon")))]
 mod rayon;
 
 #[cfg(feature = "rustc-rayon")]
@@ -245,4 +275,5 @@ impl core::fmt::Display for TryReserveError {
 }
 
 #[cfg(feature = "std")]
+#[cfg_attr(docsrs, doc(cfg(feature = "std")))]
 impl std::error::Error for TryReserveError {}

@@ -12,13 +12,11 @@
 //! # use serde_derive::{Deserialize, Serialize};
 //! #[derive(Deserialize, Serialize)]
 //! struct Data {
-//!     #[serde(with = "indexmap::serde_seq")]
+//!     #[serde(with = "indexmap::map::serde_seq")]
 //!     map: IndexMap<i32, u64>,
 //!     // ...
 //! }
 //! ```
-//!
-//! Requires crate feature `"serde"`
 
 use serde::de::{Deserialize, Deserializer, SeqAccess, Visitor};
 use serde::ser::{Serialize, Serializer};
@@ -33,10 +31,8 @@ use crate::IndexMap;
 
 /// Serializes a `map::Slice` as an ordered sequence.
 ///
-/// This behaves like [`crate::serde_seq`] for `IndexMap`, serializing a sequence
+/// This behaves like [`crate::map::serde_seq`] for `IndexMap`, serializing a sequence
 /// of `(key, value)` pairs, rather than as a map that might not preserve order.
-///
-/// Requires crate feature `"serde"`
 impl<K, V> Serialize for MapSlice<K, V>
 where
     K: Serialize,
@@ -51,8 +47,6 @@ where
 }
 
 /// Serializes a `set::Slice` as an ordered sequence.
-///
-/// Requires crate feature `"serde"`
 impl<T> Serialize for SetSlice<T>
 where
     T: Serialize,
@@ -74,13 +68,11 @@ where
 /// # use serde_derive::Serialize;
 /// #[derive(Serialize)]
 /// struct Data {
-///     #[serde(serialize_with = "indexmap::serde_seq::serialize")]
+///     #[serde(serialize_with = "indexmap::map::serde_seq::serialize")]
 ///     map: IndexMap<i32, u64>,
 ///     // ...
 /// }
 /// ```
-///
-/// Requires crate feature `"serde"`
 pub fn serialize<K, V, S, T>(map: &IndexMap<K, V, S>, serializer: T) -> Result<T::Ok, T::Error>
 where
     K: Serialize + Hash + Eq,
@@ -130,13 +122,11 @@ where
 /// # use serde_derive::Deserialize;
 /// #[derive(Deserialize)]
 /// struct Data {
-///     #[serde(deserialize_with = "indexmap::serde_seq::deserialize")]
+///     #[serde(deserialize_with = "indexmap::map::serde_seq::deserialize")]
 ///     map: IndexMap<i32, u64>,
 ///     // ...
 /// }
 /// ```
-///
-/// Requires crate feature `"serde"`
 pub fn deserialize<'de, D, K, V, S>(deserializer: D) -> Result<IndexMap<K, V, S>, D::Error>
 where
     D: Deserializer<'de>,
