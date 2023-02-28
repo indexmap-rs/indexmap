@@ -40,6 +40,10 @@
 //!   to [`IndexMap`] and [`IndexSet`]. Alternative implementations for
 //!   (de)serializing [`IndexMap`] as an ordered sequence are available in the
 //!   [`map::serde_seq`] module.
+//! * `arbitrary`: Adds implementations for the [`arbitrary::Arbitrary`] trait
+//!   to [`IndexMap`] and [`IndexSet`].
+//! * `quickcheck`: Adds implementations for the [`quickcheck::Arbitrary`] trait
+//!   to [`IndexMap`] and [`IndexSet`].
 //!
 //! _Note: only the `std` feature is enabled by default._
 //!
@@ -47,6 +51,8 @@
 //! [`no_std`]: #no-standard-library-targets
 //! [`Serialize`]: `::serde::Serialize`
 //! [`Deserialize`]: `::serde::Deserialize`
+//! [`arbitrary::Arbitrary`]: `::arbitrary::Arbitrary`
+//! [`quickcheck::Arbitrary`]: `::quickcheck::Arbitrary`
 //!
 //! ### Alternate Hashers
 //!
