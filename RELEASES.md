@@ -31,6 +31,10 @@
   - The `serde_seq` module has been moved from the crate root to below the
     `map` module.
 
+- 1.9.3
+
+  - Bump the `rustc-rayon` dependency, for compiler use only.
+
 - 1.9.2
 
   - `IndexMap` and `IndexSet` both implement `arbitrary::Arbitrary<'_>` and

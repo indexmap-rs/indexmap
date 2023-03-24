@@ -22,7 +22,7 @@ rayon = { version = "1.5.3", optional = true }
 
 # Internal feature, only used when building as part of rustc,
 # not part of the stable interface of this crate.
-rustc-rayon = { version = "0.4", optional = true }
+rustc-rayon = { package = "rustc-rayon", version = "0.5", optional = true }
 
 [dependencies.hashbrown]
 version = "0.13"
