@@ -530,3 +530,16 @@ fn from_array() {
 
     assert_eq!(set1, set2);
 }
+
+#[test]
+fn iter_default() {
+    struct Item;
+    fn assert_default<T>()
+    where
+        T: Default + Iterator,
+    {
+        assert!(T::default().next().is_none());
+    }
+    assert_default::<Iter<'static, Item>>();
+    assert_default::<IntoIter<Item>>();
+}
