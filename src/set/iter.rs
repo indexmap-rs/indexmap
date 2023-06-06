@@ -80,6 +80,12 @@ impl<T: fmt::Debug> fmt::Debug for Iter<'_, T> {
     }
 }
 
+impl<T> Default for Iter<'_, T> {
+    fn default() -> Self {
+        Self { iter: [].iter() }
+    }
+}
+
 /// An owning iterator over the items of a `IndexSet`.
 ///
 /// This `struct` is created by the [`into_iter`] method on [`IndexSet`]
@@ -126,6 +132,14 @@ impl<T: fmt::Debug> fmt::Debug for IntoIter<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let iter = self.iter.as_slice().iter().map(Bucket::key_ref);
         f.debug_list().entries(iter).finish()
+    }
+}
+
+impl<T> Default for IntoIter<T> {
+    fn default() -> Self {
+        Self {
+            iter: Vec::new().into_iter(),
+        }
     }
 }
 

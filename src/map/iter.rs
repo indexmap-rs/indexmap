@@ -89,6 +89,12 @@ impl<K: fmt::Debug, V: fmt::Debug> fmt::Debug for Iter<'_, K, V> {
     }
 }
 
+impl<K, V> Default for Iter<'_, K, V> {
+    fn default() -> Self {
+        Self { iter: [].iter() }
+    }
+}
+
 /// A mutable iterator over the entries of a `IndexMap`.
 ///
 /// This `struct` is created by the [`iter_mut`] method on [`IndexMap`]. See its
@@ -145,6 +151,14 @@ impl<K: fmt::Debug, V: fmt::Debug> fmt::Debug for IterMut<'_, K, V> {
     }
 }
 
+impl<K, V> Default for IterMut<'_, K, V> {
+    fn default() -> Self {
+        Self {
+            iter: [].iter_mut(),
+        }
+    }
+}
+
 /// An owning iterator over the entries of a `IndexMap`.
 ///
 /// This `struct` is created by the [`into_iter`] method on [`IndexMap`]
@@ -196,6 +210,14 @@ impl<K: fmt::Debug, V: fmt::Debug> fmt::Debug for IntoIter<K, V> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let iter = self.iter.as_slice().iter().map(Bucket::refs);
         f.debug_list().entries(iter).finish()
+    }
+}
+
+impl<K, V> Default for IntoIter<K, V> {
+    fn default() -> Self {
+        Self {
+            iter: Vec::new().into_iter(),
+        }
     }
 }
 
@@ -298,6 +320,12 @@ impl<K: fmt::Debug, V> fmt::Debug for Keys<'_, K, V> {
     }
 }
 
+impl<K, V> Default for Keys<'_, K, V> {
+    fn default() -> Self {
+        Self { iter: [].iter() }
+    }
+}
+
 /// An owning iterator over the keys of a `IndexMap`.
 ///
 /// This `struct` is created by the [`into_keys`] method on [`IndexMap`].
@@ -339,6 +367,14 @@ impl<K: fmt::Debug, V> fmt::Debug for IntoKeys<K, V> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let iter = self.iter.as_slice().iter().map(Bucket::key_ref);
         f.debug_list().entries(iter).finish()
+    }
+}
+
+impl<K, V> Default for IntoKeys<K, V> {
+    fn default() -> Self {
+        Self {
+            iter: Vec::new().into_iter(),
+        }
     }
 }
 
@@ -394,6 +430,12 @@ impl<K, V: fmt::Debug> fmt::Debug for Values<'_, K, V> {
     }
 }
 
+impl<K, V> Default for Values<'_, K, V> {
+    fn default() -> Self {
+        Self { iter: [].iter() }
+    }
+}
+
 /// A mutable iterator over the values of a `IndexMap`.
 ///
 /// This `struct` is created by the [`values_mut`] method on [`IndexMap`]. See its
@@ -438,6 +480,14 @@ impl<K, V: fmt::Debug> fmt::Debug for ValuesMut<'_, K, V> {
     }
 }
 
+impl<K, V> Default for ValuesMut<'_, K, V> {
+    fn default() -> Self {
+        Self {
+            iter: [].iter_mut(),
+        }
+    }
+}
+
 /// An owning iterator over the values of a `IndexMap`.
 ///
 /// This `struct` is created by the [`into_values`] method on [`IndexMap`].
@@ -479,5 +529,13 @@ impl<K, V: fmt::Debug> fmt::Debug for IntoValues<K, V> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let iter = self.iter.as_slice().iter().map(Bucket::value_ref);
         f.debug_list().entries(iter).finish()
+    }
+}
+
+impl<K, V> Default for IntoValues<K, V> {
+    fn default() -> Self {
+        Self {
+            iter: Vec::new().into_iter(),
+        }
     }
 }

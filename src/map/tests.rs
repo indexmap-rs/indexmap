@@ -427,3 +427,23 @@ fn from_array() {
 
     assert_eq!(map, expected)
 }
+
+#[test]
+fn iter_default() {
+    struct K;
+    struct V;
+    fn assert_default<T>()
+    where
+        T: Default + Iterator,
+    {
+        assert!(T::default().next().is_none());
+    }
+    assert_default::<Iter<'static, K, V>>();
+    assert_default::<IterMut<'static, K, V>>();
+    assert_default::<IntoIter<K, V>>();
+    assert_default::<Keys<'static, K, V>>();
+    assert_default::<IntoKeys<K, V>>();
+    assert_default::<Values<'static, K, V>>();
+    assert_default::<ValuesMut<'static, K, V>>();
+    assert_default::<IntoValues<K, V>>();
+}
