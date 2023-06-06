@@ -275,18 +275,14 @@ impl<K, V> IndexMapCore<K, V> {
         }
     }
 
-    /// Append a key-value pair, *without* checking whether it already exists,
-    /// and return the pair's new index.
-    fn push(&mut self, hash: HashValue, key: K, value: V) -> usize {
-        let i = self.entries.len();
-        self.indices.insert(hash.get(), i, get_hash(&self.entries));
-        if i == self.entries.capacity() {
+    /// Append a key-value pair to `entries`, *without* checking whether it already exists.
+    fn push_entry(&mut self, hash: HashValue, key: K, value: V) {
+        if self.entries.len() == self.entries.capacity() {
             // Reserve our own capacity synced to the indices,
             // rather than letting `Vec::push` just double it.
             self.reserve_entries(1);
         }
         self.entries.push(Bucket { hash, key, value });
-        i
     }
 
     /// Return the index in `entries` where an equivalent key can be found
@@ -302,9 +298,13 @@ impl<K, V> IndexMapCore<K, V> {
     where
         K: Eq,
     {
-        match self.get_index_of(hash, &key) {
-            Some(i) => (i, Some(mem::replace(&mut self.entries[i].value, value))),
-            None => (self.push(hash, key, value), None),
+        match self.find_or_insert(hash, &key) {
+            Ok(i) => (i, Some(mem::replace(&mut self.entries[i].value, value))),
+            Err(i) => {
+                debug_assert_eq!(i, self.entries.len());
+                self.push_entry(hash, key, value);
+                (i, None)
+            }
         }
     }
 
@@ -712,14 +712,18 @@ impl<'a, K, V> VacantEntry<'a, K, V> {
 
     /// Return the index where the key-value pair will be inserted.
     pub fn index(&self) -> usize {
-        self.map.len()
+        self.map.indices.len()
     }
 
     /// Inserts the entry's key and the given value into the map, and returns a mutable reference
     /// to the value.
     pub fn insert(self, value: V) -> &'a mut V {
-        let i = self.map.push(self.hash, self.key, value);
-        &mut self.map.entries[i].value
+        let i = self.index();
+        let Self { map, hash, key } = self;
+        map.indices.insert(hash.get(), i, get_hash(&map.entries));
+        debug_assert_eq!(i, map.entries.len());
+        map.push_entry(hash, key, value);
+        &mut map.entries[i].value
     }
 }
 
