@@ -2,7 +2,7 @@
 //! This module encapsulates the `unsafe` access to `hashbrown::raw::RawTable`,
 //! mostly in dealing with its bucket "pointers".
 
-use super::{equivalent, Bucket, Entry, HashValue, IndexMapCore, VacantEntry};
+use super::{equivalent, get_hash, Bucket, Entry, HashValue, IndexMapCore, VacantEntry};
 use core::fmt;
 use core::mem::replace;
 use hashbrown::raw::RawTable;
@@ -43,6 +43,32 @@ impl<K, V> IndexMapCore<K, V> {
                     *i -= offset;
                 } else if *i >= start {
                     self.indices.erase(bucket);
+                }
+            }
+        }
+    }
+
+    /// Search for a key in the table and return `Ok(entry_index)` if found.
+    /// Otherwise, insert the key and return `Err(new_index)`.
+    ///
+    /// Note that hashbrown may resize the table to reserve space for insertion,
+    /// even before checking if it's already present, so this is somewhat biased
+    /// towards new items.
+    pub(crate) fn find_or_insert(&mut self, hash: HashValue, key: &K) -> Result<usize, usize>
+    where
+        K: Eq,
+    {
+        let hash = hash.get();
+        let eq = equivalent(key, &self.entries);
+        let hasher = get_hash(&self.entries);
+        // SAFETY: We're not mutating between find and read/insert.
+        unsafe {
+            match self.indices.find_or_find_insert_slot(hash, eq, hasher) {
+                Ok(raw_bucket) => Ok(*raw_bucket.as_ref()),
+                Err(slot) => {
+                    let index = self.indices.len();
+                    self.indices.insert_in_slot(hash, slot, index);
+                    Err(index)
                 }
             }
         }

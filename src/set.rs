@@ -335,16 +335,8 @@ where
     ///
     /// Computes in **O(1)** time (amortized average).
     pub fn insert_full(&mut self, value: T) -> (usize, bool) {
-        use super::map::Entry::*;
-
-        match self.map.entry(value) {
-            Occupied(e) => (e.index(), false),
-            Vacant(e) => {
-                let index = e.index();
-                e.insert(());
-                (index, true)
-            }
-        }
+        let (index, existing) = self.map.insert_full(value, ());
+        (index, existing.is_none())
     }
 
     /// Return an iterator over the values that are in `self` but not `other`.
