@@ -26,7 +26,7 @@
     However, exactness only applies to the direct capacity for items, while the
     raw hash table still follows its own rules for capacity and load factor.
 
-  - The `hashbrown` dependency has been updated to version 0.13.
+  - The `hashbrown` dependency has been updated to version 0.14.
 
   - The `serde_seq` module has been moved from the crate root to below the
     `map` module.

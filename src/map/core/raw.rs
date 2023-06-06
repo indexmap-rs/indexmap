@@ -171,8 +171,8 @@ impl<'a, K, V> OccupiedEntry<'a, K, V> {
     pub fn swap_remove_entry(self) -> (K, V) {
         // SAFETY: This is safe because it can only happen once (self is consumed)
         // and map.indices have not been modified since entry construction
-        let index = unsafe { self.map.indices.remove(self.raw_bucket) };
-        self.map.swap_remove_finish(index.0)
+        let (index, _slot) = unsafe { self.map.indices.remove(self.raw_bucket) };
+        self.map.swap_remove_finish(index)
     }
 
     /// Remove and return the key, value pair stored in the map for this entry
@@ -185,7 +185,7 @@ impl<'a, K, V> OccupiedEntry<'a, K, V> {
     pub fn shift_remove_entry(self) -> (K, V) {
         // SAFETY: This is safe because it can only happen once (self is consumed)
         // and map.indices have not been modified since entry construction
-        let index = unsafe { self.map.indices.remove(self.raw_bucket) };
-        self.map.shift_remove_finish(index.0)
+        let (index, _slot) = unsafe { self.map.indices.remove(self.raw_bucket) };
+        self.map.shift_remove_finish(index)
     }
 }
