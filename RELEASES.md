@@ -1,6 +1,6 @@
 - 2.0.0 (pending)
 
-  - **MSRV**: Rust 1.61.0 or later is now required.
+  - **MSRV**: Rust 1.64.0 or later is now required.
 
   - The `"std"` feature is no longer auto-detected. It is included in the
     default feature set, or else can be enabled like any other Cargo feature.
@@ -26,7 +26,7 @@
     However, exactness only applies to the direct capacity for items, while the
     raw hash table still follows its own rules for capacity and load factor.
 
-  - The `hashbrown` dependency has been updated to version 0.13.
+  - The `hashbrown` dependency has been updated to version 0.14.
 
   - The `serde_seq` module has been moved from the crate root to below the
     `map` module.
