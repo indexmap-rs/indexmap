@@ -17,9 +17,8 @@ use core::fmt;
 use core::mem;
 use core::ops::RangeBounds;
 
-use crate::equivalent::Equivalent;
 use crate::util::simplify_range;
-use crate::{Bucket, Entries, HashValue};
+use crate::{Bucket, Entries, Equivalent, HashValue};
 
 /// Core of the map that does not depend on S
 pub(crate) struct IndexMapCore<K, V> {
