@@ -172,7 +172,7 @@ impl<'a, K, V> OccupiedEntry<'a, K, V> {
         // SAFETY: This is safe because it can only happen once (self is consumed)
         // and map.indices have not been modified since entry construction
         let index = unsafe { self.map.indices.remove(self.raw_bucket) };
-        self.map.swap_remove_finish(index)
+        self.map.swap_remove_finish(index.0)
     }
 
     /// Remove and return the key, value pair stored in the map for this entry
@@ -186,6 +186,6 @@ impl<'a, K, V> OccupiedEntry<'a, K, V> {
         // SAFETY: This is safe because it can only happen once (self is consumed)
         // and map.indices have not been modified since entry construction
         let index = unsafe { self.map.indices.remove(self.raw_bucket) };
-        self.map.shift_remove_finish(index)
+        self.map.shift_remove_finish(index.0)
     }
 }
