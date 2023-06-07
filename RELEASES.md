@@ -26,6 +26,9 @@
     However, exactness only applies to the direct capacity for items, while the
     raw hash table still follows its own rules for capacity and load factor.
 
+  - The `Equivalent` trait is now re-exported from the `equivalent` crate,
+    intended as a common base to allow types to work with multiple map types.
+
   - The `hashbrown` dependency has been updated to version 0.14.
 
   - The `serde_seq` module has been moved from the crate root to below the
