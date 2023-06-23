@@ -117,7 +117,6 @@ use alloc::vec::{self, Vec};
 mod arbitrary;
 #[macro_use]
 mod macros;
-mod equivalent;
 mod mutable_keys;
 #[cfg(feature = "serde")]
 #[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
@@ -136,9 +135,9 @@ mod rayon;
 #[cfg(feature = "rustc-rayon")]
 mod rustc;
 
-pub use crate::equivalent::Equivalent;
 pub use crate::map::IndexMap;
 pub use crate::set::IndexSet;
+pub use equivalent::Equivalent;
 
 // shared private items
 

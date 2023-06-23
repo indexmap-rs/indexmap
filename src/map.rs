@@ -33,9 +33,8 @@ use alloc::vec::Vec;
 use std::collections::hash_map::RandomState;
 
 use self::core::IndexMapCore;
-use crate::equivalent::Equivalent;
 use crate::util::{third, try_simplify_range};
-use crate::{Bucket, Entries, HashValue, TryReserveError};
+use crate::{Bucket, Entries, Equivalent, HashValue, TryReserveError};
 
 /// A hash table where the iteration order of the key-value pairs is independent
 /// of the hash values of the keys.
