@@ -197,6 +197,11 @@ impl<K, V, S> IndexMap<K, V, S> {
         }
     }
 
+    /// Return the number of elements the map can hold without reallocating.
+    ///
+    /// This number is a lower bound; the map might be able to hold more,
+    /// but is guaranteed to be able to hold at least this many.
+    ///
     /// Computes in **O(1)** time.
     pub fn capacity(&self) -> usize {
         self.core.capacity()
