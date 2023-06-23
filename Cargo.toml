@@ -1,8 +1,7 @@
 [package]
 name = "indexmap"
 edition = "2021"
-version = "2.0.0-pre"
-publish = false
+version = "2.0.0"
 documentation = "https://docs.rs/indexmap/"
 repository = "https://github.com/bluss/indexmap"
 license = "Apache-2.0 OR MIT"

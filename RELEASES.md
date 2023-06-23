@@ -1,4 +1,4 @@
-- 2.0.0 (pending)
+- 2.0.0
 
   - **MSRV**: Rust 1.64.0 or later is now required.
 
