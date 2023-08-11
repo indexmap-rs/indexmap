@@ -92,3 +92,21 @@ jobs:
         with:
           components: miri
       - run: cargo miri test
+
+  minimal-versions:
+    name: Check MSRV and minimal-versions
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: nightly
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: 1.64.0 # MSRV
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-hack
+      - run: cargo +nightly hack generate-lockfile --remove-dev-deps -Z direct-minimal-versions
+      - name: Build
+        run: cargo build --verbose --all-features
