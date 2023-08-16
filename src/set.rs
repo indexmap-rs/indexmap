@@ -56,6 +56,11 @@ type Bucket<T> = super::Bucket<T, ()>;
 /// `0..self.len()`. For example, the method `.get_full` looks up the index for
 /// a value, and the method `.get_index` looks up the value by index.
 ///
+/// # Complexity
+///
+/// Internally, `IndexSet<T, S>` just holds an [`IndexMap<T, (), S>`](IndexMap). Thus the complexity
+/// of the two are the same for most methods.
+///
 /// # Examples
 ///
 /// ```
@@ -420,6 +425,8 @@ where
     }
 
     /// Return item index, if it exists in the set
+    ///
+    /// Computes in **O(1)** time (average).
     pub fn get_index_of<Q: ?Sized>(&self, value: &Q) -> Option<usize>
     where
         Q: Hash + Equivalent<T>,
