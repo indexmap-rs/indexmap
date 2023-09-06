@@ -410,6 +410,26 @@ impl<K, V> IndexMapCore<K, V> {
         }
     }
 
+    pub(crate) fn swap_indices(&mut self, a: usize, b: usize) {
+        // If they're equal and in-bounds, there's nothing to do.
+        if a == b && a < self.entries.len() {
+            return;
+        }
+
+        // We'll get a "nice" bounds-check from indexing `self.entries`,
+        // and then we expect to find it in the table as well.
+        let [ref_a, ref_b] = self
+            .indices
+            .get_many_mut(
+                [self.entries[a].hash.get(), self.entries[b].hash.get()],
+                move |i, &x| if i == 0 { x == a } else { x == b },
+            )
+            .expect("indices not found");
+
+        mem::swap(ref_a, ref_b);
+        self.entries.swap(a, b);
+    }
+
     /// Remove an entry by swapping it with the last
     pub(crate) fn swap_remove_full<Q>(&mut self, hash: HashValue, key: &Q) -> Option<(usize, K, V)>
     where
