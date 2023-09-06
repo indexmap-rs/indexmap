@@ -100,29 +100,6 @@ impl<K, V> IndexMapCore<K, V> {
         // only the item references that are appropriately bound to `&mut self`.
         unsafe { self.indices.iter().map(|bucket| bucket.as_mut()) }
     }
-
-    /// Return the raw bucket for the given index
-    fn find_index(&self, index: usize) -> RawBucket {
-        // We'll get a "nice" bounds-check from indexing `self.entries`,
-        // and then we expect to find it in the table as well.
-        let hash = self.entries[index].hash.get();
-        self.indices
-            .find(hash, move |&i| i == index)
-            .expect("index not found")
-    }
-
-    pub(crate) fn swap_indices(&mut self, a: usize, b: usize) {
-        // SAFETY: Can't take two `get_mut` references from one table, so we
-        // must use raw buckets to do the swap. This is still safe because we
-        // are locally sure they won't dangle, and we write them individually.
-        unsafe {
-            let raw_bucket_a = self.find_index(a);
-            let raw_bucket_b = self.find_index(b);
-            *raw_bucket_a.as_mut() = b;
-            *raw_bucket_b.as_mut() = a;
-        }
-        self.entries.swap(a, b);
-    }
 }
 
 /// A view into an occupied entry in a `IndexMap`.
