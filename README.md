@@ -3,7 +3,7 @@
 [![build status](https://github.com/bluss/indexmap/workflows/Continuous%20integration/badge.svg?branch=master)](https://github.com/bluss/indexmap/actions)
 [![crates.io](https://img.shields.io/crates/v/indexmap.svg)](https://crates.io/crates/indexmap)
 [![docs](https://docs.rs/indexmap/badge.svg)](https://docs.rs/indexmap)
-[![rustc](https://img.shields.io/badge/rust-1.64%2B-orange.svg)](https://img.shields.io/badge/rust-1.64%2B-orange.svg)
+[![rustc](https://img.shields.io/badge/rust-1.63%2B-orange.svg)](https://img.shields.io/badge/rust-1.63%2B-orange.svg)
 
 A pure-Rust hash table which preserves (in a limited sense) insertion order.
 

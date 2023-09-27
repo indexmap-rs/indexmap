@@ -81,7 +81,7 @@
 //!
 //! ### Rust Version
 //!
-//! This version of indexmap requires Rust 1.64 or later.
+//! This version of indexmap requires Rust 1.63 or later.
 //!
 //! The indexmap 2.x release series will use a carefully considered version
 //! upgrade policy, where in a later 2.x version, we will raise the minimum

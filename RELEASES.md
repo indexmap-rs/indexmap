@@ -1,3 +1,8 @@
+- 2.0.1
+
+  - **MSRV**: Rust 1.63.0 is now supported as well, pending publication of
+    `hashbrown`'s relaxed MSRV (or use cargo `--ignore-rust-version`).
+
 - 2.0.0
 
   - **MSRV**: Rust 1.64.0 or later is now required.
