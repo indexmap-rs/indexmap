@@ -110,3 +110,11 @@ jobs:
       - run: cargo +nightly hack generate-lockfile --remove-dev-deps -Z direct-minimal-versions
       - name: Build
         run: cargo build --verbose --all-features
+
+  # See hashbrown#457: it can actually work with 1.63.0
+  relaxed-msrv:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@1.63.0
+      - run: cargo test --verbose --ignore-rust-version
