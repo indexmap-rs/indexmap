@@ -1,3 +1,8 @@
+- 2.0.2
+
+  - The `hashbrown` dependency has been updated to version 0.14.1 to
+    complete the support for Rust 1.63.
+
 - 2.0.1
 
   - **MSRV**: Rust 1.63.0 is now supported as well, pending publication of
