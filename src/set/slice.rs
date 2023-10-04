@@ -24,7 +24,7 @@ pub struct Slice<T> {
 // and reference lifetimes are bound together in function signatures.
 #[allow(unsafe_code)]
 impl<T> Slice<T> {
-    pub(super) fn from_slice(entries: &[Bucket<T>]) -> &Self {
+    pub(super) const fn from_slice(entries: &[Bucket<T>]) -> &Self {
         unsafe { &*(entries as *const [Bucket<T>] as *const Self) }
     }
 
@@ -42,13 +42,18 @@ impl<T> Slice<T> {
         self.into_boxed().into_vec()
     }
 
+    /// Returns an empty slice.
+    pub const fn new<'a>() -> &'a Self {
+        Self::from_slice(&[])
+    }
+
     /// Return the number of elements in the set slice.
-    pub fn len(&self) -> usize {
+    pub const fn len(&self) -> usize {
         self.entries.len()
     }
 
     /// Returns true if the set slice contains no elements.
-    pub fn is_empty(&self) -> bool {
+    pub const fn is_empty(&self) -> bool {
         self.entries.is_empty()
     }
 

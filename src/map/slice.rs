@@ -27,7 +27,7 @@ pub struct Slice<K, V> {
 // and reference lifetimes are bound together in function signatures.
 #[allow(unsafe_code)]
 impl<K, V> Slice<K, V> {
-    pub(super) fn from_slice(entries: &[Bucket<K, V>]) -> &Self {
+    pub(super) const fn from_slice(entries: &[Bucket<K, V>]) -> &Self {
         unsafe { &*(entries as *const [Bucket<K, V>] as *const Self) }
     }
 
@@ -49,15 +49,25 @@ impl<K, V> Slice<K, V> {
         self.into_boxed().into_vec()
     }
 
+    /// Returns an empty slice.
+    pub const fn new<'a>() -> &'a Self {
+        Self::from_slice(&[])
+    }
+
+    /// Returns an empty mutable slice.
+    pub fn new_mut<'a>() -> &'a mut Self {
+        Self::from_mut_slice(&mut [])
+    }
+
     /// Return the number of key-value pairs in the map slice.
     #[inline]
-    pub fn len(&self) -> usize {
+    pub const fn len(&self) -> usize {
         self.entries.len()
     }
 
     /// Returns true if the map slice contains no elements.
     #[inline]
-    pub fn is_empty(&self) -> bool {
+    pub const fn is_empty(&self) -> bool {
         self.entries.is_empty()
     }
 
