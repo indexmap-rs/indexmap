@@ -688,6 +688,46 @@ where
         });
     }
 
+    /// Search over a sorted set with a comparator function.
+    ///
+    /// Returns the position where that value is present, or the position where can be inserted to maintain the sort.
+    /// see [slice::binary_search_by] for more details.
+    /// **O(log(n))**
+    #[inline]
+    pub fn binary_search_by<'a, F>(&'a self, f: F) -> Result<usize, usize>
+    where
+        F: FnMut(&'a T) -> Ordering,
+    {
+        self.as_slice().binary_search_by(f)
+    }
+
+    /// Search over a sorted set with a key extraction function.
+    ///
+    /// Returns the position where that value is present, or the position where can be inserted to maintain the sort.
+    /// see [slice::binary_search_by_key] for more details.
+    /// **O(log(n))**
+    #[inline]
+    pub fn binary_search_by_key<'a, B, F>(&'a self, b: &B, f: F) -> Result<usize, usize>
+    where
+        F: FnMut(&'a T) -> B,
+        B: Ord,
+    {
+        self.as_slice().binary_search_by_key(b, f)
+    }
+
+    /// Returns the index of the partition point or a sorted set according to the given predicate
+    /// (the index of the first element of the second partition).
+    ///
+    /// see [slice::partition_point] for more details.
+    /// **O(log(n))**
+    #[must_use]
+    pub fn partition_point<P>(&self, pred: P) -> usize
+    where
+        P: FnMut(&T) -> bool,
+    {
+        self.as_slice().partition_point(pred)
+    }
+
     /// Reverses the order of the set’s values in place.
     ///
     /// Computes in **O(n)** time and **O(1)** space.
