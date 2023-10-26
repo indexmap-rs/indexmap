@@ -450,7 +450,7 @@ fn iter_default() {
 
 #[test]
 fn test_binary_search_by() {
-    // addaped from stds test for binary_search
+    // adapted from std's test for binary_search
     let b: IndexMap<_, i32> = []
         .into_iter()
         .enumerate()
@@ -526,7 +526,7 @@ fn test_binary_search_by() {
 
 #[test]
 fn test_binary_search_by_key() {
-    // addaped from stds test for binary_search
+    // adapted from std's test for binary_search
     let b: IndexMap<_, i32> = []
         .into_iter()
         .enumerate()
@@ -602,7 +602,7 @@ fn test_binary_search_by_key() {
 
 #[test]
 fn test_partition_point() {
-    // addaped from stds test for partition_point
+    // adapted from std's test for partition_point
     let b: IndexMap<_, i32> = []
         .into_iter()
         .enumerate()

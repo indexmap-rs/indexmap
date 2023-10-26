@@ -112,9 +112,11 @@ impl<T> Slice<T> {
 
     /// Search over a sorted set for a value.
     ///
-    /// Returns the position where that value is present, or the position where can be inserted to maintain the sort.
-    /// see [slice::binary_search] for more details.
-    /// **O(log(n))**, which is notably less scalable than looking the value up in the set this is a slice from.
+    /// Returns the position where that value is present, or the position where it can be inserted to maintain the sort.
+    /// see [`slice::binary_search`] for more details.
+    ///
+    /// Computes in **O(log(n))** time,
+    /// which is notably less scalable than looking the value up in the set this is a slice from.
     pub fn binary_search(&self, x: &T) -> Result<usize, usize>
     where
         T: Ord,
@@ -124,9 +126,10 @@ impl<T> Slice<T> {
 
     /// Search over a sorted set with a comparator function.
     ///
-    /// Returns the position where that value is present, or the position where can be inserted to maintain the sort.
-    /// see [slice::binary_search_by] for more details.
-    /// **O(log(n))**
+    /// Returns the position where that value is present, or the position where it can be inserted to maintain the sort.
+    /// see [`slice::binary_search_by`] for more details.
+    ///
+    /// Computes in **O(log(n))** time.
     #[inline]
     pub fn binary_search_by<'a, F>(&'a self, mut f: F) -> Result<usize, usize>
     where
@@ -135,11 +138,12 @@ impl<T> Slice<T> {
         self.entries.binary_search_by(move |a| f(&a.key))
     }
 
-    /// Search over a sorted set with a key extraction function.
+    /// Search over a sorted set with an extraction function.
     ///
-    /// Returns the position where that value is present, or the position where can be inserted to maintain the sort.
-    /// see [slice::binary_search_by_key] for more details.
-    /// **O(log(n))**
+    /// Returns the position where that value is present, or the position where it can be inserted to maintain the sort.
+    /// see [`slice::binary_search_by_key`] for more details.
+    ///
+    /// Computes in **O(log(n))** time.
     #[inline]
     pub fn binary_search_by_key<'a, B, F>(&'a self, b: &B, mut f: F) -> Result<usize, usize>
     where
@@ -149,11 +153,12 @@ impl<T> Slice<T> {
         self.binary_search_by(|k| f(k).cmp(b))
     }
 
-    /// Returns the index of the partition point or a sorted set according to the given predicate
+    /// Returns the index of the partition point of a sorted set according to the given predicate
     /// (the index of the first element of the second partition).
     ///
-    /// see [slice::partition_point] for more details.
-    /// **O(log(n))**
+    /// see [`slice::partition_point`] for more details.
+    ///
+    /// Computes in **O(log(n))** time.
     #[must_use]
     pub fn partition_point<P>(&self, mut pred: P) -> usize
     where

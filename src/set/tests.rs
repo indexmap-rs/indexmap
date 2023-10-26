@@ -546,7 +546,7 @@ fn iter_default() {
 
 #[test]
 fn test_binary_search_by() {
-    // addaped from stds test for binary_search
+    // adapted from std's test for binary_search
     let b: IndexSet<i32> = [].into();
     assert_eq!(b.binary_search_by(|x| x.cmp(&5)), Err(0));
 
@@ -577,7 +577,7 @@ fn test_binary_search_by() {
     assert_eq!(b.binary_search_by(|x| x.cmp(&0)), Err(0));
     assert_eq!(b.binary_search_by(|x| x.cmp(&1)), Ok(0));
     assert_eq!(b.binary_search_by(|x| x.cmp(&2)), Err(1));
-    // diff from std as set the duplicates keys
+    // diff from std as set merges the duplicate keys
     assert!(match b.binary_search_by(|x| x.cmp(&3)) {
         Ok(1..=2) => true,
         _ => false,
@@ -595,7 +595,7 @@ fn test_binary_search_by() {
 
 #[test]
 fn test_binary_search_by_key() {
-    // addaped from stds test for binary_search
+    // adapted from std's test for binary_search
     let b: IndexSet<i32> = [].into();
     assert_eq!(b.binary_search_by_key(&5, |&x| x), Err(0));
 
@@ -626,7 +626,7 @@ fn test_binary_search_by_key() {
     assert_eq!(b.binary_search_by_key(&0, |&x| x), Err(0));
     assert_eq!(b.binary_search_by_key(&1, |&x| x), Ok(0));
     assert_eq!(b.binary_search_by_key(&2, |&x| x), Err(1));
-    // diff from std as set the duplicates keys
+    // diff from std as set merges the duplicate keys
     assert!(match b.binary_search_by_key(&3, |&x| x) {
         Ok(1..=2) => true,
         _ => false,
@@ -644,7 +644,7 @@ fn test_binary_search_by_key() {
 
 #[test]
 fn test_partition_point() {
-    // addaped from stds test for partition_point
+    // adapted from std's test for partition_point
     let b: IndexSet<i32> = [].into();
     assert_eq!(b.partition_point(|&x| x < 5), 0);
 
@@ -676,7 +676,7 @@ fn test_partition_point() {
     assert_eq!(b.partition_point(|&x| x < 1), 0);
     assert_eq!(b.partition_point(|&x| x < 2), 1);
     assert_eq!(b.partition_point(|&x| x < 3), 1);
-    assert_eq!(b.partition_point(|&x| x < 4), 2); // diff from std as set the duplicates keys
+    assert_eq!(b.partition_point(|&x| x < 4), 2); // diff from std as set merges the duplicate keys
     assert_eq!(b.partition_point(|&x| x < 5), 2);
     assert_eq!(b.partition_point(|&x| x < 6), 2);
     assert_eq!(b.partition_point(|&x| x < 7), 2);
