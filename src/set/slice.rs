@@ -116,7 +116,8 @@ impl<T> Slice<T> {
     /// See [`slice::binary_search`] for more details.
     ///
     /// Computes in **O(log(n))** time,
-    /// which is notably less scalable than looking the value up in the set this is a slice from.
+    /// which is notably less scalable than looking the value up in the set this is a slice from
+    /// using [`IndexSet::get_index_of`], but this can also position missing values.
     pub fn binary_search(&self, x: &T) -> Result<usize, usize>
     where
         T: Ord,

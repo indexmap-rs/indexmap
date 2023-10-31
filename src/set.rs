@@ -688,6 +688,21 @@ where
         });
     }
 
+    /// Search over a sorted set for a value.
+    ///
+    /// Returns the position where that value is present, or the position where it can be inserted to maintain the sort.
+    /// See [`slice::binary_search`] for more details.
+    ///
+    /// Computes in **O(log(n))** time,
+    /// which is notably less scalable than looking the value up using [`get_index_of`],
+    /// but this can also position missing values.
+    pub fn binary_search(&self, x: &T) -> Result<usize, usize>
+    where
+        T: Ord,
+    {
+        self.as_slice().binary_search(x)
+    }
+
     /// Search over a sorted set with a comparator function.
     ///
     /// Returns the position where that value is present, or the position where it can be inserted to maintain the sort.
