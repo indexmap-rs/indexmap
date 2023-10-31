@@ -1,3 +1,15 @@
+- 2.1.0
+
+  - Empty slices can now be created with `map::Slice::{new, new_mut}` and
+    `set::Slice::new`. In addition, `Slice::new`, `len`, and `is_empty` are
+    now `const` functions on both types.
+
+  - `IndexMap`, `IndexSet`, and their respective `Slice`s all have binary
+    search methods for sorted data: map `binary_search_keys` and set
+    `binary_search` for plain comparision, `binary_search_by` for custom
+    comparators, `binary_search_by_key` for key extraction, and
+    `partition_point` for boolean conditions.
+
 - 2.0.2
 
   - The `hashbrown` dependency has been updated to version 0.14.1 to
