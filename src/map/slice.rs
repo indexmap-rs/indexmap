@@ -211,6 +211,65 @@ impl<K, V> Slice<K, V> {
     pub fn into_values(self: Box<Self>) -> IntoValues<K, V> {
         IntoValues::new(self.into_entries())
     }
+
+    /// Search over a sorted map for a key.
+    ///
+    /// Returns the position where that key is present, or the position where it can be inserted to
+    /// maintain the sort. See [`slice::binary_search`] for more details.
+    ///
+    /// Computes in **O(log(n))** time, which is notably less scalable than looking the key up in
+    /// the map this is a slice from using [`IndexMap::get_index_of`], but this can also position
+    /// missing keys.
+    pub fn binary_search_keys(&self, x: &K) -> Result<usize, usize>
+    where
+        K: Ord,
+    {
+        self.binary_search_by(|p, _| p.cmp(x))
+    }
+
+    /// Search over a sorted map with a comparator function.
+    ///
+    /// Returns the position where that value is present, or the position where it can be inserted
+    /// to maintain the sort. See [`slice::binary_search_by`] for more details.
+    ///
+    /// Computes in **O(log(n))** time.
+    #[inline]
+    pub fn binary_search_by<'a, F>(&'a self, mut f: F) -> Result<usize, usize>
+    where
+        F: FnMut(&'a K, &'a V) -> Ordering,
+    {
+        self.entries.binary_search_by(move |a| f(&a.key, &a.value))
+    }
+
+    /// Search over a sorted map with an extraction function.
+    ///
+    /// Returns the position where that value is present, or the position where it can be inserted
+    /// to maintain the sort. See [`slice::binary_search_by_key`] for more details.
+    ///
+    /// Computes in **O(log(n))** time.
+    #[inline]
+    pub fn binary_search_by_key<'a, B, F>(&'a self, b: &B, mut f: F) -> Result<usize, usize>
+    where
+        F: FnMut(&'a K, &'a V) -> B,
+        B: Ord,
+    {
+        self.binary_search_by(|k, v| f(k, v).cmp(b))
+    }
+
+    /// Returns the index of the partition point of a sorted map according to the given predicate
+    /// (the index of the first element of the second partition).
+    ///
+    /// See [`slice::partition_point`] for more details.
+    ///
+    /// Computes in **O(log(n))** time.
+    #[must_use]
+    pub fn partition_point<P>(&self, mut pred: P) -> usize
+    where
+        P: FnMut(&K, &V) -> bool,
+    {
+        self.entries
+            .partition_point(move |a| pred(&a.key, &a.value))
+    }
 }
 
 impl<'a, K, V> IntoIterator for &'a Slice<K, V> {
