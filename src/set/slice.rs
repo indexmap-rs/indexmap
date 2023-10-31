@@ -113,7 +113,7 @@ impl<T> Slice<T> {
     /// Search over a sorted set for a value.
     ///
     /// Returns the position where that value is present, or the position where it can be inserted to maintain the sort.
-    /// see [`slice::binary_search`] for more details.
+    /// See [`slice::binary_search`] for more details.
     ///
     /// Computes in **O(log(n))** time,
     /// which is notably less scalable than looking the value up in the set this is a slice from.
@@ -127,7 +127,7 @@ impl<T> Slice<T> {
     /// Search over a sorted set with a comparator function.
     ///
     /// Returns the position where that value is present, or the position where it can be inserted to maintain the sort.
-    /// see [`slice::binary_search_by`] for more details.
+    /// See [`slice::binary_search_by`] for more details.
     ///
     /// Computes in **O(log(n))** time.
     #[inline]
@@ -141,7 +141,7 @@ impl<T> Slice<T> {
     /// Search over a sorted set with an extraction function.
     ///
     /// Returns the position where that value is present, or the position where it can be inserted to maintain the sort.
-    /// see [`slice::binary_search_by_key`] for more details.
+    /// See [`slice::binary_search_by_key`] for more details.
     ///
     /// Computes in **O(log(n))** time.
     #[inline]
@@ -156,7 +156,7 @@ impl<T> Slice<T> {
     /// Returns the index of the partition point of a sorted set according to the given predicate
     /// (the index of the first element of the second partition).
     ///
-    /// see [`slice::partition_point`] for more details.
+    /// See [`slice::partition_point`] for more details.
     ///
     /// Computes in **O(log(n))** time.
     #[must_use]

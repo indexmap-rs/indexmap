@@ -797,7 +797,7 @@ where
     /// Search over a sorted map with a comparator function.
     ///
     /// Returns the position where that value is present, or the position where it can be inserted to maintain the sort.
-    /// see [`slice::binary_search_by`] for more details.
+    /// See [`slice::binary_search_by`] for more details.
     ///
     /// Computes in **O(log(n))** time.
     #[inline]
@@ -811,7 +811,7 @@ where
     /// Search over a sorted map with an extraction function.
     ///
     /// Returns the position where that value is present, or the position where it can be inserted to maintain the sort.
-    /// see [`slice::binary_search_by_key`] for more details.
+    /// See [`slice::binary_search_by_key`] for more details.
     ///
     /// Computes in **O(log(n))** time.
     #[inline]
@@ -826,7 +826,7 @@ where
     /// Returns the index of the partition point of a sorted map according to the given predicate
     /// (the index of the first element of the second partition).
     ///
-    /// see [`slice::partition_point`] for more details.
+    /// See [`slice::partition_point`] for more details.
     ///
     /// Computes in **O(log(n))** time.
     #[must_use]
