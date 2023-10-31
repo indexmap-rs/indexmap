@@ -204,12 +204,12 @@ impl<K, V> Slice<K, V> {
 
     /// Search over a sorted map for a key.
     ///
-    /// Returns the position where that key is present, or the position where it can be inserted to maintain the sort.
-    /// See [`slice::binary_search`] for more details.
+    /// Returns the position where that key is present, or the position where it can be inserted to
+    /// maintain the sort. See [`slice::binary_search`] for more details.
     ///
-    /// Computes in **O(log(n))** time,
-    /// which is notably less scalable than looking the key up in the map this is a slice from
-    /// using [`IndexMap::get_index_of`], but this can also position missing keys.
+    /// Computes in **O(log(n))** time, which is notably less scalable than looking the key up in
+    /// the map this is a slice from using [`IndexMap::get_index_of`], but this can also position
+    /// missing keys.
     pub fn binary_search_keys(&self, x: &K) -> Result<usize, usize>
     where
         K: Ord,
@@ -219,8 +219,8 @@ impl<K, V> Slice<K, V> {
 
     /// Search over a sorted map with a comparator function.
     ///
-    /// Returns the position where that value is present, or the position where it can be inserted to maintain the sort.
-    /// See [`slice::binary_search_by`] for more details.
+    /// Returns the position where that value is present, or the position where it can be inserted
+    /// to maintain the sort. See [`slice::binary_search_by`] for more details.
     ///
     /// Computes in **O(log(n))** time.
     #[inline]
@@ -233,8 +233,8 @@ impl<K, V> Slice<K, V> {
 
     /// Search over a sorted map with an extraction function.
     ///
-    /// Returns the position where that value is present, or the position where it can be inserted to maintain the sort.
-    /// See [`slice::binary_search_by_key`] for more details.
+    /// Returns the position where that value is present, or the position where it can be inserted
+    /// to maintain the sort. See [`slice::binary_search_by_key`] for more details.
     ///
     /// Computes in **O(log(n))** time.
     #[inline]
