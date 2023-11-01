@@ -3,6 +3,7 @@ use super::{Bucket, Entries, IndexMap, Slice};
 use alloc::vec::{self, Vec};
 use core::fmt;
 use core::iter::FusedIterator;
+use core::ops::Index;
 use core::slice;
 
 impl<'a, K, V, S> IntoIterator for &'a IndexMap<K, V, S> {
@@ -323,6 +324,73 @@ impl<K: fmt::Debug, V> fmt::Debug for Keys<'_, K, V> {
 impl<K, V> Default for Keys<'_, K, V> {
     fn default() -> Self {
         Self { iter: [].iter() }
+    }
+}
+
+/// Access `IndexMap` keys at indexed positions.
+///
+/// While [`Index<usize> for IndexMap`][values] accesses a map's values,
+/// indexing through [`IndexMap::keys`] offers an alternative to access a map's
+/// keys instead.
+///
+/// [values]: IndexMap#impl-Index<usize>-for-IndexMap<K,+V,+S>
+///
+/// Since `Keys` is also an iterator, consuming items from the iterator will
+/// offset the effective indexes. Similarly, if `Keys` is obtained from
+/// [`Slice::keys`], indexes will be interpreted relative to the position of
+/// that slice.
+///
+/// # Examples
+///
+/// ```
+/// use indexmap::IndexMap;
+///
+/// let mut map = IndexMap::new();
+/// for word in "Lorem ipsum dolor sit amet".split_whitespace() {
+///     map.insert(word.to_lowercase(), word.to_uppercase());
+/// }
+///
+/// assert_eq!(map[0], "LOREM");
+/// assert_eq!(map.keys()[0], "lorem");
+/// assert_eq!(map[1], "IPSUM");
+/// assert_eq!(map.keys()[1], "ipsum");
+///
+/// map.reverse();
+/// assert_eq!(map.keys()[0], "amet");
+/// assert_eq!(map.keys()[1], "sit");
+///
+/// map.sort_keys();
+/// assert_eq!(map.keys()[0], "amet");
+/// assert_eq!(map.keys()[1], "dolor");
+///
+/// // Advancing the iterator will offset the indexing
+/// let mut keys = map.keys();
+/// assert_eq!(keys[0], "amet");
+/// assert_eq!(keys.next().map(|s| &**s), Some("amet"));
+/// assert_eq!(keys[0], "dolor");
+/// assert_eq!(keys[1], "ipsum");
+///
+/// // Slices may have an offset as well
+/// let slice = &map[2..];
+/// assert_eq!(slice[0], "IPSUM");
+/// assert_eq!(slice.keys()[0], "ipsum");
+/// ```
+///
+/// ```should_panic
+/// use indexmap::IndexMap;
+///
+/// let mut map = IndexMap::new();
+/// map.insert("foo", 1);
+/// println!("{:?}", map.keys()[10]); // panics!
+/// ```
+impl<'a, K, V> Index<usize> for Keys<'a, K, V> {
+    type Output = K;
+
+    /// Returns a reference to the key at the supplied `index`.
+    ///
+    /// ***Panics*** if `index` is out of bounds.
+    fn index(&self, index: usize) -> &K {
+        &self.iter.as_slice()[index].key
     }
 }
 
