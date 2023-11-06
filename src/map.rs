@@ -9,6 +9,9 @@ mod slice;
 #[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
 pub mod serde_seq;
 
+#[cfg(feature = "merge")]
+use merge::Merge;
+
 #[cfg(test)]
 mod tests;
 
@@ -86,6 +89,44 @@ pub struct IndexMap<K, V, S = RandomState> {
 pub struct IndexMap<K, V, S> {
     pub(crate) core: IndexMapCore<K, V>,
     hash_builder: S,
+}
+
+#[cfg(feature = "merge")]
+impl<K, V, S> Merge for IndexMap<K, V, S>
+where
+    K: Hash + Eq,
+    S: BuildHasher,
+{
+    /// Note: If any of the rows have the same key, then they wont be merged.
+    /// the value on the right will be preserved.
+    /// 
+    /// ```
+    /// use indexmap::IndexMap;
+    /// // You need the merge crate, this crate does not re-export it.
+    /// use merge::Merge;
+    /// 
+    /// let expected: IndexMap<_, i32> = [("Hello", 1), ("Hi", 50), ("Ello", 2)]
+    ///     .into_iter()
+    ///     .collect();
+    ///
+    /// let mut a: IndexMap<_, i32> = [("Hello", 1), ("Hi", 50)]
+    ///     .into_iter()
+    ///     .collect();
+    /// 
+    /// let b: IndexMap<_, i32> = [("Ello", 2), ("Hi", 2)]
+    ///     .into_iter()
+    ///     .collect();
+    ///
+    /// a.merge(b);
+    /// // Note how `("Hi", 2)` in `b` wont replace `("Hi", 50)` in `a`.
+    /// // Things in `b` will be ordered after `a`
+    /// assert_eq!(expected, a);
+    /// ```
+    fn merge(&mut self, other: Self) {
+        for (key, value) in other.into_iter() {
+            self.entry(key).or_insert(value);
+        }
+    }
 }
 
 impl<K, V, S> Clone for IndexMap<K, V, S>

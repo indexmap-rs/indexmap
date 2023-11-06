@@ -668,3 +668,33 @@ fn test_partition_point() {
     assert_eq!(b.partition_point(|_, &x| x < 7), 4);
     assert_eq!(b.partition_point(|_, &x| x < 8), 5);
 }
+
+#[cfg(feature = "merge")]
+#[test]
+fn merge() {
+    // Joinked from the merge crate tests
+    fn test<T: std::fmt::Debug + Merge + PartialEq>(expected: T, mut left: T, right: T) {
+        left.merge(right);
+        assert_eq!(expected, left);
+    }
+
+    let expected: IndexMap<_, i32> = [1, 3, 3, 3, 7, 1, 3, 3, 3, 7]
+        .into_iter()
+        .enumerate()
+        .map(|(i, x)| (i + 100, x))
+        .collect();
+
+    let a: IndexMap<_, i32> = [1, 3, 3, 3, 7]
+        .into_iter()
+        .enumerate()
+        .map(|(i, x)| (i + 100, x))
+        .collect();
+
+    let b: IndexMap<_, i32> = [1, 3, 3, 3, 7]
+        .into_iter()
+        .enumerate()
+        .map(|(i, x)| (i + 105, x)) // Key must be different, see merge doc
+        .collect();
+
+    test(expected, a, b);
+}
