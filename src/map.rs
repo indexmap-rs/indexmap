@@ -98,7 +98,7 @@ where
     S: BuildHasher,
 {
     /// Note: If any of the rows have the same key, then they wont be merged.
-    /// the value on the right will be preserved.
+    /// the value on the left will be preserved.
     /// 
     /// ```
     /// use indexmap::IndexMap;
