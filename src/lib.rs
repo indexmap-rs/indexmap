@@ -1,7 +1,6 @@
 // We *mostly* avoid unsafe code, but `map::core::raw` allows it to use `RawTable` buckets.
 #![deny(unsafe_code)]
 #![warn(rust_2018_idioms)]
-#![doc(html_root_url = "https://docs.rs/indexmap/1/")]
 #![no_std]
 
 //! [`IndexMap`] is a hash table where the iteration order of the key-value
