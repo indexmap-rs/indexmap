@@ -360,6 +360,36 @@ fn occupied_entry_key() {
 }
 
 #[test]
+fn get_index_entry() {
+    let mut map = IndexMap::new();
+
+    assert!(map.get_index_entry(0).is_none());
+
+    map.insert(0, "0");
+    map.insert(1, "1");
+    map.insert(2, "2");
+    map.insert(3, "3");
+
+    assert!(map.get_index_entry(4).is_none());
+
+    {
+        let e = map.get_index_entry(1).unwrap();
+        assert_eq!(*e.key(), 1);
+        assert_eq!(*e.get(), "1");
+        assert_eq!(e.swap_remove(), "1");
+    }
+
+    {
+        let mut e = map.get_index_entry(1).unwrap();
+        assert_eq!(*e.key(), 3);
+        assert_eq!(*e.get(), "3");
+        assert_eq!(e.insert("4"), "3");
+    }
+
+    assert_eq!(*map.get(&3).unwrap(), "4");
+}
+
+#[test]
 fn keys() {
     let vec = vec![(1, 'a'), (2, 'b'), (3, 'c')];
     let map: IndexMap<_, _> = vec.into_iter().collect();

@@ -32,7 +32,7 @@ use alloc::vec::Vec;
 #[cfg(feature = "std")]
 use std::collections::hash_map::RandomState;
 
-use self::core::IndexMapCore;
+use self::core::{IndexMapCore, IndexedEntry};
 use crate::util::{third, try_simplify_range};
 use crate::{Bucket, Entries, Equivalent, HashValue, TryReserveError};
 
@@ -421,6 +421,18 @@ where
     pub fn entry(&mut self, key: K) -> Entry<'_, K, V> {
         let hash = self.hash(&key);
         self.core.entry(hash, key)
+    }
+
+    /// Get an entry in the map by index for in-place manipulation.
+    ///
+    /// Valid indices are *0 <= index < self.len()*
+    ///
+    /// Computes in **O(1)** time.
+    pub fn get_index_entry(&mut self, index: usize) -> Option<IndexedEntry<'_, K, V>> {
+        if index >= self.len() {
+            return None;
+        }
+        Some(IndexedEntry::new(&mut self.core, index))
     }
 
     /// Return `true` if an equivalent to `key` exists in the map.

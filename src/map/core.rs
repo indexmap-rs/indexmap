@@ -754,9 +754,115 @@ impl<K: fmt::Debug, V> fmt::Debug for VacantEntry<'_, K, V> {
     }
 }
 
+/// A view into an occupied entry in a `IndexMap` obtained by index.
+///
+/// This struct is constructed from the `get_index_entry` method on `IndexMap`.
+pub struct IndexedEntry<'a, K, V> {
+    map: &'a mut IndexMapCore<K, V>,
+    // We have a mutable reference to the map, which keeps the index
+    // valid and pointing to the correct entry.
+    index: usize,
+}
+
+impl<'a, K, V> IndexedEntry<'a, K, V> {
+    pub(crate) fn new(map: &'a mut IndexMapCore<K, V>, index: usize) -> Self {
+        Self { map, index }
+    }
+
+    /// Gets a reference to the entry's key in the map.
+    pub fn key(&self) -> &K {
+        &self.map.entries[self.index].key
+    }
+
+    /// Gets a reference to the entry's value in the map.
+    pub fn get(&self) -> &V {
+        &self.map.entries[self.index].value
+    }
+
+    /// Gets a mutable reference to the entry's value in the map.
+    ///
+    /// If you need a reference which may outlive the destruction of the
+    /// `IndexedEntry` value, see `into_mut`.
+    pub fn get_mut(&mut self) -> &mut V {
+        &mut self.map.entries[self.index].value
+    }
+
+    /// Sets the value of the entry to `value`, and returns the entry's old value.
+    pub fn insert(&mut self, value: V) -> V {
+        mem::replace(self.get_mut(), value)
+    }
+
+    /// Return the index of the key-value pair
+    #[inline]
+    pub fn index(&self) -> usize {
+        self.index
+    }
+
+    /// Converts into a mutable reference to the entry's value in the map,
+    /// with a lifetime bound to the map itself.
+    pub fn into_mut(self) -> &'a mut V {
+        &mut self.map.entries[self.index].value
+    }
+
+    /// Remove and return the key, value pair stored in the map for this entry
+    ///
+    /// Like `Vec::swap_remove`, the pair is removed by swapping it with the
+    /// last element of the map and popping it off. **This perturbs
+    /// the position of what used to be the last element!**
+    ///
+    /// Computes in **O(1)** time (average).
+    pub fn swap_remove_entry(self) -> (K, V) {
+        self.map.swap_remove_index(self.index).unwrap()
+    }
+
+    /// Remove and return the key, value pair stored in the map for this entry
+    ///
+    /// Like `Vec::remove`, the pair is removed by shifting all of the
+    /// elements that follow it, preserving their relative order.
+    /// **This perturbs the index of all of those elements!**
+    ///
+    /// Computes in **O(n)** time (average).
+    pub fn shift_remove_entry(self) -> (K, V) {
+        self.map.shift_remove_index(self.index).unwrap()
+    }
+
+    /// Remove the key, value pair stored in the map for this entry, and return the value.
+    ///
+    /// Like `Vec::swap_remove`, the pair is removed by swapping it with the
+    /// last element of the map and popping it off. **This perturbs
+    /// the position of what used to be the last element!**
+    ///
+    /// Computes in **O(1)** time (average).
+    pub fn swap_remove(self) -> V {
+        self.swap_remove_entry().1
+    }
+
+    /// Remove the key, value pair stored in the map for this entry, and return the value.
+    ///
+    /// Like `Vec::remove`, the pair is removed by shifting all of the
+    /// elements that follow it, preserving their relative order.
+    /// **This perturbs the index of all of those elements!**
+    ///
+    /// Computes in **O(n)** time (average).
+    pub fn shift_remove(self) -> V {
+        self.shift_remove_entry().1
+    }
+}
+
+impl<K: fmt::Debug, V: fmt::Debug> fmt::Debug for IndexedEntry<'_, K, V> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct(stringify!(IndexedEntry))
+            .field("index", &self.index)
+            .field("key", self.key())
+            .field("value", self.get())
+            .finish()
+    }
+}
+
 #[test]
 fn assert_send_sync() {
     fn assert_send_sync<T: Send + Sync>() {}
     assert_send_sync::<IndexMapCore<i32, i32>>();
     assert_send_sync::<Entry<'_, i32, i32>>();
+    assert_send_sync::<IndexedEntry<'_, i32, i32>>();
 }
