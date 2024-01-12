@@ -423,18 +423,6 @@ where
         self.core.entry(hash, key)
     }
 
-    /// Get an entry in the map by index for in-place manipulation.
-    ///
-    /// Valid indices are *0 <= index < self.len()*
-    ///
-    /// Computes in **O(1)** time.
-    pub fn get_index_entry(&mut self, index: usize) -> Option<IndexedEntry<'_, K, V>> {
-        if index >= self.len() {
-            return None;
-        }
-        Some(IndexedEntry::new(&mut self.core, index))
-    }
-
     /// Return `true` if an equivalent to `key` exists in the map.
     ///
     /// Computes in **O(1)** time (average).
@@ -909,6 +897,18 @@ impl<K, V, S> IndexMap<K, V, S> {
     /// Computes in **O(1)** time.
     pub fn get_index_mut(&mut self, index: usize) -> Option<(&K, &mut V)> {
         self.as_entries_mut().get_mut(index).map(Bucket::ref_mut)
+    }
+
+    /// Get an entry in the map by index for in-place manipulation.
+    ///
+    /// Valid indices are *0 <= index < self.len()*
+    ///
+    /// Computes in **O(1)** time.
+    pub fn get_index_entry(&mut self, index: usize) -> Option<IndexedEntry<'_, K, V>> {
+        if index >= self.len() {
+            return None;
+        }
+        Some(IndexedEntry::new(&mut self.core, index))
     }
 
     /// Returns a slice of key-value pairs in the given range of indices.
