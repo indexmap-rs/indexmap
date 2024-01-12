@@ -664,7 +664,12 @@ impl<K, V> OccupiedEntry<'_, K, V> {
 
     /// Remove the key, value pair stored in the map for this entry, and return the value.
     ///
-    /// **NOTE:** This is equivalent to `.swap_remove()`.
+    /// **NOTE:** This is equivalent to [`.swap_remove()`][Self::swap_remove], replacing this
+    /// entry's position with the last element, and it is deprecated in favor of calling that
+    /// explicitly. If you need to preserve the relative order of the keys in the map, use
+    /// [`.shift_remove()`][Self::shift_remove] instead.
+    #[deprecated(note = "`remove` disrupts the map order -- \
+        use `swap_remove` or `shift_remove` for explicit behavior.")]
     pub fn remove(self) -> V {
         self.swap_remove()
     }
@@ -693,7 +698,12 @@ impl<K, V> OccupiedEntry<'_, K, V> {
 
     /// Remove and return the key, value pair stored in the map for this entry
     ///
-    /// **NOTE:** This is equivalent to `.swap_remove_entry()`.
+    /// **NOTE:** This is equivalent to [`.swap_remove_entry()`][Self::swap_remove_entry],
+    /// replacing this entry's position with the last element, and it is deprecated in favor of
+    /// calling that explicitly. If you need to preserve the relative order of the keys in the map,
+    /// use [`.shift_remove_entry()`][Self::shift_remove_entry] instead.
+    #[deprecated(note = "`remove_entry` disrupts the map order -- \
+        use `swap_remove_entry` or `shift_remove_entry` for explicit behavior.")]
     pub fn remove_entry(self) -> (K, V) {
         self.swap_remove_entry()
     }
