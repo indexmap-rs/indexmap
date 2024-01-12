@@ -707,6 +707,30 @@ impl<K, V> OccupiedEntry<'_, K, V> {
     pub fn remove_entry(self) -> (K, V) {
         self.swap_remove_entry()
     }
+
+    /// Remove and return the key, value pair stored in the map for this entry
+    ///
+    /// Like `Vec::swap_remove`, the pair is removed by swapping it with the
+    /// last element of the map and popping it off. **This perturbs
+    /// the position of what used to be the last element!**
+    ///
+    /// Computes in **O(1)** time (average).
+    pub fn swap_remove_entry(self) -> (K, V) {
+        let (map, index) = self.remove_index();
+        map.swap_remove_finish(index)
+    }
+
+    /// Remove and return the key, value pair stored in the map for this entry
+    ///
+    /// Like `Vec::remove`, the pair is removed by shifting all of the
+    /// elements that follow it, preserving their relative order.
+    /// **This perturbs the index of all of those elements!**
+    ///
+    /// Computes in **O(n)** time (average).
+    pub fn shift_remove_entry(self) -> (K, V) {
+        let (map, index) = self.remove_index();
+        map.shift_remove_finish(index)
+    }
 }
 
 impl<K: fmt::Debug, V: fmt::Debug> fmt::Debug for OccupiedEntry<'_, K, V> {
