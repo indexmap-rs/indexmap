@@ -1091,6 +1091,10 @@ where
 
 /// Access `IndexMap` values at indexed positions.
 ///
+/// See [`Index<usize> for Keys`][keys] to access a map's keys instead.
+///
+/// [keys]: Keys#impl-Index<usize>-for-Keys<'a,+K,+V>
+///
 /// # Examples
 ///
 /// ```
