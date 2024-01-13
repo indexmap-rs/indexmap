@@ -26,7 +26,9 @@ was indexmap, a hash table that has following properties:
 - Order is **independent of hash function** and hash values of keys.
 - Fast to iterate.
 - Indexed in compact space.
-- Preserves insertion order **as long** as you don't call `.remove()`.
+- Preserves insertion order **as long** as you don't call `.remove()`,
+  `.swap_remove()`, or other methods that explicitly change order.
+  The alternate `.shift_remove()` does preserve relative order.
 - Uses hashbrown for the inner table, just like Rust's libstd `HashMap` does.
 
 ## Performance
