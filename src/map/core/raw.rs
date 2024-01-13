@@ -143,20 +143,6 @@ impl<'a, K, V> OccupiedEntry<'a, K, V> {
         &mut self.map.entries[index].value
     }
 
-    /// Put the new key in the occupied entry's key slot
-    pub(crate) fn replace_key(self) -> K {
-        let index = self.index();
-        let old_key = &mut self.map.entries[index].key;
-        replace(old_key, self.key)
-    }
-
-    /// Return the index of the key-value pair
-    #[inline]
-    pub fn index(&self) -> usize {
-        // SAFETY: we have &mut map keep keeping the bucket stable
-        unsafe { *self.raw_bucket.as_ref() }
-    }
-
     /// Converts into a mutable reference to the entry's value in the map,
     /// with a lifetime bound to the map itself.
     pub fn into_mut(self) -> &'a mut V {
@@ -164,31 +150,25 @@ impl<'a, K, V> OccupiedEntry<'a, K, V> {
         &mut self.map.entries[index].value
     }
 
-    /// Remove and return the key, value pair stored in the map for this entry
-    ///
-    /// Like `Vec::swap_remove`, the pair is removed by swapping it with the
-    /// last element of the map and popping it off. **This perturbs
-    /// the position of what used to be the last element!**
-    ///
-    /// Computes in **O(1)** time (average).
-    pub fn swap_remove_entry(self) -> (K, V) {
-        // SAFETY: This is safe because it can only happen once (self is consumed)
-        // and map.indices have not been modified since entry construction
-        let (index, _slot) = unsafe { self.map.indices.remove(self.raw_bucket) };
-        self.map.swap_remove_finish(index)
+    /// Return the index of the key-value pair
+    #[inline]
+    pub fn index(&self) -> usize {
+        // SAFETY: we have `&mut map` keeping the bucket stable
+        unsafe { *self.raw_bucket.as_ref() }
     }
 
-    /// Remove and return the key, value pair stored in the map for this entry
-    ///
-    /// Like `Vec::remove`, the pair is removed by shifting all of the
-    /// elements that follow it, preserving their relative order.
-    /// **This perturbs the index of all of those elements!**
-    ///
-    /// Computes in **O(n)** time (average).
-    pub fn shift_remove_entry(self) -> (K, V) {
+    /// Put the new key in the occupied entry's key slot
+    pub(crate) fn replace_key(self) -> K {
+        let index = self.index();
+        let old_key = &mut self.map.entries[index].key;
+        replace(old_key, self.key)
+    }
+
+    /// Remove the index from indices, leaving the actual entries to the caller.
+    pub(super) fn remove_index(self) -> (&'a mut IndexMapCore<K, V>, usize) {
         // SAFETY: This is safe because it can only happen once (self is consumed)
         // and map.indices have not been modified since entry construction
         let (index, _slot) = unsafe { self.map.indices.remove(self.raw_bucket) };
-        self.map.shift_remove_finish(index)
+        (self.map, index)
     }
 }

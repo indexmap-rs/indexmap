@@ -520,11 +520,12 @@ where
     /// Remove the key-value pair equivalent to `key` and return
     /// its value.
     ///
-    /// **NOTE:** This is equivalent to `.swap_remove(key)`, if you need to
-    /// preserve the order of the keys in the map, use `.shift_remove(key)`
-    /// instead.
-    ///
-    /// Computes in **O(1)** time (average).
+    /// **NOTE:** This is equivalent to [`.swap_remove(key)`][Self::swap_remove], replacing this
+    /// entry's position with the last element, and it is deprecated in favor of calling that
+    /// explicitly. If you need to preserve the relative order of the keys in the map, use
+    /// [`.shift_remove(key)`][Self::shift_remove] instead.
+    #[deprecated(note = "`remove` disrupts the map order -- \
+        use `swap_remove` or `shift_remove` for explicit behavior.")]
     pub fn remove<Q: ?Sized>(&mut self, key: &Q) -> Option<V>
     where
         Q: Hash + Equivalent<K>,
@@ -534,11 +535,12 @@ where
 
     /// Remove and return the key-value pair equivalent to `key`.
     ///
-    /// **NOTE:** This is equivalent to `.swap_remove_entry(key)`, if you need to
-    /// preserve the order of the keys in the map, use `.shift_remove_entry(key)`
-    /// instead.
-    ///
-    /// Computes in **O(1)** time (average).
+    /// **NOTE:** This is equivalent to [`.swap_remove_entry(key)`][Self::swap_remove_entry],
+    /// replacing this entry's position with the last element, and it is deprecated in favor of
+    /// calling that explicitly. If you need to preserve the relative order of the keys in the map,
+    /// use [`.shift_remove_entry(key)`][Self::shift_remove_entry] instead.
+    #[deprecated(note = "`remove_entry` disrupts the map order -- \
+        use `swap_remove_entry` or `shift_remove_entry` for explicit behavior.")]
     pub fn remove_entry<Q: ?Sized>(&mut self, key: &Q) -> Option<(K, V)>
     where
         Q: Hash + Equivalent<K>,

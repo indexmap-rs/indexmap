@@ -463,10 +463,12 @@ where
 
     /// Remove the value from the set, and return `true` if it was present.
     ///
-    /// **NOTE:** This is equivalent to `.swap_remove(value)`, if you want
-    /// to preserve the order of the values in the set, use `.shift_remove(value)`.
-    ///
-    /// Computes in **O(1)** time (average).
+    /// **NOTE:** This is equivalent to [`.swap_remove(value)`][Self::swap_remove], replacing this
+    /// value's position with the last element, and it is deprecated in favor of calling that
+    /// explicitly. If you need to preserve the relative order of the values in the set, use
+    /// [`.shift_remove(value)`][Self::shift_remove] instead.
+    #[deprecated(note = "`remove` disrupts the set order -- \
+        use `swap_remove` or `shift_remove` for explicit behavior.")]
     pub fn remove<Q: ?Sized>(&mut self, value: &Q) -> bool
     where
         Q: Hash + Equivalent<T>,
@@ -509,11 +511,12 @@ where
     /// Removes and returns the value in the set, if any, that is equal to the
     /// given one.
     ///
-    /// **NOTE:** This is equivalent to `.swap_take(value)`, if you need to
-    /// preserve the order of the values in the set, use `.shift_take(value)`
-    /// instead.
-    ///
-    /// Computes in **O(1)** time (average).
+    /// **NOTE:** This is equivalent to [`.swap_take(value)`][Self::swap_take], replacing this
+    /// value's position with the last element, and it is deprecated in favor of calling that
+    /// explicitly. If you need to preserve the relative order of the values in the set, use
+    /// [`.shift_take(value)`][Self::shift_take] instead.
+    #[deprecated(note = "`take` disrupts the set order -- \
+        use `swap_take` or `shift_take` for explicit behavior.")]
     pub fn take<Q: ?Sized>(&mut self, value: &Q) -> Option<T>
     where
         Q: Hash + Equivalent<T>,
