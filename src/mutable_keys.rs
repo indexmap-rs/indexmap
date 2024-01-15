@@ -2,7 +2,7 @@ use core::hash::{BuildHasher, Hash};
 
 use super::{Bucket, Entries, Equivalent, IndexMap};
 
-/// Opt-in mutable access to keys.
+/// Opt-in mutable access to [`IndexMap`] keys.
 ///
 /// These methods expose `&mut K`, mutable references to the key as it is stored
 /// in the map.
@@ -11,7 +11,7 @@ use super::{Bucket, Entries, Equivalent, IndexMap};
 ///
 /// If keys are modified erroneously, you can no longer look them up.
 /// This is sound (memory safe) but a logical error hazard (just like
-/// implementing PartialEq, Eq, or Hash incorrectly would be).
+/// implementing `PartialEq`, `Eq`, or `Hash` incorrectly would be).
 ///
 /// `use` this trait to enable its methods for `IndexMap`.
 ///
@@ -51,7 +51,7 @@ pub trait MutableKeys: private::Sealed {
 
 /// Opt-in mutable access to keys.
 ///
-/// See [`MutableKeys`](trait.MutableKeys.html) for more information.
+/// See [`MutableKeys`] for more information.
 impl<K, V, S> MutableKeys for IndexMap<K, V, S>
 where
     K: Eq + Hash,

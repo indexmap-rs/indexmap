@@ -9,10 +9,6 @@
 //! [`IndexSet`] is a corresponding hash set using the same implementation and
 //! with similar properties.
 //!
-//! [`IndexMap`]: map/struct.IndexMap.html
-//! [`IndexSet`]: set/struct.IndexSet.html
-//!
-//!
 //! ### Highlights
 //!
 //! [`IndexMap`] and [`IndexSet`] are drop-in compatible with the std `HashMap`
@@ -55,7 +51,8 @@
 //!
 //! ### Alternate Hashers
 //!
-//! [`IndexMap`] and [`IndexSet`] have a default hasher type `S = RandomState`,
+//! [`IndexMap`] and [`IndexSet`] have a default hasher type
+//! [`S = RandomState`][std::collections::hash_map::RandomState],
 //! just like the standard `HashMap` and `HashSet`, which is resistant to
 //! HashDoS attacks but not the most performant. Type aliases can make it easier
 //! to use alternate hashers:
@@ -94,14 +91,11 @@
 //!
 //! - Creating maps and sets using [`new`][IndexMap::new] and
 //! [`with_capacity`][IndexMap::with_capacity] is unavailable without `std`.
-//!   Use methods [`IndexMap::default`][def],
-//!   [`with_hasher`][IndexMap::with_hasher],
+//!   Use methods [`IndexMap::default`], [`with_hasher`][IndexMap::with_hasher],
 //!   [`with_capacity_and_hasher`][IndexMap::with_capacity_and_hasher] instead.
 //!   A no-std compatible hasher will be needed as well, for example
 //!   from the crate `twox-hash`.
 //! - Macros [`indexmap!`] and [`indexset!`] are unavailable without `std`.
-//!
-//! [def]: map/struct.IndexMap.html#impl-Default
 
 #![cfg_attr(docsrs, feature(doc_cfg))]
 
@@ -118,7 +112,6 @@ mod arbitrary;
 mod macros;
 mod mutable_keys;
 #[cfg(feature = "serde")]
-#[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
 mod serde;
 mod util;
 
@@ -128,7 +121,6 @@ pub mod set;
 // Placed after `map` and `set` so new `rayon` methods on the types
 // are documented after the "normal" methods.
 #[cfg(feature = "rayon")]
-#[cfg_attr(docsrs, doc(cfg(feature = "rayon")))]
 mod rayon;
 
 #[cfg(feature = "rustc-rayon")]
@@ -220,7 +212,7 @@ trait Entries {
         F: FnOnce(&mut [Self::Entry]);
 }
 
-/// The error type for `try_reserve` methods.
+/// The error type for [`try_reserve`][IndexMap::try_reserve] methods.
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct TryReserveError {
     kind: TryReserveErrorKind,

@@ -1,3 +1,5 @@
+#![cfg_attr(docsrs, doc(cfg(feature = "serde")))]
+
 use serde::de::value::{MapDeserializer, SeqDeserializer};
 use serde::de::{
     Deserialize, Deserializer, Error, IntoDeserializer, MapAccess, SeqAccess, Visitor,
