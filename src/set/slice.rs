@@ -8,13 +8,13 @@ use core::fmt;
 use core::hash::{Hash, Hasher};
 use core::ops::{self, Bound, Index, RangeBounds};
 
-/// A dynamically-sized slice of values in an `IndexSet`.
+/// A dynamically-sized slice of values in an [`IndexSet`].
 ///
 /// This supports indexed operations much like a `[T]` slice,
 /// but not any hashed operations on the values.
 ///
-/// Unlike `IndexSet`, `Slice` does consider the order for `PartialEq`
-/// and `Eq`, and it also implements `PartialOrd`, `Ord`, and `Hash`.
+/// Unlike `IndexSet`, `Slice` does consider the order for [`PartialEq`]
+/// and [`Eq`], and it also implements [`PartialOrd`], [`Ord`], and [`Hash`].
 #[repr(transparent)]
 pub struct Slice<T> {
     pub(crate) entries: [Bucket<T>],

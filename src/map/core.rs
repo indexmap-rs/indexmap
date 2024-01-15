@@ -545,8 +545,8 @@ impl<K, V> IndexMapCore<K, V> {
     }
 }
 
-/// Entry for an existing key-value pair or a vacant location to
-/// insert one.
+/// Entry for an existing key-value pair in an [`IndexMap`][crate::IndexMap]
+/// or a vacant location to insert one.
 pub enum Entry<'a, K, V> {
     /// Existing slot with equivalent key.
     Occupied(OccupiedEntry<'a, K, V>),
@@ -676,7 +676,7 @@ impl<K, V> OccupiedEntry<'_, K, V> {
 
     /// Remove the key, value pair stored in the map for this entry, and return the value.
     ///
-    /// Like `Vec::swap_remove`, the pair is removed by swapping it with the
+    /// Like [`Vec::swap_remove`], the pair is removed by swapping it with the
     /// last element of the map and popping it off. **This perturbs
     /// the position of what used to be the last element!**
     ///
@@ -687,7 +687,7 @@ impl<K, V> OccupiedEntry<'_, K, V> {
 
     /// Remove the key, value pair stored in the map for this entry, and return the value.
     ///
-    /// Like `Vec::remove`, the pair is removed by shifting all of the
+    /// Like [`Vec::remove`], the pair is removed by shifting all of the
     /// elements that follow it, preserving their relative order.
     /// **This perturbs the index of all of those elements!**
     ///
@@ -710,7 +710,7 @@ impl<K, V> OccupiedEntry<'_, K, V> {
 
     /// Remove and return the key, value pair stored in the map for this entry
     ///
-    /// Like `Vec::swap_remove`, the pair is removed by swapping it with the
+    /// Like [`Vec::swap_remove`], the pair is removed by swapping it with the
     /// last element of the map and popping it off. **This perturbs
     /// the position of what used to be the last element!**
     ///
@@ -722,7 +722,7 @@ impl<K, V> OccupiedEntry<'_, K, V> {
 
     /// Remove and return the key, value pair stored in the map for this entry
     ///
-    /// Like `Vec::remove`, the pair is removed by shifting all of the
+    /// Like [`Vec::remove`], the pair is removed by shifting all of the
     /// elements that follow it, preserving their relative order.
     /// **This perturbs the index of all of those elements!**
     ///
@@ -742,10 +742,8 @@ impl<K: fmt::Debug, V: fmt::Debug> fmt::Debug for OccupiedEntry<'_, K, V> {
     }
 }
 
-/// A view into a vacant entry in a `IndexMap`.
+/// A view into a vacant entry in an [`IndexMap`][crate::IndexMap].
 /// It is part of the [`Entry`] enum.
-///
-/// [`Entry`]: enum.Entry.html
 pub struct VacantEntry<'a, K, V> {
     map: &'a mut IndexMapCore<K, V>,
     hash: HashValue,
@@ -788,9 +786,9 @@ impl<K: fmt::Debug, V> fmt::Debug for VacantEntry<'_, K, V> {
     }
 }
 
-/// A view into an occupied entry in a `IndexMap` obtained by index.
+/// A view into an occupied entry in an [`IndexMap`][crate::IndexMap] obtained by index.
 ///
-/// This struct is constructed from the `get_index_entry` method on `IndexMap`.
+/// This `struct` is created from the [`get_index_entry`][crate::IndexMap::get_index_entry] method.
 pub struct IndexedEntry<'a, K, V> {
     map: &'a mut IndexMapCore<K, V>,
     // We have a mutable reference to the map, which keeps the index
@@ -816,7 +814,7 @@ impl<'a, K, V> IndexedEntry<'a, K, V> {
     /// Gets a mutable reference to the entry's value in the map.
     ///
     /// If you need a reference which may outlive the destruction of the
-    /// `IndexedEntry` value, see `into_mut`.
+    /// `IndexedEntry` value, see [`into_mut`][Self::into_mut].
     pub fn get_mut(&mut self) -> &mut V {
         &mut self.map.entries[self.index].value
     }
@@ -840,7 +838,7 @@ impl<'a, K, V> IndexedEntry<'a, K, V> {
 
     /// Remove and return the key, value pair stored in the map for this entry
     ///
-    /// Like `Vec::swap_remove`, the pair is removed by swapping it with the
+    /// Like [`Vec::swap_remove`], the pair is removed by swapping it with the
     /// last element of the map and popping it off. **This perturbs
     /// the position of what used to be the last element!**
     ///
@@ -851,7 +849,7 @@ impl<'a, K, V> IndexedEntry<'a, K, V> {
 
     /// Remove and return the key, value pair stored in the map for this entry
     ///
-    /// Like `Vec::remove`, the pair is removed by shifting all of the
+    /// Like [`Vec::remove`], the pair is removed by shifting all of the
     /// elements that follow it, preserving their relative order.
     /// **This perturbs the index of all of those elements!**
     ///
@@ -862,7 +860,7 @@ impl<'a, K, V> IndexedEntry<'a, K, V> {
 
     /// Remove the key, value pair stored in the map for this entry, and return the value.
     ///
-    /// Like `Vec::swap_remove`, the pair is removed by swapping it with the
+    /// Like [`Vec::swap_remove`], the pair is removed by swapping it with the
     /// last element of the map and popping it off. **This perturbs
     /// the position of what used to be the last element!**
     ///
@@ -873,7 +871,7 @@ impl<'a, K, V> IndexedEntry<'a, K, V> {
 
     /// Remove the key, value pair stored in the map for this entry, and return the value.
     ///
-    /// Like `Vec::remove`, the pair is removed by shifting all of the
+    /// Like [`Vec::remove`], the pair is removed by shifting all of the
     /// elements that follow it, preserving their relative order.
     /// **This perturbs the index of all of those elements!**
     ///

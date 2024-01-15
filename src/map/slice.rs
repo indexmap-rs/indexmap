@@ -11,13 +11,13 @@ use core::fmt;
 use core::hash::{Hash, Hasher};
 use core::ops::{self, Bound, Index, IndexMut, RangeBounds};
 
-/// A dynamically-sized slice of key-value pairs in an `IndexMap`.
+/// A dynamically-sized slice of key-value pairs in an [`IndexMap`].
 ///
 /// This supports indexed operations much like a `[(K, V)]` slice,
 /// but not any hashed operations on the map keys.
 ///
-/// Unlike `IndexMap`, `Slice` does consider the order for `PartialEq`
-/// and `Eq`, and it also implements `PartialOrd`, `Ord`, and `Hash`.
+/// Unlike `IndexMap`, `Slice` does consider the order for [`PartialEq`]
+/// and [`Eq`], and it also implements [`PartialOrd`], [`Ord`], and [`Hash`].
 #[repr(transparent)]
 pub struct Slice<K, V> {
     pub(crate) entries: [Bucket<K, V>],

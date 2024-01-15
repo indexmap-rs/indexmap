@@ -1,4 +1,4 @@
-//! A hash set implemented using `IndexMap`
+//! A hash set implemented using [`IndexMap`]
 
 mod iter;
 mod slice;
@@ -31,8 +31,9 @@ type Bucket<T> = super::Bucket<T, ()>;
 /// A hash set where the iteration order of the values is independent of their
 /// hash values.
 ///
-/// The interface is closely compatible with the standard `HashSet`, but also
-/// has additional features.
+/// The interface is closely compatible with the standard
+/// [`HashSet`][std::collections::HashSet],
+/// but also has additional features.
 ///
 /// # Order
 ///
@@ -43,11 +44,12 @@ type Bucket<T> = super::Bucket<T, ()>;
 /// already present.
 ///
 /// All iterators traverse the set *in order*.  Set operation iterators like
-/// `union` produce a concatenated order, as do their matching "bitwise"
+/// [`IndexSet::union`] produce a concatenated order, as do their matching "bitwise"
 /// operators.  See their documentation for specifics.
 ///
 /// The insertion order is preserved, with **notable exceptions** like the
-/// `.remove()` or `.swap_remove()` methods. Methods such as `.sort_by()` of
+/// [`.remove()`][Self::remove] or [`.swap_remove()`][Self::swap_remove] methods.
+/// Methods such as [`.sort_by()`][Self::sort_by] of
 /// course result in a new order, depending on the sorting order.
 ///
 /// # Indices
@@ -232,7 +234,7 @@ impl<T, S> IndexSet<T, S> {
     /// Clears the `IndexSet` in the given index range, returning those values
     /// as a drain iterator.
     ///
-    /// The range may be any type that implements `RangeBounds<usize>`,
+    /// The range may be any type that implements [`RangeBounds<usize>`],
     /// including all of the `std::ops::Range*` types, or even a tuple pair of
     /// `Bound` start and end values. To drain the set entirely, use `RangeFull`
     /// like `set.drain(..)`.
@@ -478,7 +480,7 @@ where
 
     /// Remove the value from the set, and return `true` if it was present.
     ///
-    /// Like `Vec::swap_remove`, the value is removed by swapping it with the
+    /// Like [`Vec::swap_remove`], the value is removed by swapping it with the
     /// last element of the set and popping it off. **This perturbs
     /// the position of what used to be the last element!**
     ///
@@ -494,7 +496,7 @@ where
 
     /// Remove the value from the set, and return `true` if it was present.
     ///
-    /// Like `Vec::remove`, the value is removed by shifting all of the
+    /// Like [`Vec::remove`], the value is removed by shifting all of the
     /// elements that follow it, preserving their relative order.
     /// **This perturbs the index of all of those elements!**
     ///
@@ -527,7 +529,7 @@ where
     /// Removes and returns the value in the set, if any, that is equal to the
     /// given one.
     ///
-    /// Like `Vec::swap_remove`, the value is removed by swapping it with the
+    /// Like [`Vec::swap_remove`], the value is removed by swapping it with the
     /// last element of the set and popping it off. **This perturbs
     /// the position of what used to be the last element!**
     ///
@@ -544,7 +546,7 @@ where
     /// Removes and returns the value in the set, if any, that is equal to the
     /// given one.
     ///
-    /// Like `Vec::remove`, the value is removed by shifting all of the
+    /// Like [`Vec::remove`], the value is removed by shifting all of the
     /// elements that follow it, preserving their relative order.
     /// **This perturbs the index of all of those elements!**
     ///
@@ -560,7 +562,7 @@ where
 
     /// Remove the value from the set return it and the index it had.
     ///
-    /// Like `Vec::swap_remove`, the value is removed by swapping it with the
+    /// Like [`Vec::swap_remove`], the value is removed by swapping it with the
     /// last element of the set and popping it off. **This perturbs
     /// the position of what used to be the last element!**
     ///
@@ -574,7 +576,7 @@ where
 
     /// Remove the value from the set return it and the index it had.
     ///
-    /// Like `Vec::remove`, the value is removed by shifting all of the
+    /// Like [`Vec::remove`], the value is removed by shifting all of the
     /// elements that follow it, preserving their relative order.
     /// **This perturbs the index of all of those elements!**
     ///
@@ -809,7 +811,7 @@ impl<T, S> IndexSet<T, S> {
     ///
     /// Valid indices are *0 <= index < self.len()*
     ///
-    /// Like `Vec::swap_remove`, the value is removed by swapping it with the
+    /// Like [`Vec::swap_remove`], the value is removed by swapping it with the
     /// last element of the set and popping it off. **This perturbs
     /// the position of what used to be the last element!**
     ///
@@ -822,7 +824,7 @@ impl<T, S> IndexSet<T, S> {
     ///
     /// Valid indices are *0 <= index < self.len()*
     ///
-    /// Like `Vec::remove`, the value is removed by shifting all of the
+    /// Like [`Vec::remove`], the value is removed by shifting all of the
     /// elements that follow it, preserving their relative order.
     /// **This perturbs the index of all of those elements!**
     ///
@@ -852,7 +854,7 @@ impl<T, S> IndexSet<T, S> {
     }
 }
 
-/// Access `IndexSet` values at indexed positions.
+/// Access [`IndexSet`] values at indexed positions.
 ///
 /// # Examples
 ///
@@ -951,7 +953,7 @@ impl<T, S> Default for IndexSet<T, S>
 where
     S: Default,
 {
-    /// Return an empty `IndexSet`
+    /// Return an empty [`IndexSet`]
     fn default() -> Self {
         IndexSet {
             map: IndexMap::default(),

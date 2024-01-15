@@ -1,4 +1,4 @@
-//! `IndexMap` is a hash table where the iteration order of the key-value
+//! [`IndexMap`] is a hash table where the iteration order of the key-value
 //! pairs is independent of the hash values of the keys.
 
 mod core;
@@ -12,7 +12,7 @@ pub mod serde_seq;
 #[cfg(test)]
 mod tests;
 
-pub use self::core::{Entry, OccupiedEntry, VacantEntry};
+pub use self::core::{Entry, IndexedEntry, OccupiedEntry, VacantEntry};
 pub use self::iter::{
     Drain, IntoIter, IntoKeys, IntoValues, Iter, IterMut, Keys, Values, ValuesMut,
 };
@@ -32,15 +32,16 @@ use alloc::vec::Vec;
 #[cfg(feature = "std")]
 use std::collections::hash_map::RandomState;
 
-use self::core::{IndexMapCore, IndexedEntry};
+use self::core::IndexMapCore;
 use crate::util::{third, try_simplify_range};
 use crate::{Bucket, Entries, Equivalent, HashValue, TryReserveError};
 
 /// A hash table where the iteration order of the key-value pairs is independent
 /// of the hash values of the keys.
 ///
-/// The interface is closely compatible with the standard `HashMap`, but also
-/// has additional features.
+/// The interface is closely compatible with the standard
+/// [`HashMap`][std::collections::HashMap],
+/// but also has additional features.
 ///
 /// # Order
 ///
@@ -51,7 +52,8 @@ use crate::{Bucket, Entries, Equivalent, HashValue, TryReserveError};
 /// All iterators traverse the map in *the order*.
 ///
 /// The insertion order is preserved, with **notable exceptions** like the
-/// `.remove()` or `.swap_remove()` methods. Methods such as `.sort_by()` of
+/// [`.remove()`][Self::remove] or [`.swap_remove()`][Self::swap_remove] methods.
+/// Methods such as [`.sort_by()`][Self::sort_by] of
 /// course result in a new order, depending on the sorting order.
 ///
 /// # Indices
@@ -281,7 +283,7 @@ impl<K, V, S> IndexMap<K, V, S> {
     /// Clears the `IndexMap` in the given index range, returning those
     /// key-value pairs as a drain iterator.
     ///
-    /// The range may be any type that implements `RangeBounds<usize>`,
+    /// The range may be any type that implements [`RangeBounds<usize>`],
     /// including all of the `std::ops::Range*` types, or even a tuple pair of
     /// `Bound` start and end values. To drain the map entirely, use `RangeFull`
     /// like `map.drain(..)`.
@@ -390,8 +392,9 @@ where
     ///
     /// Computes in **O(1)** time (amortized average).
     ///
-    /// See also [`entry`](#method.entry) if you you want to insert *or* modify
-    /// or if you need to get the index of the corresponding key-value pair.
+    /// See also [`entry`][Self::entry] if you you want to insert *or* modify,
+    /// or [`insert_full`][Self::insert_full] if you need to get the index of
+    /// the corresponding key-value pair.
     pub fn insert(&mut self, key: K, value: V) -> Option<V> {
         self.insert_full(key, value).1
     }
@@ -407,8 +410,7 @@ where
     ///
     /// Computes in **O(1)** time (amortized average).
     ///
-    /// See also [`entry`](#method.entry) if you you want to insert *or* modify
-    /// or if you need to get the index of the corresponding key-value pair.
+    /// See also [`entry`][Self::entry] if you you want to insert *or* modify.
     pub fn insert_full(&mut self, key: K, value: V) -> (usize, Option<V>) {
         let hash = self.hash(&key);
         self.core.insert_full(hash, key, value)
@@ -551,7 +553,7 @@ where
     /// Remove the key-value pair equivalent to `key` and return
     /// its value.
     ///
-    /// Like `Vec::swap_remove`, the pair is removed by swapping it with the
+    /// Like [`Vec::swap_remove`], the pair is removed by swapping it with the
     /// last element of the map and popping it off. **This perturbs
     /// the position of what used to be the last element!**
     ///
@@ -567,7 +569,7 @@ where
 
     /// Remove and return the key-value pair equivalent to `key`.
     ///
-    /// Like `Vec::swap_remove`, the pair is removed by swapping it with the
+    /// Like [`Vec::swap_remove`], the pair is removed by swapping it with the
     /// last element of the map and popping it off. **This perturbs
     /// the position of what used to be the last element!**
     ///
@@ -587,7 +589,7 @@ where
     /// Remove the key-value pair equivalent to `key` and return it and
     /// the index it had.
     ///
-    /// Like `Vec::swap_remove`, the pair is removed by swapping it with the
+    /// Like [`Vec::swap_remove`], the pair is removed by swapping it with the
     /// last element of the map and popping it off. **This perturbs
     /// the position of what used to be the last element!**
     ///
@@ -608,7 +610,7 @@ where
     /// Remove the key-value pair equivalent to `key` and return
     /// its value.
     ///
-    /// Like `Vec::remove`, the pair is removed by shifting all of the
+    /// Like [`Vec::remove`], the pair is removed by shifting all of the
     /// elements that follow it, preserving their relative order.
     /// **This perturbs the index of all of those elements!**
     ///
@@ -624,7 +626,7 @@ where
 
     /// Remove and return the key-value pair equivalent to `key`.
     ///
-    /// Like `Vec::remove`, the pair is removed by shifting all of the
+    /// Like [`Vec::remove`], the pair is removed by shifting all of the
     /// elements that follow it, preserving their relative order.
     /// **This perturbs the index of all of those elements!**
     ///
@@ -644,7 +646,7 @@ where
     /// Remove the key-value pair equivalent to `key` and return it and
     /// the index it had.
     ///
-    /// Like `Vec::remove`, the pair is removed by shifting all of the
+    /// Like [`Vec::remove`], the pair is removed by shifting all of the
     /// elements that follow it, preserving their relative order.
     /// **This perturbs the index of all of those elements!**
     ///
@@ -967,7 +969,7 @@ impl<K, V, S> IndexMap<K, V, S> {
     ///
     /// Valid indices are *0 <= index < self.len()*
     ///
-    /// Like `Vec::swap_remove`, the pair is removed by swapping it with the
+    /// Like [`Vec::swap_remove`], the pair is removed by swapping it with the
     /// last element of the map and popping it off. **This perturbs
     /// the position of what used to be the last element!**
     ///
@@ -980,7 +982,7 @@ impl<K, V, S> IndexMap<K, V, S> {
     ///
     /// Valid indices are *0 <= index < self.len()*
     ///
-    /// Like `Vec::remove`, the pair is removed by shifting all of the
+    /// Like [`Vec::remove`], the pair is removed by shifting all of the
     /// elements that follow it, preserving their relative order.
     /// **This perturbs the index of all of those elements!**
     ///
@@ -1010,7 +1012,7 @@ impl<K, V, S> IndexMap<K, V, S> {
     }
 }
 
-/// Access `IndexMap` values corresponding to a key.
+/// Access [`IndexMap`] values corresponding to a key.
 ///
 /// # Examples
 ///
@@ -1048,7 +1050,7 @@ where
     }
 }
 
-/// Access `IndexMap` values corresponding to a key.
+/// Access [`IndexMap`] values corresponding to a key.
 ///
 /// Mutable indexing allows changing / updating values of key-value
 /// pairs that are already present.
@@ -1091,7 +1093,7 @@ where
     }
 }
 
-/// Access `IndexMap` values at indexed positions.
+/// Access [`IndexMap`] values at indexed positions.
 ///
 /// See [`Index<usize> for Keys`][keys] to access a map's keys instead.
 ///
@@ -1136,12 +1138,12 @@ impl<K, V, S> Index<usize> for IndexMap<K, V, S> {
     }
 }
 
-/// Access `IndexMap` values at indexed positions.
+/// Access [`IndexMap`] values at indexed positions.
 ///
 /// Mutable indexing allows changing / updating indexed values
 /// that are already present.
 ///
-/// You can **not** insert new values with index syntax, use `.insert()`.
+/// You can **not** insert new values with index syntax -- use [`.insert()`][IndexMap::insert].
 ///
 /// # Examples
 ///
@@ -1185,7 +1187,7 @@ where
     /// iterable.
     ///
     /// `from_iter` uses the same logic as `extend`. See
-    /// [`extend`](#method.extend) for more details.
+    /// [`extend`][IndexMap::extend] for more details.
     fn from_iter<I: IntoIterator<Item = (K, V)>>(iterable: I) -> Self {
         let iter = iterable.into_iter();
         let (low, _) = iter.size_hint();
@@ -1222,7 +1224,7 @@ where
 {
     /// Extend the map with all key-value pairs in the iterable.
     ///
-    /// This is equivalent to calling [`insert`](#method.insert) for each of
+    /// This is equivalent to calling [`insert`][IndexMap::insert] for each of
     /// them in order, which means that for keys that already existed
     /// in the map, their value is updated but it keeps the existing order.
     ///
@@ -1266,7 +1268,7 @@ impl<K, V, S> Default for IndexMap<K, V, S>
 where
     S: Default,
 {
-    /// Return an empty `IndexMap`
+    /// Return an empty [`IndexMap`]
     fn default() -> Self {
         Self::with_capacity_and_hasher(0, S::default())
     }

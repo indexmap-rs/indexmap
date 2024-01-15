@@ -1,4 +1,4 @@
-//! Functions to serialize and deserialize an `IndexMap` as an ordered sequence.
+//! Functions to serialize and deserialize an [`IndexMap`] as an ordered sequence.
 //!
 //! The default `serde` implementation serializes `IndexMap` as a normal map,
 //! but there is no guarantee that serialization formats will preserve the order
@@ -29,7 +29,7 @@ use crate::map::Slice as MapSlice;
 use crate::set::Slice as SetSlice;
 use crate::IndexMap;
 
-/// Serializes a `map::Slice` as an ordered sequence.
+/// Serializes a [`map::Slice`][MapSlice] as an ordered sequence.
 ///
 /// This behaves like [`crate::map::serde_seq`] for `IndexMap`, serializing a sequence
 /// of `(key, value)` pairs, rather than as a map that might not preserve order.
@@ -46,7 +46,7 @@ where
     }
 }
 
-/// Serializes a `set::Slice` as an ordered sequence.
+/// Serializes a [`set::Slice`][SetSlice] as an ordered sequence.
 impl<T> Serialize for SetSlice<T>
 where
     T: Serialize,
@@ -59,9 +59,9 @@ where
     }
 }
 
-/// Serializes an `IndexMap` as an ordered sequence.
+/// Serializes an [`IndexMap`] as an ordered sequence.
 ///
-/// This function may be used in a field attribute for deriving `Serialize`:
+/// This function may be used in a field attribute for deriving [`Serialize`]:
 ///
 /// ```
 /// # use indexmap::IndexMap;
@@ -113,9 +113,9 @@ where
     }
 }
 
-/// Deserializes an `IndexMap` from an ordered sequence.
+/// Deserializes an [`IndexMap`] from an ordered sequence.
 ///
-/// This function may be used in a field attribute for deriving `Deserialize`:
+/// This function may be used in a field attribute for deriving [`Deserialize`]:
 ///
 /// ```
 /// # use indexmap::IndexMap;

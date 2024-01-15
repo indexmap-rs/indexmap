@@ -102,10 +102,8 @@ impl<K, V> IndexMapCore<K, V> {
     }
 }
 
-/// A view into an occupied entry in a `IndexMap`.
+/// A view into an occupied entry in an [`IndexMap`][crate::IndexMap].
 /// It is part of the [`Entry`] enum.
-///
-/// [`Entry`]: enum.Entry.html
 // SAFETY: The lifetime of the map reference also constrains the raw bucket,
 // which is essentially a raw pointer into the map indices.
 pub struct OccupiedEntry<'a, K, V> {
@@ -137,7 +135,7 @@ impl<'a, K, V> OccupiedEntry<'a, K, V> {
     /// Gets a mutable reference to the entry's value in the map.
     ///
     /// If you need a reference which may outlive the destruction of the
-    /// `Entry` value, see `into_mut`.
+    /// [`Entry`] value, see [`into_mut`][Self::into_mut].
     pub fn get_mut(&mut self) -> &mut V {
         let index = self.index();
         &mut self.map.entries[index].value

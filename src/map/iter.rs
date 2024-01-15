@@ -33,13 +33,10 @@ impl<K, V, S> IntoIterator for IndexMap<K, V, S> {
     }
 }
 
-/// An iterator over the entries of a `IndexMap`.
+/// An iterator over the entries of an [`IndexMap`].
 ///
-/// This `struct` is created by the [`iter`] method on [`IndexMap`]. See its
-/// documentation for more.
-///
-/// [`iter`]: struct.IndexMap.html#method.iter
-/// [`IndexMap`]: struct.IndexMap.html
+/// This `struct` is created by the [`IndexMap::iter`] method.
+/// See its documentation for more.
 pub struct Iter<'a, K, V> {
     iter: slice::Iter<'a, Bucket<K, V>>,
 }
@@ -96,13 +93,10 @@ impl<K, V> Default for Iter<'_, K, V> {
     }
 }
 
-/// A mutable iterator over the entries of a `IndexMap`.
+/// A mutable iterator over the entries of an [`IndexMap`].
 ///
-/// This `struct` is created by the [`iter_mut`] method on [`IndexMap`]. See its
-/// documentation for more.
-///
-/// [`iter_mut`]: struct.IndexMap.html#method.iter_mut
-/// [`IndexMap`]: struct.IndexMap.html
+/// This `struct` is created by the [`IndexMap::iter_mut`] method.
+/// See its documentation for more.
 pub struct IterMut<'a, K, V> {
     iter: slice::IterMut<'a, Bucket<K, V>>,
 }
@@ -160,13 +154,10 @@ impl<K, V> Default for IterMut<'_, K, V> {
     }
 }
 
-/// An owning iterator over the entries of a `IndexMap`.
+/// An owning iterator over the entries of an [`IndexMap`].
 ///
-/// This `struct` is created by the [`into_iter`] method on [`IndexMap`]
-/// (provided by the `IntoIterator` trait). See its documentation for more.
-///
-/// [`into_iter`]: struct.IndexMap.html#method.into_iter
-/// [`IndexMap`]: struct.IndexMap.html
+/// This `struct` is created by the [`IndexMap::into_iter`] method
+/// (provided by the [`IntoIterator`] trait). See its documentation for more.
 pub struct IntoIter<K, V> {
     iter: vec::IntoIter<Bucket<K, V>>,
 }
@@ -222,13 +213,10 @@ impl<K, V> Default for IntoIter<K, V> {
     }
 }
 
-/// A draining iterator over the entries of a `IndexMap`.
+/// A draining iterator over the entries of an [`IndexMap`].
 ///
-/// This `struct` is created by the [`drain`] method on [`IndexMap`]. See its
-/// documentation for more.
-///
-/// [`drain`]: struct.IndexMap.html#method.drain
-/// [`IndexMap`]: struct.IndexMap.html
+/// This `struct` is created by the [`IndexMap::drain`] method.
+/// See its documentation for more.
 pub struct Drain<'a, K, V> {
     iter: vec::Drain<'a, Bucket<K, V>>,
 }
@@ -269,13 +257,10 @@ impl<K: fmt::Debug, V: fmt::Debug> fmt::Debug for Drain<'_, K, V> {
     }
 }
 
-/// An iterator over the keys of a `IndexMap`.
+/// An iterator over the keys of an [`IndexMap`].
 ///
-/// This `struct` is created by the [`keys`] method on [`IndexMap`]. See its
-/// documentation for more.
-///
-/// [`keys`]: struct.IndexMap.html#method.keys
-/// [`IndexMap`]: struct.IndexMap.html
+/// This `struct` is created by the [`IndexMap::keys`] method.
+/// See its documentation for more.
 pub struct Keys<'a, K, V> {
     iter: slice::Iter<'a, Bucket<K, V>>,
 }
@@ -327,7 +312,7 @@ impl<K, V> Default for Keys<'_, K, V> {
     }
 }
 
-/// Access `IndexMap` keys at indexed positions.
+/// Access [`IndexMap`] keys at indexed positions.
 ///
 /// While [`Index<usize> for IndexMap`][values] accesses a map's values,
 /// indexing through [`IndexMap::keys`] offers an alternative to access a map's
@@ -394,13 +379,10 @@ impl<'a, K, V> Index<usize> for Keys<'a, K, V> {
     }
 }
 
-/// An owning iterator over the keys of a `IndexMap`.
+/// An owning iterator over the keys of an [`IndexMap`].
 ///
-/// This `struct` is created by the [`into_keys`] method on [`IndexMap`].
+/// This `struct` is created by the [`IndexMap::into_keys`] method.
 /// See its documentation for more.
-///
-/// [`IndexMap`]: struct.IndexMap.html
-/// [`into_keys`]: struct.IndexMap.html#method.into_keys
 pub struct IntoKeys<K, V> {
     iter: vec::IntoIter<Bucket<K, V>>,
 }
@@ -446,13 +428,10 @@ impl<K, V> Default for IntoKeys<K, V> {
     }
 }
 
-/// An iterator over the values of a `IndexMap`.
+/// An iterator over the values of an [`IndexMap`].
 ///
-/// This `struct` is created by the [`values`] method on [`IndexMap`]. See its
-/// documentation for more.
-///
-/// [`values`]: struct.IndexMap.html#method.values
-/// [`IndexMap`]: struct.IndexMap.html
+/// This `struct` is created by the [`IndexMap::values`] method.
+/// See its documentation for more.
 pub struct Values<'a, K, V> {
     iter: slice::Iter<'a, Bucket<K, V>>,
 }
@@ -504,13 +483,10 @@ impl<K, V> Default for Values<'_, K, V> {
     }
 }
 
-/// A mutable iterator over the values of a `IndexMap`.
+/// A mutable iterator over the values of an [`IndexMap`].
 ///
-/// This `struct` is created by the [`values_mut`] method on [`IndexMap`]. See its
-/// documentation for more.
-///
-/// [`values_mut`]: struct.IndexMap.html#method.values_mut
-/// [`IndexMap`]: struct.IndexMap.html
+/// This `struct` is created by the [`IndexMap::values_mut`] method.
+/// See its documentation for more.
 pub struct ValuesMut<'a, K, V> {
     iter: slice::IterMut<'a, Bucket<K, V>>,
 }
@@ -556,13 +532,10 @@ impl<K, V> Default for ValuesMut<'_, K, V> {
     }
 }
 
-/// An owning iterator over the values of a `IndexMap`.
+/// An owning iterator over the values of an [`IndexMap`].
 ///
-/// This `struct` is created by the [`into_values`] method on [`IndexMap`].
+/// This `struct` is created by the [`IndexMap::into_values`] method.
 /// See its documentation for more.
-///
-/// [`IndexMap`]: struct.IndexMap.html
-/// [`into_values`]: struct.IndexMap.html#method.into_values
 pub struct IntoValues<K, V> {
     iter: vec::IntoIter<Bucket<K, V>>,
 }
