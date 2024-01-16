@@ -266,13 +266,7 @@ impl<T, S> IndexSet<T, S> {
             map: self.map.split_off(at),
         }
     }
-}
 
-impl<T, S> IndexSet<T, S>
-where
-    T: Hash + Eq,
-    S: BuildHasher,
-{
     /// Reserve capacity for `additional` more values.
     ///
     /// Computes in **O(n)** time.
@@ -324,7 +318,13 @@ where
     pub fn shrink_to(&mut self, min_capacity: usize) {
         self.map.shrink_to(min_capacity);
     }
+}
 
+impl<T, S> IndexSet<T, S>
+where
+    T: Hash + Eq,
+    S: BuildHasher,
+{
     /// Insert the value into the set.
     ///
     /// If an equivalent item already exists in the set, it returns
@@ -349,6 +349,33 @@ where
     pub fn insert_full(&mut self, value: T) -> (usize, bool) {
         let (index, existing) = self.map.insert_full(value, ());
         (index, existing.is_none())
+    }
+
+    /// Adds a value to the set, replacing the existing value, if any, that is
+    /// equal to the given one, without altering its insertion order. Returns
+    /// the replaced value.
+    ///
+    /// Computes in **O(1)** time (average).
+    pub fn replace(&mut self, value: T) -> Option<T> {
+        self.replace_full(value).1
+    }
+
+    /// Adds a value to the set, replacing the existing value, if any, that is
+    /// equal to the given one, without altering its insertion order. Returns
+    /// the index of the item and its replaced value.
+    ///
+    /// Computes in **O(1)** time (average).
+    pub fn replace_full(&mut self, value: T) -> (usize, Option<T>) {
+        use super::map::Entry::*;
+
+        match self.map.entry(value) {
+            Vacant(e) => {
+                let index = e.index();
+                e.insert(());
+                (index, None)
+            }
+            Occupied(e) => (e.index(), Some(e.replace_key())),
+        }
     }
 
     /// Return an iterator over the values that are in `self` but not `other`.
@@ -396,7 +423,12 @@ where
     {
         Union::new(self, other)
     }
+}
 
+impl<T, S> IndexSet<T, S>
+where
+    S: BuildHasher,
+{
     /// Return `true` if an equivalent to `value` exists in the set.
     ///
     /// Computes in **O(1)** time (average).
@@ -434,33 +466,6 @@ where
         Q: Hash + Equivalent<T>,
     {
         self.map.get_index_of(value)
-    }
-
-    /// Adds a value to the set, replacing the existing value, if any, that is
-    /// equal to the given one, without altering its insertion order. Returns
-    /// the replaced value.
-    ///
-    /// Computes in **O(1)** time (average).
-    pub fn replace(&mut self, value: T) -> Option<T> {
-        self.replace_full(value).1
-    }
-
-    /// Adds a value to the set, replacing the existing value, if any, that is
-    /// equal to the given one, without altering its insertion order. Returns
-    /// the index of the item and its replaced value.
-    ///
-    /// Computes in **O(1)** time (average).
-    pub fn replace_full(&mut self, value: T) -> (usize, Option<T>) {
-        use super::map::Entry::*;
-
-        match self.map.entry(value) {
-            Vacant(e) => {
-                let index = e.index();
-                e.insert(());
-                (index, None)
-            }
-            Occupied(e) => (e.index(), Some(e.replace_key())),
-        }
     }
 
     /// Remove the value from the set, and return `true` if it was present.
@@ -587,7 +592,9 @@ where
     {
         self.map.shift_remove_full(value).map(|(i, x, ())| (i, x))
     }
+}
 
+impl<T, S> IndexSet<T, S> {
     /// Remove the last value
     ///
     /// This preserves the order of the remaining elements.
@@ -756,9 +763,7 @@ where
     pub fn reverse(&mut self) {
         self.map.reverse()
     }
-}
 
-impl<T, S> IndexSet<T, S> {
     /// Returns a slice of all the values in the set.
     ///
     /// Computes in **O(1)** time.

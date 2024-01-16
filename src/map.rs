@@ -316,13 +316,7 @@ impl<K, V, S> IndexMap<K, V, S> {
             hash_builder: self.hash_builder.clone(),
         }
     }
-}
 
-impl<K, V, S> IndexMap<K, V, S>
-where
-    K: Hash + Eq,
-    S: BuildHasher,
-{
     /// Reserve capacity for `additional` more key-value pairs.
     ///
     /// Computes in **O(n)** time.
@@ -374,13 +368,13 @@ where
     pub fn shrink_to(&mut self, min_capacity: usize) {
         self.core.shrink_to(min_capacity);
     }
+}
 
-    fn hash<Q: ?Sized + Hash>(&self, key: &Q) -> HashValue {
-        let mut h = self.hash_builder.build_hasher();
-        key.hash(&mut h);
-        HashValue(h.finish() as usize)
-    }
-
+impl<K, V, S> IndexMap<K, V, S>
+where
+    K: Hash + Eq,
+    S: BuildHasher,
+{
     /// Insert a key-value pair in the map.
     ///
     /// If an equivalent key already exists in the map: the key remains and
@@ -423,6 +417,17 @@ where
     pub fn entry(&mut self, key: K) -> Entry<'_, K, V> {
         let hash = self.hash(&key);
         self.core.entry(hash, key)
+    }
+}
+
+impl<K, V, S> IndexMap<K, V, S>
+where
+    S: BuildHasher,
+{
+    fn hash<Q: ?Sized + Hash>(&self, key: &Q) -> HashValue {
+        let mut h = self.hash_builder.build_hasher();
+        key.hash(&mut h);
+        HashValue(h.finish() as usize)
     }
 
     /// Return `true` if an equivalent to `key` exists in the map.
@@ -663,7 +668,9 @@ where
         let hash = self.hash(key);
         self.core.shift_remove_full(hash, key)
     }
+}
 
+impl<K, V, S> IndexMap<K, V, S> {
     /// Remove the last key-value pair
     ///
     /// This preserves the order of the remaining elements.
@@ -861,9 +868,7 @@ where
     pub fn reverse(&mut self) {
         self.core.reverse()
     }
-}
 
-impl<K, V, S> IndexMap<K, V, S> {
     /// Returns a slice of all the key-value pairs in the map.
     ///
     /// Computes in **O(1)** time.
@@ -1037,7 +1042,6 @@ impl<K, V, S> IndexMap<K, V, S> {
 impl<K, V, Q: ?Sized, S> Index<&Q> for IndexMap<K, V, S>
 where
     Q: Hash + Equivalent<K>,
-    K: Hash + Eq,
     S: BuildHasher,
 {
     type Output = V;
@@ -1082,7 +1086,6 @@ where
 impl<K, V, Q: ?Sized, S> IndexMut<&Q> for IndexMap<K, V, S>
 where
     Q: Hash + Equivalent<K>,
-    K: Hash + Eq,
     S: BuildHasher,
 {
     /// Returns a mutable reference to the value corresponding to the supplied `key`.

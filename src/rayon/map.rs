@@ -408,9 +408,8 @@ where
 
 impl<K, V, S> IndexMap<K, V, S>
 where
-    K: Hash + Eq + Send,
+    K: Send,
     V: Send,
-    S: BuildHasher,
 {
     /// Sort the map’s key-value pairs in parallel, by the default ordering of the keys.
     pub fn par_sort_keys(&mut self)

@@ -75,9 +75,8 @@ where
 /// ```
 pub fn serialize<K, V, S, T>(map: &IndexMap<K, V, S>, serializer: T) -> Result<T::Ok, T::Error>
 where
-    K: Serialize + Hash + Eq,
+    K: Serialize,
     V: Serialize,
-    S: BuildHasher,
     T: Serializer,
 {
     serializer.collect_seq(map)
