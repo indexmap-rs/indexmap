@@ -484,8 +484,7 @@ where
 /// The following methods **require crate feature `"rayon"`**.
 impl<T, S> IndexSet<T, S>
 where
-    T: Hash + Eq + Send,
-    S: BuildHasher + Send,
+    T: Send,
 {
     /// Sort the set’s values in parallel by their default ordering.
     pub fn par_sort(&mut self)

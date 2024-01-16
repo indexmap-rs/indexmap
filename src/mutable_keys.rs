@@ -54,7 +54,6 @@ pub trait MutableKeys: private::Sealed {
 /// See [`MutableKeys`] for more information.
 impl<K, V, S> MutableKeys for IndexMap<K, V, S>
 where
-    K: Eq + Hash,
     S: BuildHasher,
 {
     type Key = K;
