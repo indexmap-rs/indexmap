@@ -11,7 +11,7 @@ mod raw;
 
 use hashbrown::raw::RawTable;
 
-use crate::vec::{Drain, Vec};
+use crate::vec::{self, Vec};
 use crate::TryReserveError;
 use core::fmt;
 use core::mem;
@@ -160,7 +160,7 @@ impl<K, V> IndexMapCore<K, V> {
         }
     }
 
-    pub(crate) fn drain<R>(&mut self, range: R) -> Drain<'_, Bucket<K, V>>
+    pub(crate) fn drain<R>(&mut self, range: R) -> vec::Drain<'_, Bucket<K, V>>
     where
         R: RangeBounds<usize>,
     {
@@ -190,6 +190,28 @@ impl<K, V> IndexMapCore<K, V> {
         let mut indices = RawTable::with_capacity(entries.len());
         raw::insert_bulk_no_grow(&mut indices, &entries);
         Self { indices, entries }
+    }
+
+    pub(crate) fn split_splice<R>(&mut self, range: R) -> (Self, vec::IntoIter<Bucket<K, V>>)
+    where
+        R: RangeBounds<usize>,
+    {
+        let range = simplify_range(range, self.len());
+        self.erase_indices(range.start, self.entries.len());
+        let entries = self.entries.split_off(range.end);
+        let drained = self.entries.split_off(range.start);
+
+        let mut indices = RawTable::with_capacity(entries.len());
+        raw::insert_bulk_no_grow(&mut indices, &entries);
+        (Self { indices, entries }, drained.into_iter())
+    }
+
+    /// Append from another map without checking whether items already exist.
+    pub(crate) fn append_unchecked(&mut self, other: &mut Self) {
+        self.reserve(other.len());
+        raw::insert_bulk_no_grow(&mut self.indices, &other.entries);
+        self.entries.append(&mut other.entries);
+        other.indices.clear();
     }
 
     /// Reserve capacity for `additional` more key-value pairs.

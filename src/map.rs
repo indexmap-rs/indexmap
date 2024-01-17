@@ -14,7 +14,7 @@ mod tests;
 
 pub use self::core::{Entry, IndexedEntry, OccupiedEntry, VacantEntry};
 pub use self::iter::{
-    Drain, IntoIter, IntoKeys, IntoValues, Iter, IterMut, Keys, Values, ValuesMut,
+    Drain, IntoIter, IntoKeys, IntoValues, Iter, IterMut, Keys, Splice, Values, ValuesMut,
 };
 pub use self::slice::Slice;
 pub use crate::mutable_keys::MutableKeys;
@@ -417,6 +417,44 @@ where
     pub fn entry(&mut self, key: K) -> Entry<'_, K, V> {
         let hash = self.hash(&key);
         self.core.entry(hash, key)
+    }
+
+    /// Creates a splicing iterator that replaces the specified range in the map
+    /// with the given `replace_with` key-value iterator and yields the removed
+    /// items. `replace_with` does not need to be the same length as `range`.
+    ///
+    /// The `range` is removed even if the iterator is not consumed until the
+    /// end. It is unspecified how many elements are removed from the map if the
+    /// `Splice` value is leaked.
+    ///
+    /// The input iterator `replace_with` is only consumed when the `Splice`
+    /// value is dropped. If a key from the iterator matches an existing entry
+    /// in the map (outside of `range`), then the value will be updated in that
+    /// position. Otherwise, the new key-value pair will be inserted in the
+    /// replaced `range`.
+    ///
+    /// ***Panics*** if the starting point is greater than the end point or if
+    /// the end point is greater than the length of the map.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use indexmap::IndexMap;
+    ///
+    /// let mut map = IndexMap::from([(0, '_'), (1, 'a'), (2, 'b'), (3, 'c'), (4, 'd')]);
+    /// let new = [(5, 'E'), (4, 'D'), (3, 'C'), (2, 'B'), (1, 'A')];
+    /// let removed: Vec<_> = map.splice(2..4, new).collect();
+    ///
+    /// // 1 and 4 got new values, while 5, 3, and 2 were newly inserted.
+    /// assert!(map.into_iter().eq([(0, '_'), (1, 'A'), (5, 'E'), (3, 'C'), (2, 'B'), (4, 'D')]));
+    /// assert_eq!(removed, &[(2, 'b'), (3, 'c')]);
+    /// ```
+    pub fn splice<R, I>(&mut self, range: R, replace_with: I) -> Splice<'_, I::IntoIter, K, V, S>
+    where
+        R: RangeBounds<usize>,
+        I: IntoIterator<Item = (K, V)>,
+    {
+        Splice::new(self, range, replace_with.into_iter())
     }
 }
 

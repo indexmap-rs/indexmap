@@ -4,6 +4,7 @@ use alloc::vec::{self, Vec};
 use core::fmt;
 use core::hash::{BuildHasher, Hash};
 use core::iter::{Chain, FusedIterator};
+use core::ops::RangeBounds;
 use core::slice::Iter as SliceIter;
 
 impl<'a, T, S> IntoIterator for &'a IndexSet<T, S> {
@@ -518,5 +519,108 @@ where
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_list().entries(self.clone()).finish()
+    }
+}
+
+/// A splicing iterator for `IndexSet`.
+///
+/// This `struct` is created by [`IndexSet::splice()`].
+/// See its documentation for more.
+pub struct Splice<'a, I, T, S>
+where
+    I: Iterator<Item = T>,
+    T: Hash + Eq,
+    S: BuildHasher,
+{
+    iter: crate::map::Splice<'a, UnitValue<I>, T, (), S>,
+}
+
+impl<'a, I, T, S> Splice<'a, I, T, S>
+where
+    I: Iterator<Item = T>,
+    T: Hash + Eq,
+    S: BuildHasher,
+{
+    pub(super) fn new<R>(set: &'a mut IndexSet<T, S>, range: R, replace_with: I) -> Self
+    where
+        R: RangeBounds<usize>,
+    {
+        Self {
+            iter: set.map.splice(range, UnitValue(replace_with)),
+        }
+    }
+}
+
+impl<I, T, S> Iterator for Splice<'_, I, T, S>
+where
+    I: Iterator<Item = T>,
+    T: Hash + Eq,
+    S: BuildHasher,
+{
+    type Item = T;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        Some(self.iter.next()?.0)
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.iter.size_hint()
+    }
+}
+
+impl<I, T, S> DoubleEndedIterator for Splice<'_, I, T, S>
+where
+    I: Iterator<Item = T>,
+    T: Hash + Eq,
+    S: BuildHasher,
+{
+    fn next_back(&mut self) -> Option<Self::Item> {
+        Some(self.iter.next_back()?.0)
+    }
+}
+
+impl<I, T, S> ExactSizeIterator for Splice<'_, I, T, S>
+where
+    I: Iterator<Item = T>,
+    T: Hash + Eq,
+    S: BuildHasher,
+{
+    fn len(&self) -> usize {
+        self.iter.len()
+    }
+}
+
+impl<I, T, S> FusedIterator for Splice<'_, I, T, S>
+where
+    I: Iterator<Item = T>,
+    T: Hash + Eq,
+    S: BuildHasher,
+{
+}
+
+struct UnitValue<I>(I);
+
+impl<I: Iterator> Iterator for UnitValue<I> {
+    type Item = (I::Item, ());
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.0.next().map(|x| (x, ()))
+    }
+}
+
+impl<'a, I, T, S> fmt::Debug for Splice<'a, I, T, S>
+where
+    I: fmt::Debug + Iterator<Item = T>,
+    T: fmt::Debug + Hash + Eq,
+    S: BuildHasher,
+{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmt::Debug::fmt(&self.iter, f)
+    }
+}
+
+impl<I: fmt::Debug> fmt::Debug for UnitValue<I> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmt::Debug::fmt(&self.0, f)
     }
 }

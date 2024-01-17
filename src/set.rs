@@ -6,7 +6,9 @@ mod slice;
 #[cfg(test)]
 mod tests;
 
-pub use self::iter::{Difference, Drain, Intersection, IntoIter, Iter, SymmetricDifference, Union};
+pub use self::iter::{
+    Difference, Drain, Intersection, IntoIter, Iter, Splice, SymmetricDifference, Union,
+};
 pub use self::slice::Slice;
 
 #[cfg(feature = "rayon")]
@@ -422,6 +424,43 @@ where
         S2: BuildHasher,
     {
         Union::new(self, other)
+    }
+
+    /// Creates a splicing iterator that replaces the specified range in the set
+    /// with the given `replace_with` iterator and yields the removed items.
+    /// `replace_with` does not need to be the same length as `range`.
+    ///
+    /// The `range` is removed even if the iterator is not consumed until the
+    /// end. It is unspecified how many elements are removed from the set if the
+    /// `Splice` value is leaked.
+    ///
+    /// The input iterator `replace_with` is only consumed when the `Splice`
+    /// value is dropped. If a value from the iterator matches an existing entry
+    /// in the set (outside of `range`), then the original will be unchanged.
+    /// Otherwise, the new value will be inserted in the replaced `range`.
+    ///
+    /// ***Panics*** if the starting point is greater than the end point or if
+    /// the end point is greater than the length of the set.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use indexmap::IndexSet;
+    ///
+    /// let mut set = IndexSet::from([0, 1, 2, 3, 4]);
+    /// let new = [5, 4, 3, 2, 1];
+    /// let removed: Vec<_> = set.splice(2..4, new).collect();
+    ///
+    /// // 1 and 4 kept their positions, while 5, 3, and 2 were newly inserted.
+    /// assert!(set.into_iter().eq([0, 1, 5, 3, 2, 4]));
+    /// assert_eq!(removed, &[2, 3]);
+    /// ```
+    pub fn splice<R, I>(&mut self, range: R, replace_with: I) -> Splice<'_, I::IntoIter, T, S>
+    where
+        R: RangeBounds<usize>,
+        I: IntoIterator<Item = T>,
+    {
+        Splice::new(self, range, replace_with.into_iter())
     }
 }
 
