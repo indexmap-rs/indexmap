@@ -4,10 +4,10 @@
 //! matching its unstable state as of Rust 1.75. See the tracking issue
 //! [rust#56167](https://github.com/rust-lang/rust/issues/56167) for more details.
 //!
-//! The trait [`RawEntryV1`] and the `_v1` suffix on its methods are meant to insulate this for
+//! The trait [`RawEntryApiV1`] and the `_v1` suffix on its methods are meant to insulate this for
 //! the future, in case later breaking changes are needed. If the standard library stabilizes its
-//! `hash_raw_entry` feature (or some replacement), matching *inherent* methods will be added
-//! to `IndexMap` without such an opt-in trait.
+//! `hash_raw_entry` feature (or some replacement), matching *inherent* methods will be added to
+//! `IndexMap` without such an opt-in trait.
 
 use super::raw::RawTableEntry;
 use super::{get_hash, IndexMapCore};
@@ -19,7 +19,7 @@ use core::mem;
 /// Opt-in access to the experimental raw entry API.
 ///
 /// See the [`raw_entry_v1`][self] module documentation for more information.
-pub trait RawEntryV1<K, V, S>: private::Sealed {
+pub trait RawEntryApiV1<K, V, S>: private::Sealed {
     /// Creates a raw immutable entry builder for the [`IndexMap`].
     fn raw_entry_v1(&self) -> RawEntryBuilder<'_, K, V, S>;
 
@@ -27,7 +27,7 @@ pub trait RawEntryV1<K, V, S>: private::Sealed {
     fn raw_entry_mut_v1(&mut self) -> RawEntryBuilderMut<'_, K, V, S>;
 }
 
-impl<K, V, S> RawEntryV1<K, V, S> for IndexMap<K, V, S> {
+impl<K, V, S> RawEntryApiV1<K, V, S> for IndexMap<K, V, S> {
     fn raw_entry_v1(&self) -> RawEntryBuilder<'_, K, V, S> {
         RawEntryBuilder { map: self }
     }
@@ -40,7 +40,7 @@ impl<K, V, S> RawEntryV1<K, V, S> for IndexMap<K, V, S> {
 /// A builder for computing where in an [`IndexMap`] a key-value pair would be stored.
 ///
 /// This `struct` is created by the [`IndexMap::raw_entry_v1`] method, provided by the
-/// [`RawEntryV1`] trait. See its documentation for more.
+/// [`RawEntryApiV1`] trait. See its documentation for more.
 pub struct RawEntryBuilder<'a, K, V, S> {
     map: &'a IndexMap<K, V, S>,
 }
@@ -81,7 +81,7 @@ impl<'a, K, V, S> RawEntryBuilder<'a, K, V, S> {
 /// A builder for computing where in an [`IndexMap`] a key-value pair would be stored.
 ///
 /// This `struct` is created by the [`IndexMap::raw_entry_mut_v1`] method, provided by the
-/// [`RawEntryV1`] trait. See its documentation for more.
+/// [`RawEntryApiV1`] trait. See its documentation for more.
 pub struct RawEntryBuilderMut<'a, K, V, S> {
     map: &'a mut IndexMap<K, V, S>,
 }

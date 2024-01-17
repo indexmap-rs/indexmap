@@ -12,7 +12,7 @@ pub mod serde_seq;
 #[cfg(test)]
 mod tests;
 
-pub use self::core::raw_entry_v1::{self, RawEntryV1};
+pub use self::core::raw_entry_v1::{self, RawEntryApiV1};
 pub use self::core::{Entry, IndexedEntry, OccupiedEntry, VacantEntry};
 pub use self::iter::{
     Drain, IntoIter, IntoKeys, IntoValues, Iter, IterMut, Keys, Splice, Values, ValuesMut,
