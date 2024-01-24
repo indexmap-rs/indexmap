@@ -21,9 +21,145 @@ use core::mem;
 /// See the [`raw_entry_v1`][self] module documentation for more information.
 pub trait RawEntryApiV1<K, V, S>: private::Sealed {
     /// Creates a raw immutable entry builder for the [`IndexMap`].
+    ///
+    /// Raw entries provide the lowest level of control for searching and
+    /// manipulating a map. They must be manually initialized with a hash and
+    /// then manually searched.
+    ///
+    /// This is useful for
+    /// * Hash memoization
+    /// * Using a search key that doesn't work with the [`Equivalent`] trait
+    /// * Using custom comparison logic without newtype wrappers
+    ///
+    /// Unless you are in such a situation, higher-level and more foolproof APIs like
+    /// [`get`][IndexMap::get] should be preferred.
+    ///
+    /// Immutable raw entries have very limited use; you might instead want
+    /// [`raw_entry_mut_v1`][Self::raw_entry_mut_v1].
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use core::hash::{BuildHasher, Hash};
+    /// use indexmap::map::{IndexMap, RawEntryApiV1};
+    ///
+    /// let mut map = IndexMap::new();
+    /// map.extend([("a", 100), ("b", 200), ("c", 300)]);
+    ///
+    /// fn compute_hash<K: Hash + ?Sized, S: BuildHasher>(hash_builder: &S, key: &K) -> u64 {
+    ///     use core::hash::Hasher;
+    ///     let mut state = hash_builder.build_hasher();
+    ///     key.hash(&mut state);
+    ///     state.finish()
+    /// }
+    ///
+    /// for k in ["a", "b", "c", "d", "e", "f"] {
+    ///     let hash = compute_hash(map.hasher(), k);
+    ///     let v = map.get(k).cloned();
+    ///     let kv = v.as_ref().map(|v| (&k, v));
+    ///
+    ///     println!("Key: {} and value: {:?}", k, v);
+    ///
+    ///     assert_eq!(map.raw_entry_v1().from_key(k), kv);
+    ///     assert_eq!(map.raw_entry_v1().from_hash(hash, |q| *q == k), kv);
+    ///     assert_eq!(map.raw_entry_v1().from_key_hashed_nocheck(hash, k), kv);
+    /// }
+    /// ```
     fn raw_entry_v1(&self) -> RawEntryBuilder<'_, K, V, S>;
 
     /// Creates a raw entry builder for the [`IndexMap`].
+    ///
+    /// Raw entries provide the lowest level of control for searching and
+    /// manipulating a map. They must be manually initialized with a hash and
+    /// then manually searched. After this, insertions into a vacant entry
+    /// still require an owned key to be provided.
+    ///
+    /// Raw entries are useful for such exotic situations as:
+    ///
+    /// * Hash memoization
+    /// * Deferring the creation of an owned key until it is known to be required
+    /// * Using a search key that doesn't work with the [`Equivalent`] trait
+    /// * Using custom comparison logic without newtype wrappers
+    ///
+    /// Because raw entries provide much more low-level control, it's much easier
+    /// to put the `IndexMap` into an inconsistent state which, while memory-safe,
+    /// will cause the map to produce seemingly random results. Higher-level and more
+    /// foolproof APIs like [`entry`][IndexMap::entry] should be preferred when possible.
+    ///
+    /// Raw entries give mutable access to the keys. This must not be used
+    /// to modify how the key would compare or hash, as the map will not re-evaluate
+    /// where the key should go, meaning the keys may become "lost" if their
+    /// location does not reflect their state. For instance, if you change a key
+    /// so that the map now contains keys which compare equal, search may start
+    /// acting erratically, with two keys randomly masking each other. Implementations
+    /// are free to assume this doesn't happen (within the limits of memory-safety).
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use core::hash::{BuildHasher, Hash};
+    /// use indexmap::map::{IndexMap, RawEntryApiV1};
+    /// use indexmap::map::raw_entry_v1::RawEntryMut;
+    ///
+    /// let mut map = IndexMap::new();
+    /// map.extend([("a", 100), ("b", 200), ("c", 300)]);
+    ///
+    /// fn compute_hash<K: Hash + ?Sized, S: BuildHasher>(hash_builder: &S, key: &K) -> u64 {
+    ///     use core::hash::Hasher;
+    ///     let mut state = hash_builder.build_hasher();
+    ///     key.hash(&mut state);
+    ///     state.finish()
+    /// }
+    ///
+    /// // Existing key (insert and update)
+    /// match map.raw_entry_mut_v1().from_key("a") {
+    ///     RawEntryMut::Vacant(_) => unreachable!(),
+    ///     RawEntryMut::Occupied(mut view) => {
+    ///         assert_eq!(view.get(), &100);
+    ///         let v = view.get_mut();
+    ///         let new_v = (*v) * 10;
+    ///         *v = new_v;
+    ///         assert_eq!(view.insert(1111), 1000);
+    ///     }
+    /// }
+    ///
+    /// assert_eq!(map["a"], 1111);
+    /// assert_eq!(map.len(), 3);
+    ///
+    /// // Existing key (take)
+    /// let hash = compute_hash(map.hasher(), "c");
+    /// match map.raw_entry_mut_v1().from_key_hashed_nocheck(hash, "c") {
+    ///     RawEntryMut::Vacant(_) => unreachable!(),
+    ///     RawEntryMut::Occupied(view) => {
+    ///         assert_eq!(view.shift_remove_entry(), ("c", 300));
+    ///     }
+    /// }
+    /// assert_eq!(map.raw_entry_v1().from_key("c"), None);
+    /// assert_eq!(map.len(), 2);
+    ///
+    /// // Nonexistent key (insert and update)
+    /// let key = "d";
+    /// let hash = compute_hash(map.hasher(), key);
+    /// match map.raw_entry_mut_v1().from_hash(hash, |q| *q == key) {
+    ///     RawEntryMut::Occupied(_) => unreachable!(),
+    ///     RawEntryMut::Vacant(view) => {
+    ///         let (k, value) = view.insert("d", 4000);
+    ///         assert_eq!((*k, *value), ("d", 4000));
+    ///         *value = 40000;
+    ///     }
+    /// }
+    /// assert_eq!(map["d"], 40000);
+    /// assert_eq!(map.len(), 3);
+    ///
+    /// match map.raw_entry_mut_v1().from_hash(hash, |q| *q == key) {
+    ///     RawEntryMut::Vacant(_) => unreachable!(),
+    ///     RawEntryMut::Occupied(view) => {
+    ///         assert_eq!(view.swap_remove_entry(), ("d", 40000));
+    ///     }
+    /// }
+    /// assert_eq!(map.get("d"), None);
+    /// assert_eq!(map.len(), 2);
+    /// ```
     fn raw_entry_mut_v1(&mut self) -> RawEntryBuilderMut<'_, K, V, S>;
 }
 
