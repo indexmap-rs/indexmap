@@ -332,6 +332,33 @@ impl<K, V> IndexMapCore<K, V> {
         }
     }
 
+    /// Same as `insert_full`, except it also replaces the key
+    pub(crate) fn replace_full(
+        &mut self,
+        hash: HashValue,
+        key: K,
+        value: V,
+    ) -> (usize, Option<(K, V)>)
+    where
+        K: Eq,
+    {
+        match self.find_or_insert(hash, &key) {
+            Ok(i) => {
+                let entry = &mut self.entries[i];
+                let kv = (
+                    mem::replace(&mut entry.key, key),
+                    mem::replace(&mut entry.value, value),
+                );
+                (i, Some(kv))
+            }
+            Err(i) => {
+                debug_assert_eq!(i, self.entries.len());
+                self.push_entry(hash, key, value);
+                (i, None)
+            }
+        }
+    }
+
     /// Remove an entry by shifting all entries that follow it
     pub(crate) fn shift_remove_full<Q>(&mut self, hash: HashValue, key: &Q) -> Option<(usize, K, V)>
     where

@@ -9,7 +9,7 @@ impl<K, V> IndexMapCore<K, V> {
         K: Eq,
     {
         match self.raw_entry(hash, |k| *k == key) {
-            Ok(raw) => Entry::Occupied(OccupiedEntry { raw, key }),
+            Ok(raw) => Entry::Occupied(OccupiedEntry { raw }),
             Err(map) => Entry::Vacant(VacantEntry { map, hash, key }),
         }
     }
@@ -124,7 +124,6 @@ impl<K: fmt::Debug, V: fmt::Debug> fmt::Debug for Entry<'_, K, V> {
 /// It is part of the [`Entry`] enum.
 pub struct OccupiedEntry<'a, K, V> {
     raw: RawTableEntry<'a, K, V>,
-    key: K,
 }
 
 impl<'a, K, V> OccupiedEntry<'a, K, V> {
@@ -160,12 +159,6 @@ impl<'a, K, V> OccupiedEntry<'a, K, V> {
     /// with a lifetime bound to the map itself.
     pub fn into_mut(self) -> &'a mut V {
         &mut self.raw.into_bucket().value
-    }
-
-    /// Put the new key in the occupied entry's key slot
-    pub(crate) fn replace_key(mut self) -> K {
-        let old_key = &mut self.raw.bucket_mut().key;
-        mem::replace(old_key, self.key)
     }
 
     /// Sets the value of the entry to `value`, and returns the entry's old value.

@@ -234,6 +234,18 @@ fn replace_order() {
 }
 
 #[test]
+fn replace_change() {
+    // Check pointers to make sure it really changes
+    let mut set = indexset!(vec![42]);
+    let old_ptr = set[0].as_ptr();
+    let new = set[0].clone();
+    let new_ptr = new.as_ptr();
+    assert_ne!(old_ptr, new_ptr);
+    let replaced = set.replace(new).unwrap();
+    assert_eq!(replaced.as_ptr(), old_ptr);
+}
+
+#[test]
 fn grow() {
     let insert = [0, 4, 2, 12, 8, 7, 11];
     let not_present = [1, 3, 6, 9, 10];

@@ -368,15 +368,10 @@ where
     ///
     /// Computes in **O(1)** time (average).
     pub fn replace_full(&mut self, value: T) -> (usize, Option<T>) {
-        use super::map::Entry::*;
-
-        match self.map.entry(value) {
-            Vacant(e) => {
-                let index = e.index();
-                e.insert(());
-                (index, None)
-            }
-            Occupied(e) => (e.index(), Some(e.replace_key())),
+        let hash = self.map.hash(&value);
+        match self.map.core.replace_full(hash, value, ()) {
+            (i, Some((replaced, ()))) => (i, Some(replaced)),
+            (i, None) => (i, None),
         }
     }
 
