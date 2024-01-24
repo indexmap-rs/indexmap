@@ -12,6 +12,7 @@
 use super::raw::RawTableEntry;
 use super::{get_hash, IndexMapCore};
 use crate::{Equivalent, HashValue, IndexMap};
+use core::fmt;
 use core::hash::{BuildHasher, Hash, Hasher};
 use core::marker::PhantomData;
 use core::mem;
@@ -181,6 +182,12 @@ pub struct RawEntryBuilder<'a, K, V, S> {
     map: &'a IndexMap<K, V, S>,
 }
 
+impl<K, V, S> fmt::Debug for RawEntryBuilder<'_, K, V, S> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("RawEntryBuilder").finish_non_exhaustive()
+    }
+}
+
 impl<'a, K, V, S> RawEntryBuilder<'a, K, V, S> {
     /// Access an entry by key.
     pub fn from_key<Q: ?Sized>(self, key: &Q) -> Option<(&'a K, &'a V)>
@@ -220,6 +227,12 @@ impl<'a, K, V, S> RawEntryBuilder<'a, K, V, S> {
 /// [`RawEntryApiV1`] trait. See its documentation for more.
 pub struct RawEntryBuilderMut<'a, K, V, S> {
     map: &'a mut IndexMap<K, V, S>,
+}
+
+impl<K, V, S> fmt::Debug for RawEntryBuilderMut<'_, K, V, S> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("RawEntryBuilderMut").finish_non_exhaustive()
+    }
 }
 
 impl<'a, K, V, S> RawEntryBuilderMut<'a, K, V, S> {
@@ -267,6 +280,17 @@ pub enum RawEntryMut<'a, K, V, S> {
     Occupied(RawOccupiedEntryMut<'a, K, V, S>),
     /// Vacant slot (no equivalent key in the map).
     Vacant(RawVacantEntryMut<'a, K, V, S>),
+}
+
+impl<K: fmt::Debug, V: fmt::Debug, S> fmt::Debug for RawEntryMut<'_, K, V, S> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let mut tuple = f.debug_tuple("RawEntryMut");
+        match self {
+            Self::Vacant(v) => tuple.field(v),
+            Self::Occupied(o) => tuple.field(o),
+        };
+        tuple.finish()
+    }
 }
 
 impl<'a, K, V, S> RawEntryMut<'a, K, V, S> {
@@ -318,6 +342,15 @@ impl<'a, K, V, S> RawEntryMut<'a, K, V, S> {
 pub struct RawOccupiedEntryMut<'a, K, V, S> {
     raw: RawTableEntry<'a, K, V>,
     hash_builder: PhantomData<&'a S>,
+}
+
+impl<K: fmt::Debug, V: fmt::Debug, S> fmt::Debug for RawOccupiedEntryMut<'_, K, V, S> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("RawOccupiedEntryMut")
+            .field("key", self.key())
+            .field("value", self.get())
+            .finish_non_exhaustive()
+    }
 }
 
 impl<'a, K, V, S> RawOccupiedEntryMut<'a, K, V, S> {
@@ -476,6 +509,12 @@ impl<'a, K, V, S> RawOccupiedEntryMut<'a, K, V, S> {
 pub struct RawVacantEntryMut<'a, K, V, S> {
     map: &'a mut IndexMapCore<K, V>,
     hash_builder: &'a S,
+}
+
+impl<K, V, S> fmt::Debug for RawVacantEntryMut<'_, K, V, S> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("RawVacantEntryMut").finish_non_exhaustive()
+    }
 }
 
 impl<'a, K, V, S> RawVacantEntryMut<'a, K, V, S> {
