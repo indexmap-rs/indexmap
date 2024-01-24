@@ -113,10 +113,12 @@ impl<'a, K, V> Entry<'a, K, V> {
 
 impl<K: fmt::Debug, V: fmt::Debug> fmt::Debug for Entry<'_, K, V> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match *self {
-            Entry::Vacant(ref v) => f.debug_tuple(stringify!(Entry)).field(v).finish(),
-            Entry::Occupied(ref o) => f.debug_tuple(stringify!(Entry)).field(o).finish(),
-        }
+        let mut tuple = f.debug_tuple("Entry");
+        match self {
+            Entry::Vacant(v) => tuple.field(v),
+            Entry::Occupied(o) => tuple.field(o),
+        };
+        tuple.finish()
     }
 }
 
@@ -239,7 +241,7 @@ impl<'a, K, V> OccupiedEntry<'a, K, V> {
 
 impl<K: fmt::Debug, V: fmt::Debug> fmt::Debug for OccupiedEntry<'_, K, V> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct(stringify!(OccupiedEntry))
+        f.debug_struct("OccupiedEntry")
             .field("key", self.key())
             .field("value", self.get())
             .finish()
@@ -284,9 +286,7 @@ impl<'a, K, V> VacantEntry<'a, K, V> {
 
 impl<K: fmt::Debug, V> fmt::Debug for VacantEntry<'_, K, V> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_tuple(stringify!(VacantEntry))
-            .field(self.key())
-            .finish()
+        f.debug_tuple("VacantEntry").field(self.key()).finish()
     }
 }
 
@@ -387,7 +387,7 @@ impl<'a, K, V> IndexedEntry<'a, K, V> {
 
 impl<K: fmt::Debug, V: fmt::Debug> fmt::Debug for IndexedEntry<'_, K, V> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct(stringify!(IndexedEntry))
+        f.debug_struct("IndexedEntry")
             .field("index", &self.index)
             .field("key", self.key())
             .field("value", self.get())
