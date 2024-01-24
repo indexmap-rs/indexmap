@@ -7,6 +7,7 @@
 //!
 //! However, we should probably not let this show in the public API or docs.
 
+mod entry;
 mod raw;
 
 use hashbrown::raw::RawTable;
@@ -19,6 +20,8 @@ use core::ops::RangeBounds;
 
 use crate::util::simplify_range;
 use crate::{Bucket, Entries, Equivalent, HashValue};
+
+pub use entry::{Entry, IndexedEntry, OccupiedEntry, VacantEntry};
 
 /// Core of the map that does not depend on S
 pub(crate) struct IndexMapCore<K, V> {
@@ -329,6 +332,33 @@ impl<K, V> IndexMapCore<K, V> {
         }
     }
 
+    /// Same as `insert_full`, except it also replaces the key
+    pub(crate) fn replace_full(
+        &mut self,
+        hash: HashValue,
+        key: K,
+        value: V,
+    ) -> (usize, Option<(K, V)>)
+    where
+        K: Eq,
+    {
+        match self.find_or_insert(hash, &key) {
+            Ok(i) => {
+                let entry = &mut self.entries[i];
+                let kv = (
+                    mem::replace(&mut entry.key, key),
+                    mem::replace(&mut entry.value, value),
+                );
+                (i, Some(kv))
+            }
+            Err(i) => {
+                debug_assert_eq!(i, self.entries.len());
+                self.push_entry(hash, key, value);
+                (i, None)
+            }
+        }
+    }
+
     /// Remove an entry by shifting all entries that follow it
     pub(crate) fn shift_remove_full<Q>(&mut self, hash: HashValue, key: &Q) -> Option<(usize, K, V)>
     where
@@ -564,352 +594,6 @@ impl<K, V> IndexMapCore<K, V> {
         for i in self.indices_mut() {
             *i = len - *i - 1;
         }
-    }
-}
-
-/// Entry for an existing key-value pair in an [`IndexMap`][crate::IndexMap]
-/// or a vacant location to insert one.
-pub enum Entry<'a, K, V> {
-    /// Existing slot with equivalent key.
-    Occupied(OccupiedEntry<'a, K, V>),
-    /// Vacant slot (no equivalent key in the map).
-    Vacant(VacantEntry<'a, K, V>),
-}
-
-impl<'a, K, V> Entry<'a, K, V> {
-    /// Inserts the given default value in the entry if it is vacant and returns a mutable
-    /// reference to it. Otherwise a mutable reference to an already existent value is returned.
-    ///
-    /// Computes in **O(1)** time (amortized average).
-    pub fn or_insert(self, default: V) -> &'a mut V {
-        match self {
-            Entry::Occupied(entry) => entry.into_mut(),
-            Entry::Vacant(entry) => entry.insert(default),
-        }
-    }
-
-    /// Inserts the result of the `call` function in the entry if it is vacant and returns a mutable
-    /// reference to it. Otherwise a mutable reference to an already existent value is returned.
-    ///
-    /// Computes in **O(1)** time (amortized average).
-    pub fn or_insert_with<F>(self, call: F) -> &'a mut V
-    where
-        F: FnOnce() -> V,
-    {
-        match self {
-            Entry::Occupied(entry) => entry.into_mut(),
-            Entry::Vacant(entry) => entry.insert(call()),
-        }
-    }
-
-    /// Inserts the result of the `call` function with a reference to the entry's key if it is
-    /// vacant, and returns a mutable reference to the new value. Otherwise a mutable reference to
-    /// an already existent value is returned.
-    ///
-    /// Computes in **O(1)** time (amortized average).
-    pub fn or_insert_with_key<F>(self, call: F) -> &'a mut V
-    where
-        F: FnOnce(&K) -> V,
-    {
-        match self {
-            Entry::Occupied(entry) => entry.into_mut(),
-            Entry::Vacant(entry) => {
-                let value = call(&entry.key);
-                entry.insert(value)
-            }
-        }
-    }
-
-    /// Gets a reference to the entry's key, either within the map if occupied,
-    /// or else the new key that was used to find the entry.
-    pub fn key(&self) -> &K {
-        match *self {
-            Entry::Occupied(ref entry) => entry.key(),
-            Entry::Vacant(ref entry) => entry.key(),
-        }
-    }
-
-    /// Return the index where the key-value pair exists or will be inserted.
-    pub fn index(&self) -> usize {
-        match *self {
-            Entry::Occupied(ref entry) => entry.index(),
-            Entry::Vacant(ref entry) => entry.index(),
-        }
-    }
-
-    /// Modifies the entry if it is occupied.
-    pub fn and_modify<F>(self, f: F) -> Self
-    where
-        F: FnOnce(&mut V),
-    {
-        match self {
-            Entry::Occupied(mut o) => {
-                f(o.get_mut());
-                Entry::Occupied(o)
-            }
-            x => x,
-        }
-    }
-
-    /// Inserts a default-constructed value in the entry if it is vacant and returns a mutable
-    /// reference to it. Otherwise a mutable reference to an already existent value is returned.
-    ///
-    /// Computes in **O(1)** time (amortized average).
-    pub fn or_default(self) -> &'a mut V
-    where
-        V: Default,
-    {
-        match self {
-            Entry::Occupied(entry) => entry.into_mut(),
-            Entry::Vacant(entry) => entry.insert(V::default()),
-        }
-    }
-}
-
-impl<K: fmt::Debug, V: fmt::Debug> fmt::Debug for Entry<'_, K, V> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match *self {
-            Entry::Vacant(ref v) => f.debug_tuple(stringify!(Entry)).field(v).finish(),
-            Entry::Occupied(ref o) => f.debug_tuple(stringify!(Entry)).field(o).finish(),
-        }
-    }
-}
-
-pub use self::raw::OccupiedEntry;
-
-// Extra methods that don't threaten the unsafe encapsulation.
-impl<K, V> OccupiedEntry<'_, K, V> {
-    /// Sets the value of the entry to `value`, and returns the entry's old value.
-    pub fn insert(&mut self, value: V) -> V {
-        mem::replace(self.get_mut(), value)
-    }
-
-    /// Remove the key, value pair stored in the map for this entry, and return the value.
-    ///
-    /// **NOTE:** This is equivalent to [`.swap_remove()`][Self::swap_remove], replacing this
-    /// entry's position with the last element, and it is deprecated in favor of calling that
-    /// explicitly. If you need to preserve the relative order of the keys in the map, use
-    /// [`.shift_remove()`][Self::shift_remove] instead.
-    #[deprecated(note = "`remove` disrupts the map order -- \
-        use `swap_remove` or `shift_remove` for explicit behavior.")]
-    pub fn remove(self) -> V {
-        self.swap_remove()
-    }
-
-    /// Remove the key, value pair stored in the map for this entry, and return the value.
-    ///
-    /// Like [`Vec::swap_remove`], the pair is removed by swapping it with the
-    /// last element of the map and popping it off. **This perturbs
-    /// the position of what used to be the last element!**
-    ///
-    /// Computes in **O(1)** time (average).
-    pub fn swap_remove(self) -> V {
-        self.swap_remove_entry().1
-    }
-
-    /// Remove the key, value pair stored in the map for this entry, and return the value.
-    ///
-    /// Like [`Vec::remove`], the pair is removed by shifting all of the
-    /// elements that follow it, preserving their relative order.
-    /// **This perturbs the index of all of those elements!**
-    ///
-    /// Computes in **O(n)** time (average).
-    pub fn shift_remove(self) -> V {
-        self.shift_remove_entry().1
-    }
-
-    /// Remove and return the key, value pair stored in the map for this entry
-    ///
-    /// **NOTE:** This is equivalent to [`.swap_remove_entry()`][Self::swap_remove_entry],
-    /// replacing this entry's position with the last element, and it is deprecated in favor of
-    /// calling that explicitly. If you need to preserve the relative order of the keys in the map,
-    /// use [`.shift_remove_entry()`][Self::shift_remove_entry] instead.
-    #[deprecated(note = "`remove_entry` disrupts the map order -- \
-        use `swap_remove_entry` or `shift_remove_entry` for explicit behavior.")]
-    pub fn remove_entry(self) -> (K, V) {
-        self.swap_remove_entry()
-    }
-
-    /// Remove and return the key, value pair stored in the map for this entry
-    ///
-    /// Like [`Vec::swap_remove`], the pair is removed by swapping it with the
-    /// last element of the map and popping it off. **This perturbs
-    /// the position of what used to be the last element!**
-    ///
-    /// Computes in **O(1)** time (average).
-    pub fn swap_remove_entry(self) -> (K, V) {
-        let (map, index) = self.remove_index();
-        map.swap_remove_finish(index)
-    }
-
-    /// Remove and return the key, value pair stored in the map for this entry
-    ///
-    /// Like [`Vec::remove`], the pair is removed by shifting all of the
-    /// elements that follow it, preserving their relative order.
-    /// **This perturbs the index of all of those elements!**
-    ///
-    /// Computes in **O(n)** time (average).
-    pub fn shift_remove_entry(self) -> (K, V) {
-        let (map, index) = self.remove_index();
-        map.shift_remove_finish(index)
-    }
-}
-
-impl<K: fmt::Debug, V: fmt::Debug> fmt::Debug for OccupiedEntry<'_, K, V> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct(stringify!(OccupiedEntry))
-            .field("key", self.key())
-            .field("value", self.get())
-            .finish()
-    }
-}
-
-/// A view into a vacant entry in an [`IndexMap`][crate::IndexMap].
-/// It is part of the [`Entry`] enum.
-pub struct VacantEntry<'a, K, V> {
-    map: &'a mut IndexMapCore<K, V>,
-    hash: HashValue,
-    key: K,
-}
-
-impl<'a, K, V> VacantEntry<'a, K, V> {
-    /// Gets a reference to the key that was used to find the entry.
-    pub fn key(&self) -> &K {
-        &self.key
-    }
-
-    /// Takes ownership of the key, leaving the entry vacant.
-    pub fn into_key(self) -> K {
-        self.key
-    }
-
-    /// Return the index where the key-value pair will be inserted.
-    pub fn index(&self) -> usize {
-        self.map.indices.len()
-    }
-
-    /// Inserts the entry's key and the given value into the map, and returns a mutable reference
-    /// to the value.
-    pub fn insert(self, value: V) -> &'a mut V {
-        let i = self.index();
-        let Self { map, hash, key } = self;
-        map.indices.insert(hash.get(), i, get_hash(&map.entries));
-        debug_assert_eq!(i, map.entries.len());
-        map.push_entry(hash, key, value);
-        &mut map.entries[i].value
-    }
-}
-
-impl<K: fmt::Debug, V> fmt::Debug for VacantEntry<'_, K, V> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_tuple(stringify!(VacantEntry))
-            .field(self.key())
-            .finish()
-    }
-}
-
-/// A view into an occupied entry in an [`IndexMap`][crate::IndexMap] obtained by index.
-///
-/// This `struct` is created from the [`get_index_entry`][crate::IndexMap::get_index_entry] method.
-pub struct IndexedEntry<'a, K, V> {
-    map: &'a mut IndexMapCore<K, V>,
-    // We have a mutable reference to the map, which keeps the index
-    // valid and pointing to the correct entry.
-    index: usize,
-}
-
-impl<'a, K, V> IndexedEntry<'a, K, V> {
-    pub(crate) fn new(map: &'a mut IndexMapCore<K, V>, index: usize) -> Self {
-        Self { map, index }
-    }
-
-    /// Gets a reference to the entry's key in the map.
-    pub fn key(&self) -> &K {
-        &self.map.entries[self.index].key
-    }
-
-    /// Gets a reference to the entry's value in the map.
-    pub fn get(&self) -> &V {
-        &self.map.entries[self.index].value
-    }
-
-    /// Gets a mutable reference to the entry's value in the map.
-    ///
-    /// If you need a reference which may outlive the destruction of the
-    /// `IndexedEntry` value, see [`into_mut`][Self::into_mut].
-    pub fn get_mut(&mut self) -> &mut V {
-        &mut self.map.entries[self.index].value
-    }
-
-    /// Sets the value of the entry to `value`, and returns the entry's old value.
-    pub fn insert(&mut self, value: V) -> V {
-        mem::replace(self.get_mut(), value)
-    }
-
-    /// Return the index of the key-value pair
-    #[inline]
-    pub fn index(&self) -> usize {
-        self.index
-    }
-
-    /// Converts into a mutable reference to the entry's value in the map,
-    /// with a lifetime bound to the map itself.
-    pub fn into_mut(self) -> &'a mut V {
-        &mut self.map.entries[self.index].value
-    }
-
-    /// Remove and return the key, value pair stored in the map for this entry
-    ///
-    /// Like [`Vec::swap_remove`], the pair is removed by swapping it with the
-    /// last element of the map and popping it off. **This perturbs
-    /// the position of what used to be the last element!**
-    ///
-    /// Computes in **O(1)** time (average).
-    pub fn swap_remove_entry(self) -> (K, V) {
-        self.map.swap_remove_index(self.index).unwrap()
-    }
-
-    /// Remove and return the key, value pair stored in the map for this entry
-    ///
-    /// Like [`Vec::remove`], the pair is removed by shifting all of the
-    /// elements that follow it, preserving their relative order.
-    /// **This perturbs the index of all of those elements!**
-    ///
-    /// Computes in **O(n)** time (average).
-    pub fn shift_remove_entry(self) -> (K, V) {
-        self.map.shift_remove_index(self.index).unwrap()
-    }
-
-    /// Remove the key, value pair stored in the map for this entry, and return the value.
-    ///
-    /// Like [`Vec::swap_remove`], the pair is removed by swapping it with the
-    /// last element of the map and popping it off. **This perturbs
-    /// the position of what used to be the last element!**
-    ///
-    /// Computes in **O(1)** time (average).
-    pub fn swap_remove(self) -> V {
-        self.swap_remove_entry().1
-    }
-
-    /// Remove the key, value pair stored in the map for this entry, and return the value.
-    ///
-    /// Like [`Vec::remove`], the pair is removed by shifting all of the
-    /// elements that follow it, preserving their relative order.
-    /// **This perturbs the index of all of those elements!**
-    ///
-    /// Computes in **O(n)** time (average).
-    pub fn shift_remove(self) -> V {
-        self.shift_remove_entry().1
-    }
-}
-
-impl<K: fmt::Debug, V: fmt::Debug> fmt::Debug for IndexedEntry<'_, K, V> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct(stringify!(IndexedEntry))
-            .field("index", &self.index)
-            .field("key", self.key())
-            .field("value", self.get())
-            .finish()
     }
 }
 
