@@ -2,6 +2,11 @@
 #![deny(unsafe_code)]
 #![warn(rust_2018_idioms)]
 #![no_std]
+#![cfg_attr(
+    feature = "debugger_visualizer",
+    feature(debugger_visualizer),
+    debugger_visualizer(natvis_file = "../debug_metadata/indexmap.natvis")
+)]
 
 //! [`IndexMap`] is a hash table where the iteration order of the key-value
 //! pairs is independent of the hash values of the keys.
