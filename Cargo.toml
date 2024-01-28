@@ -59,3 +59,6 @@ rustdoc-args = ["--cfg", "docsrs"]
 
 [workspace]
 members = ["test-nostd", "test-serde"]
+
+[lints.clippy]
+style = "allow"
