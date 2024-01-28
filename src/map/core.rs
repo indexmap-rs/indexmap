@@ -10,6 +10,8 @@
 mod entry;
 mod raw;
 
+pub mod raw_entry_v1;
+
 use hashbrown::raw::RawTable;
 
 use crate::vec::{self, Vec};
