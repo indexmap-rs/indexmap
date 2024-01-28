@@ -1,3 +1,27 @@
+- 2.2.0
+
+  - The new `IndexMap::get_index_entry` method finds an entry by its index for
+    in-place manipulation.
+
+  - The `Keys` iterator now implements `Index<usize>` for quick access to the
+    entry's key, compared to indexing the map to get the value.
+
+  - The new `IndexMap::splice` and `IndexSet::splice` methods will drain the
+    given range as an iterator, and then replace that range with entries from
+    an input iterator.
+
+  - The new trait `RawEntryApiV1` offers opt-in access to a raw entry API for
+    `IndexMap`, corresponding to the unstable API on `HashSet` as of Rust 1.75.
+
+  - Many `IndexMap` and `IndexSet` methods have relaxed their type constraints,
+    e.g. removing `K: Hash` on methods that don't actually need to hash.
+
+  - Removal methods `remove`, `remove_entry`, and `take` are now deprecated
+    in favor of their `shift_` or `swap_` prefixed variants, which are more
+    explicit about their effect on the index and order of remaining items.
+    The deprecated methods will remain to guide drop-in replacements from
+    `HashMap` and `HashSet` toward the prefixed methods.
+
 - 2.1.0
 
   - Empty slices can now be created with `map::Slice::{new, new_mut}` and
@@ -6,7 +30,7 @@
 
   - `IndexMap`, `IndexSet`, and their respective `Slice`s all have binary
     search methods for sorted data: map `binary_search_keys` and set
-    `binary_search` for plain comparision, `binary_search_by` for custom
+    `binary_search` for plain comparison, `binary_search_by` for custom
     comparators, `binary_search_by_key` for key extraction, and
     `partition_point` for boolean conditions.
 
