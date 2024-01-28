@@ -31,7 +31,7 @@ default-features = false
 features = ["raw"]
 
 [dev-dependencies]
-itertools = "0.11"
+itertools = "0.12"
 rand = {version = "0.8", features = ["small_rng"] }
 quickcheck = { version = "1.0", default-features = false }
 fnv = "1.0"
@@ -59,3 +59,6 @@ rustdoc-args = ["--cfg", "docsrs"]
 
 [workspace]
 members = ["test-nostd", "test-serde"]
+
+[lints.clippy]
+style = "allow"
