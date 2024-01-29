@@ -1,3 +1,9 @@
+- 2.2.1
+
+  - Corrected the signature of `RawOccupiedEntryMut::into_key(self) -> &'a mut K`,
+    This a breaking change from 2.2.0, but that version was published for less
+    than a day and has now been yanked.
+
 - 2.2.0
 
   - The new `IndexMap::get_index_entry` method finds an entry by its index for
