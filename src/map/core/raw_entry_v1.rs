@@ -384,8 +384,8 @@ impl<'a, K, V, S> RawOccupiedEntryMut<'a, K, V, S> {
     /// Note that this is not the key that was used to find the entry. There may be an observable
     /// difference if the key type has any distinguishing features outside of `Hash` and `Eq`, like
     /// extra fields or the memory address of an allocation.
-    pub fn into_key(&mut self) -> &mut K {
-        &mut self.raw.bucket_mut().key
+    pub fn into_key(self) -> &'a mut K {
+        &mut self.raw.into_bucket().key
     }
 
     /// Gets a reference to the entry's value in the map.
