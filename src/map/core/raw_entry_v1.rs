@@ -56,14 +56,18 @@ pub trait RawEntryApiV1<K, V, S>: private::Sealed {
     ///
     /// for k in ["a", "b", "c", "d", "e", "f"] {
     ///     let hash = compute_hash(map.hasher(), k);
-    ///     let v = map.get(k).cloned();
-    ///     let kv = v.as_ref().map(|v| (&k, v));
+    ///     let i = map.get_index_of(k);
+    ///     let v = map.get(k);
+    ///     let kv = map.get_key_value(k);
+    ///     let ikv = map.get_full(k);
     ///
     ///     println!("Key: {} and value: {:?}", k, v);
     ///
     ///     assert_eq!(map.raw_entry_v1().from_key(k), kv);
     ///     assert_eq!(map.raw_entry_v1().from_hash(hash, |q| *q == k), kv);
     ///     assert_eq!(map.raw_entry_v1().from_key_hashed_nocheck(hash, k), kv);
+    ///     assert_eq!(map.raw_entry_v1().from_hash_full(hash, |q| *q == k), ikv);
+    ///     assert_eq!(map.raw_entry_v1().index_from_hash(hash, |q| *q == k), i);
     /// }
     /// ```
     fn raw_entry_v1(&self) -> RawEntryBuilder<'_, K, V, S>;
@@ -116,6 +120,7 @@ pub trait RawEntryApiV1<K, V, S>: private::Sealed {
     /// match map.raw_entry_mut_v1().from_key("a") {
     ///     RawEntryMut::Vacant(_) => unreachable!(),
     ///     RawEntryMut::Occupied(mut view) => {
+    ///         assert_eq!(view.index(), 0);
     ///         assert_eq!(view.get(), &100);
     ///         let v = view.get_mut();
     ///         let new_v = (*v) * 10;
@@ -132,6 +137,7 @@ pub trait RawEntryApiV1<K, V, S>: private::Sealed {
     /// match map.raw_entry_mut_v1().from_key_hashed_nocheck(hash, "c") {
     ///     RawEntryMut::Vacant(_) => unreachable!(),
     ///     RawEntryMut::Occupied(view) => {
+    ///         assert_eq!(view.index(), 2);
     ///         assert_eq!(view.shift_remove_entry(), ("c", 300));
     ///     }
     /// }
@@ -144,6 +150,7 @@ pub trait RawEntryApiV1<K, V, S>: private::Sealed {
     /// match map.raw_entry_mut_v1().from_hash(hash, |q| *q == key) {
     ///     RawEntryMut::Occupied(_) => unreachable!(),
     ///     RawEntryMut::Vacant(view) => {
+    ///         assert_eq!(view.index(), 2);
     ///         let (k, value) = view.insert("d", 4000);
     ///         assert_eq!((*k, *value), ("d", 4000));
     ///         *value = 40000;
@@ -155,6 +162,7 @@ pub trait RawEntryApiV1<K, V, S>: private::Sealed {
     /// match map.raw_entry_mut_v1().from_hash(hash, |q| *q == key) {
     ///     RawEntryMut::Vacant(_) => unreachable!(),
     ///     RawEntryMut::Occupied(view) => {
+    ///         assert_eq!(view.index(), 2);
     ///         assert_eq!(view.swap_remove_entry(), ("d", 40000));
     ///     }
     /// }
@@ -205,19 +213,39 @@ impl<'a, K, V, S> RawEntryBuilder<'a, K, V, S> {
     {
         let hash = HashValue(hash as usize);
         let i = self.map.core.get_index_of(hash, key)?;
-        Some(self.map.core.entries[i].refs())
+        self.map.get_index(i)
     }
 
     /// Access an entry by hash.
-    pub fn from_hash<F>(self, hash: u64, mut is_match: F) -> Option<(&'a K, &'a V)>
+    pub fn from_hash<F>(self, hash: u64, is_match: F) -> Option<(&'a K, &'a V)>
+    where
+        F: FnMut(&K) -> bool,
+    {
+        let map = self.map;
+        let i = self.index_from_hash(hash, is_match)?;
+        map.get_index(i)
+    }
+
+    /// Access an entry by hash, including its index.
+    pub fn from_hash_full<F>(self, hash: u64, is_match: F) -> Option<(usize, &'a K, &'a V)>
+    where
+        F: FnMut(&K) -> bool,
+    {
+        let map = self.map;
+        let i = self.index_from_hash(hash, is_match)?;
+        let (key, value) = map.get_index(i)?;
+        Some((i, key, value))
+    }
+
+    /// Access the index of an entry by hash.
+    pub fn index_from_hash<F>(self, hash: u64, mut is_match: F) -> Option<usize>
     where
         F: FnMut(&K) -> bool,
     {
         let hash = HashValue(hash as usize);
         let entries = &*self.map.core.entries;
         let eq = move |&i: &usize| is_match(&entries[i].key);
-        let i = *self.map.core.indices.get(hash.get(), eq)?;
-        Some(entries[i].refs())
+        self.map.core.indices.get(hash.get(), eq).copied()
     }
 }
 
@@ -294,6 +322,15 @@ impl<K: fmt::Debug, V: fmt::Debug, S> fmt::Debug for RawEntryMut<'_, K, V, S> {
 }
 
 impl<'a, K, V, S> RawEntryMut<'a, K, V, S> {
+    /// Return the index where the key-value pair exists or may be inserted.
+    #[inline]
+    pub fn index(&self) -> usize {
+        match self {
+            Self::Occupied(entry) => entry.index(),
+            Self::Vacant(entry) => entry.index(),
+        }
+    }
+
     /// Inserts the given default key and value in the entry if it is vacant and returns mutable
     /// references to them. Otherwise mutable references to an already existent pair are returned.
     pub fn or_insert(self, default_key: K, default_value: V) -> (&'a mut K, &'a mut V)
