@@ -1,3 +1,8 @@
+- 2.2.2
+
+  - Added indexing methods to raw entries: `RawEntryBuilder::from_hash_full`,
+    `RawEntryBuilder::index_from_hash`, and `RawEntryMut::index`.
+
 - 2.2.1
 
   - Corrected the signature of `RawOccupiedEntryMut::into_key(self) -> &'a mut K`,
