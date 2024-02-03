@@ -1,3 +1,5 @@
+use crate::map::{ExtractCore, IndexMapCore};
+
 use super::{Bucket, Entries, IndexSet, Slice};
 
 use alloc::vec::{self, Vec};
@@ -624,5 +626,55 @@ where
 impl<I: fmt::Debug> fmt::Debug for UnitValue<I> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         fmt::Debug::fmt(&self.0, f)
+    }
+}
+
+/// An extracting iterator for `IndexSet`.
+///
+/// This `struct` is created by [`IndexSet::extract_if()`].
+/// See its documentation for more.
+pub struct ExtractIf<'a, T, F>
+where
+    F: FnMut(&T) -> bool,
+{
+    inner: ExtractCore<'a, T, ()>,
+    pred: F,
+}
+
+impl<T, F> ExtractIf<'_, T, F>
+where
+    F: FnMut(&T) -> bool,
+{
+    pub(super) fn new(core: &mut IndexMapCore<T, ()>, pred: F) -> ExtractIf<'_, T, F> {
+        ExtractIf {
+            inner: core.extract(),
+            pred,
+        }
+    }
+}
+
+impl<T, F> Iterator for ExtractIf<'_, T, F>
+where
+    F: FnMut(&T) -> bool,
+{
+    type Item = T;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.inner
+            .extract_if(|bucket| (self.pred)(bucket.key_ref()))
+            .map(Bucket::key)
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        (0, Some(self.inner.remaining()))
+    }
+}
+
+impl<'a, T, F> fmt::Debug for ExtractIf<'a, T, F>
+where
+    F: FnMut(&T) -> bool,
+{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("ExtractIf").finish_non_exhaustive()
     }
 }

@@ -1,5 +1,4 @@
-use super::core::IndexMapCore;
-use super::{Bucket, Entries, IndexMap, Slice};
+use super::{Bucket, Entries, ExtractCore, IndexMap, IndexMapCore, Slice};
 
 use alloc::vec::{self, Vec};
 use core::fmt;
@@ -772,5 +771,58 @@ where
             .field("drain", &self.drain)
             .field("replace_with", &self.replace_with)
             .finish()
+    }
+}
+
+/// An extracting iterator for `IndexMap`.
+///
+/// This `struct` is created by [`IndexMap::extract_if()`].
+/// See its documentation for more.
+pub struct ExtractIf<'a, K, V, F>
+where
+    F: FnMut(&K, &mut V) -> bool,
+{
+    inner: ExtractCore<'a, K, V>,
+    pred: F,
+}
+
+impl<K, V, F> ExtractIf<'_, K, V, F>
+where
+    F: FnMut(&K, &mut V) -> bool,
+{
+    pub(super) fn new(core: &mut IndexMapCore<K, V>, pred: F) -> ExtractIf<'_, K, V, F> {
+        ExtractIf {
+            inner: core.extract(),
+            pred,
+        }
+    }
+}
+
+impl<K, V, F> Iterator for ExtractIf<'_, K, V, F>
+where
+    F: FnMut(&K, &mut V) -> bool,
+{
+    type Item = (K, V);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.inner
+            .extract_if(|bucket| {
+                let (key, value) = bucket.ref_mut();
+                (self.pred)(key, value)
+            })
+            .map(Bucket::key_value)
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        (0, Some(self.inner.remaining()))
+    }
+}
+
+impl<'a, K, V, F> fmt::Debug for ExtractIf<'a, K, V, F>
+where
+    F: FnMut(&K, &mut V) -> bool,
+{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("ExtractIf").finish_non_exhaustive()
     }
 }
