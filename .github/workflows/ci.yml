@@ -38,6 +38,11 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/cache@v4
+        if: matrix.rust == '1.63.0'
+        with:
+          path: ~/.cargo/registry/index
+          key: cargo-git-index
       - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{ matrix.rust }}
@@ -67,6 +72,11 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/cache@v4
+        if: matrix.rust == '1.63.0'
+        with:
+          path: ~/.cargo/registry/index
+          key: cargo-git-index
       - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{ matrix.rust }}
@@ -99,6 +109,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cargo/registry/index
+          key: cargo-git-index
       - uses: dtolnay/rust-toolchain@nightly
       - uses: dtolnay/rust-toolchain@1.63.0 # MSRV
       - uses: taiki-e/install-action@v2
