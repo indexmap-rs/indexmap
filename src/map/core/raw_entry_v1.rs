@@ -10,7 +10,7 @@
 //! `IndexMap` without such an opt-in trait.
 
 use super::raw::RawTableEntry;
-use super::{get_hash, IndexMapCore};
+use super::IndexMapCore;
 use crate::{Equivalent, HashValue, IndexMap};
 use core::fmt;
 use core::hash::{BuildHasher, Hash, Hasher};
@@ -539,6 +539,30 @@ impl<'a, K, V, S> RawOccupiedEntryMut<'a, K, V, S> {
         let (map, index) = self.raw.remove_index();
         map.shift_remove_finish(index)
     }
+
+    /// Moves the position of the entry to a new index
+    /// by shifting all other entries in-between.
+    ///
+    /// * If `self.index() < to`, the other pairs will shift down while the targeted pair moves up.
+    /// * If `self.index() > to`, the other pairs will shift up while the targeted pair moves down.
+    ///
+    /// ***Panics*** if `to` is out of bounds.
+    ///
+    /// Computes in **O(n)** time (average).
+    pub fn move_index(self, to: usize) {
+        let (map, index) = self.raw.into_inner();
+        map.move_index(index, to);
+    }
+
+    /// Swaps the position of entry with another.
+    ///
+    /// ***Panics*** if the `other` index is out of bounds.
+    ///
+    /// Computes in **O(1)** time (average).
+    pub fn swap_indices(self, other: usize) {
+        let (map, index) = self.raw.into_inner();
+        map.swap_indices(index, other)
+    }
 }
 
 /// A view into a vacant raw entry in an [`IndexMap`].
@@ -575,13 +599,43 @@ impl<'a, K, V, S> RawVacantEntryMut<'a, K, V, S> {
     /// Inserts the given key and value into the map with the provided hash,
     /// and returns mutable references to them.
     pub fn insert_hashed_nocheck(self, hash: u64, key: K, value: V) -> (&'a mut K, &'a mut V) {
-        let i = self.index();
-        let map = self.map;
         let hash = HashValue(hash as usize);
-        map.indices.insert(hash.get(), i, get_hash(&map.entries));
-        debug_assert_eq!(i, map.entries.len());
-        map.push_entry(hash, key, value);
-        map.entries[i].muts()
+        let i = self.map.insert_unique(hash, key, value);
+        self.map.entries[i].muts()
+    }
+
+    /// Inserts the given key and value into the map at the given index,
+    /// shifting others to the right, and returns mutable references to them.
+    ///
+    /// ***Panics*** if `index` is out of bounds.
+    ///
+    /// Computes in **O(n)** time (average).
+    pub fn shift_insert(self, index: usize, key: K, value: V) -> (&'a mut K, &'a mut V)
+    where
+        K: Hash,
+        S: BuildHasher,
+    {
+        let mut h = self.hash_builder.build_hasher();
+        key.hash(&mut h);
+        self.shift_insert_hashed_nocheck(index, h.finish(), key, value)
+    }
+
+    /// Inserts the given key and value into the map with the provided hash
+    /// at the given index, and returns mutable references to them.
+    ///
+    /// ***Panics*** if `index` is out of bounds.
+    ///
+    /// Computes in **O(n)** time (average).
+    pub fn shift_insert_hashed_nocheck(
+        self,
+        index: usize,
+        hash: u64,
+        key: K,
+        value: V,
+    ) -> (&'a mut K, &'a mut V) {
+        let hash = HashValue(hash as usize);
+        self.map.shift_insert_unique(index, hash, key, value);
+        self.map.entries[index].muts()
     }
 }
 

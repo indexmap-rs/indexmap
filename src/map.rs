@@ -1051,6 +1051,8 @@ impl<K, V, S> IndexMap<K, V, S> {
     /// Swaps the position of two key-value pairs in the map.
     ///
     /// ***Panics*** if `a` or `b` are out of bounds.
+    ///
+    /// Computes in **O(1)** time (average).
     pub fn swap_indices(&mut self, a: usize, b: usize) {
         self.core.swap_indices(a, b)
     }

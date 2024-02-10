@@ -311,6 +311,17 @@ impl<K, V> IndexMapCore<K, V> {
         self.entries.push(Bucket { hash, key, value });
     }
 
+    /// Insert a key-value pair in `entries` at a particular index,
+    /// *without* checking whether it already exists.
+    fn insert_entry(&mut self, index: usize, hash: HashValue, key: K, value: V) {
+        if self.entries.len() == self.entries.capacity() {
+            // Reserve our own capacity synced to the indices,
+            // rather than letting `Vec::insert` just double it.
+            self.reserve_entries(1);
+        }
+        self.entries.insert(index, Bucket { hash, key, value });
+    }
+
     /// Return the index in `entries` where an equivalent key can be found
     pub(crate) fn get_index_of<Q>(&self, hash: HashValue, key: &Q) -> Option<usize>
     where
@@ -359,6 +370,29 @@ impl<K, V> IndexMapCore<K, V> {
                 (i, None)
             }
         }
+    }
+
+    fn insert_unique(&mut self, hash: HashValue, key: K, value: V) -> usize {
+        let i = self.indices.len();
+        self.indices.insert(hash.get(), i, get_hash(&self.entries));
+        debug_assert_eq!(i, self.entries.len());
+        self.push_entry(hash, key, value);
+        i
+    }
+
+    fn shift_insert_unique(&mut self, index: usize, hash: HashValue, key: K, value: V) {
+        let end = self.indices.len();
+        assert!(index <= end);
+        // Increment others first so we don't have duplicate indices.
+        self.increment_indices(index, end);
+        let entries = &*self.entries;
+        self.indices.insert(hash.get(), index, move |&i| {
+            // Adjust for the incremented indices to find hashes.
+            debug_assert_ne!(i, index);
+            let i = if i < index { i } else { i - 1 };
+            entries[i].hash.get()
+        });
+        self.insert_entry(index, hash, key, value);
     }
 
     /// Remove an entry by shifting all entries that follow it

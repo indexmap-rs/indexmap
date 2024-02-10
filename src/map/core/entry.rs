@@ -1,5 +1,5 @@
 use super::raw::RawTableEntry;
-use super::{get_hash, IndexMapCore};
+use super::IndexMapCore;
 use crate::HashValue;
 use core::{fmt, mem};
 
@@ -237,6 +237,30 @@ impl<'a, K, V> OccupiedEntry<'a, K, V> {
         let (map, index) = self.raw.remove_index();
         map.shift_remove_finish(index)
     }
+
+    /// Moves the position of the entry to a new index
+    /// by shifting all other entries in-between.
+    ///
+    /// * If `self.index() < to`, the other pairs will shift down while the targeted pair moves up.
+    /// * If `self.index() > to`, the other pairs will shift up while the targeted pair moves down.
+    ///
+    /// ***Panics*** if `to` is out of bounds.
+    ///
+    /// Computes in **O(n)** time (average).
+    pub fn move_index(self, to: usize) {
+        let (map, index) = self.raw.into_inner();
+        map.move_index(index, to);
+    }
+
+    /// Swaps the position of entry with another.
+    ///
+    /// ***Panics*** if the `other` index is out of bounds.
+    ///
+    /// Computes in **O(1)** time (average).
+    pub fn swap_indices(self, other: usize) {
+        let (map, index) = self.raw.into_inner();
+        map.swap_indices(index, other)
+    }
 }
 
 impl<K: fmt::Debug, V: fmt::Debug> fmt::Debug for OccupiedEntry<'_, K, V> {
@@ -275,12 +299,21 @@ impl<'a, K, V> VacantEntry<'a, K, V> {
     /// Inserts the entry's key and the given value into the map, and returns a mutable reference
     /// to the value.
     pub fn insert(self, value: V) -> &'a mut V {
-        let i = self.index();
         let Self { map, hash, key } = self;
-        map.indices.insert(hash.get(), i, get_hash(&map.entries));
-        debug_assert_eq!(i, map.entries.len());
-        map.push_entry(hash, key, value);
+        let i = map.insert_unique(hash, key, value);
         &mut map.entries[i].value
+    }
+
+    /// Inserts the entry's key and the given value into the map at the given index,
+    /// shifting others to the right, and returns a mutable reference to the value.
+    ///
+    /// ***Panics*** if `index` is out of bounds.
+    ///
+    /// Computes in **O(n)** time (average).
+    pub fn shift_insert(self, index: usize, value: V) -> &'a mut V {
+        let Self { map, hash, key } = self;
+        map.shift_insert_unique(index, hash, key, value);
+        &mut map.entries[index].value
     }
 }
 
@@ -382,6 +415,28 @@ impl<'a, K, V> IndexedEntry<'a, K, V> {
     /// Computes in **O(n)** time (average).
     pub fn shift_remove(self) -> V {
         self.shift_remove_entry().1
+    }
+
+    /// Moves the position of the entry to a new index
+    /// by shifting all other entries in-between.
+    ///
+    /// * If `self.index() < to`, the other pairs will shift down while the targeted pair moves up.
+    /// * If `self.index() > to`, the other pairs will shift up while the targeted pair moves down.
+    ///
+    /// ***Panics*** if `to` is out of bounds.
+    ///
+    /// Computes in **O(n)** time (average).
+    pub fn move_index(self, to: usize) {
+        self.map.move_index(self.index, to);
+    }
+
+    /// Swaps the position of entry with another.
+    ///
+    /// ***Panics*** if the `other` index is out of bounds.
+    ///
+    /// Computes in **O(1)** time (average).
+    pub fn swap_indices(self, other: usize) {
+        self.map.swap_indices(self.index, other)
     }
 }
 
