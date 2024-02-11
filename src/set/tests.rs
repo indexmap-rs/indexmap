@@ -144,6 +144,14 @@ fn shift_insert() {
     for (i, v) in (0..insert.len()).zip(set.iter()) {
         assert_eq!(set.get_index(i).unwrap(), v);
     }
+
+    // "insert" that moves an existing entry
+    set.shift_insert(0, insert[0]);
+    assert_eq!(set.iter().count(), insert.len());
+    assert_eq!(insert[0], set[0]);
+    for (a, b) in insert[1..].iter().rev().zip(set.iter().skip(1)) {
+        assert_eq!(a, b);
+    }
 }
 
 #[test]
