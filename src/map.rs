@@ -26,6 +26,7 @@ pub use crate::rayon::map as rayon;
 use ::core::cmp::Ordering;
 use ::core::fmt;
 use ::core::hash::{BuildHasher, Hash, Hasher};
+use ::core::mem;
 use ::core::ops::{Index, IndexMut, RangeBounds};
 use alloc::boxed::Box;
 use alloc::vec::Vec;
@@ -380,14 +381,14 @@ where
     ///
     /// If an equivalent key already exists in the map: the key remains and
     /// retains in its place in the order, its corresponding value is updated
-    /// with `value` and the older value is returned inside `Some(_)`.
+    /// with `value`, and the older value is returned inside `Some(_)`.
     ///
     /// If no equivalent key existed in the map: the new key-value pair is
     /// inserted, last in order, and `None` is returned.
     ///
     /// Computes in **O(1)** time (amortized average).
     ///
-    /// See also [`entry`][Self::entry] if you you want to insert *or* modify,
+    /// See also [`entry`][Self::entry] if you want to insert *or* modify,
     /// or [`insert_full`][Self::insert_full] if you need to get the index of
     /// the corresponding key-value pair.
     pub fn insert(&mut self, key: K, value: V) -> Option<V> {
@@ -398,17 +399,46 @@ where
     ///
     /// If an equivalent key already exists in the map: the key remains and
     /// retains in its place in the order, its corresponding value is updated
-    /// with `value` and the older value is returned inside `(index, Some(_))`.
+    /// with `value`, and the older value is returned inside `(index, Some(_))`.
     ///
     /// If no equivalent key existed in the map: the new key-value pair is
     /// inserted, last in order, and `(index, None)` is returned.
     ///
     /// Computes in **O(1)** time (amortized average).
     ///
-    /// See also [`entry`][Self::entry] if you you want to insert *or* modify.
+    /// See also [`entry`][Self::entry] if you want to insert *or* modify.
     pub fn insert_full(&mut self, key: K, value: V) -> (usize, Option<V>) {
         let hash = self.hash(&key);
         self.core.insert_full(hash, key, value)
+    }
+
+    /// Insert a key-value pair in the map at the given index.
+    ///
+    /// If an equivalent key already exists in the map: the key remains and
+    /// is moved to the new position in the map, its corresponding value is updated
+    /// with `value`, and the older value is returned inside `Some(_)`.
+    ///
+    /// If no equivalent key existed in the map: the new key-value pair is
+    /// inserted at the given index, and `None` is returned.
+    ///
+    /// ***Panics*** if `index` is out of bounds.
+    ///
+    /// Computes in **O(n)** time (average).
+    ///
+    /// See also [`entry`][Self::entry] if you want to insert *or* modify,
+    /// perhaps only using the index for new entries with [`VacantEntry::shift_insert`].
+    pub fn shift_insert(&mut self, index: usize, key: K, value: V) -> Option<V> {
+        match self.entry(key) {
+            Entry::Occupied(mut entry) => {
+                let old = mem::replace(entry.get_mut(), value);
+                entry.move_index(index);
+                Some(old)
+            }
+            Entry::Vacant(entry) => {
+                entry.shift_insert(index, value);
+                None
+            }
+        }
     }
 
     /// Get the given key’s corresponding entry in the map for insertion and/or
