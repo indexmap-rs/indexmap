@@ -3,7 +3,6 @@
 //! mostly in dealing with its bucket "pointers".
 
 use super::{equivalent, get_hash, Bucket, HashValue, IndexMapCore};
-use core::fmt;
 use hashbrown::raw::RawTable;
 
 type RawBucket = hashbrown::raw::Bucket<usize>;
@@ -21,9 +20,12 @@ pub(super) fn insert_bulk_no_grow<K, V>(indices: &mut RawTable<usize>, entries: 
     }
 }
 
+#[cfg(feature = "test_debug")]
 pub(super) struct DebugIndices<'a>(pub &'a RawTable<usize>);
-impl fmt::Debug for DebugIndices<'_> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+
+#[cfg(feature = "test_debug")]
+impl core::fmt::Debug for DebugIndices<'_> {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         // SAFETY: we're not letting any of the buckets escape this function
         let indices = unsafe { self.0.iter().map(|raw_bucket| *raw_bucket.as_ref()) };
         f.debug_list().entries(indices).finish()

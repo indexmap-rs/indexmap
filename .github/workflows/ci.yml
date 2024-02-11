@@ -93,7 +93,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@beta
         with:
           components: clippy
-      - run: cargo clippy
+      - run: cargo clippy --all-features
 
   miri:
     runs-on: ubuntu-latest
