@@ -543,6 +543,9 @@ impl<'a, K, V, S> RawOccupiedEntryMut<'a, K, V, S> {
     /// Moves the position of the entry to a new index
     /// by shifting all other entries in-between.
     ///
+    /// This is equivalent to [`IndexMap::move_index`]
+    /// coming `from` the current [`.index()`][Self::index].
+    ///
     /// * If `self.index() < to`, the other pairs will shift down while the targeted pair moves up.
     /// * If `self.index() > to`, the other pairs will shift up while the targeted pair moves down.
     ///
@@ -555,6 +558,9 @@ impl<'a, K, V, S> RawOccupiedEntryMut<'a, K, V, S> {
     }
 
     /// Swaps the position of entry with another.
+    ///
+    /// This is equivalent to [`IndexMap::swap_indices`]
+    /// with the current [`.index()`][Self::index] as one of the two being swapped.
     ///
     /// ***Panics*** if the `other` index is out of bounds.
     ///
