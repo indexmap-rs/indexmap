@@ -19,8 +19,8 @@ use std::hash::Hash;
 use std::ops::Bound;
 use std::ops::Deref;
 
-use indexmap::map::Entry as OEntry;
-use std::collections::hash_map::Entry as HEntry;
+use indexmap::map::Entry;
+use std::collections::hash_map::Entry as StdEntry;
 
 fn set<'a, T: 'a, I>(iter: I) -> HashSet<T>
 where
@@ -248,7 +248,7 @@ quickcheck_limit! {
         test_map_swap_indices(vec, from, to, |map, from, to| {
             let key = map.keys()[from];
             match map.entry(key) {
-                OEntry::Occupied(entry) => entry.swap_indices(to),
+                Entry::Occupied(entry) => entry.swap_indices(to),
                 _ => unreachable!(),
             }
         })
@@ -303,7 +303,7 @@ quickcheck_limit! {
         test_map_move_index(vec, from, to, |map, from, to| {
             let key = map.keys()[from];
             match map.entry(key) {
-                OEntry::Occupied(entry) => entry.move_index(to),
+                Entry::Occupied(entry) => entry.move_index(to),
                 _ => unreachable!(),
             }
         })
@@ -329,7 +329,7 @@ quickcheck_limit! {
     fn occupied_entry_shift_insert(vec: Vec<u8>, i: u8) -> TestResult {
         test_map_shift_insert(vec, i, |map, i, key| {
             match map.entry(key) {
-                OEntry::Vacant(entry) => entry.shift_insert(i, ()),
+                Entry::Vacant(entry) => entry.shift_insert(i, ()),
                 _ => unreachable!(),
             };
         })
@@ -473,10 +473,10 @@ where
                 b.remove(k);
             }
             RemoveEntry(ref k) => {
-                if let OEntry::Occupied(ent) = a.entry(k.clone()) {
+                if let Entry::Occupied(ent) = a.entry(k.clone()) {
                     ent.swap_remove_entry();
                 }
-                if let HEntry::Occupied(ent) = b.entry(k.clone()) {
+                if let StdEntry::Occupied(ent) = b.entry(k.clone()) {
                     ent.remove_entry();
                 }
             }
