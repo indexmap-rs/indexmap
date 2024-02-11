@@ -353,6 +353,20 @@ where
         (index, existing.is_none())
     }
 
+    /// Insert the value into the set at the given index.
+    ///
+    /// If an equivalent item already exists in the set, it returns
+    /// `false` leaving the original value in the set, but moving it to
+    /// the new position in the set. Otherwise, it inserts the new
+    /// item at the given index and returns `true`.
+    ///
+    /// ***Panics*** if `index` is out of bounds.
+    ///
+    /// Computes in **O(n)** time (average).
+    pub fn shift_insert(&mut self, index: usize, value: T) -> bool {
+        self.map.shift_insert(index, value, ()).is_none()
+    }
+
     /// Adds a value to the set, replacing the existing value, if any, that is
     /// equal to the given one, without altering its insertion order. Returns
     /// the replaced value.
