@@ -16,7 +16,6 @@ use hashbrown::raw::RawTable;
 
 use crate::vec::{self, Vec};
 use crate::TryReserveError;
-use core::fmt;
 use core::mem;
 use core::ops::RangeBounds;
 
@@ -83,12 +82,13 @@ where
     }
 }
 
-impl<K, V> fmt::Debug for IndexMapCore<K, V>
+#[cfg(feature = "test_debug")]
+impl<K, V> core::fmt::Debug for IndexMapCore<K, V>
 where
-    K: fmt::Debug,
-    V: fmt::Debug,
+    K: core::fmt::Debug,
+    V: core::fmt::Debug,
 {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         f.debug_struct("IndexMapCore")
             .field("indices", &raw::DebugIndices(&self.indices))
             .field("entries", &self.entries)
