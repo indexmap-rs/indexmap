@@ -109,6 +109,33 @@ fn insert_order() {
 }
 
 #[test]
+fn shift_insert() {
+    let insert = [0, 4, 2, 12, 8, 7, 11, 5, 3, 17, 19, 22, 23];
+    let mut map = IndexMap::new();
+
+    for &elt in &insert {
+        map.shift_insert(0, elt, ());
+    }
+
+    assert_eq!(map.keys().count(), map.len());
+    assert_eq!(map.keys().count(), insert.len());
+    for (a, b) in insert.iter().rev().zip(map.keys()) {
+        assert_eq!(a, b);
+    }
+    for (i, k) in (0..insert.len()).zip(map.keys()) {
+        assert_eq!(map.get_index(i).unwrap().0, k);
+    }
+
+    // "insert" that moves an existing entry
+    map.shift_insert(0, insert[0], ());
+    assert_eq!(map.keys().count(), insert.len());
+    assert_eq!(insert[0], map.keys()[0]);
+    for (a, b) in insert[1..].iter().rev().zip(map.keys().skip(1)) {
+        assert_eq!(a, b);
+    }
+}
+
+#[test]
 fn grow() {
     let insert = [0, 4, 2, 12, 8, 7, 11];
     let not_present = [1, 3, 6, 9, 10];

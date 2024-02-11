@@ -144,4 +144,10 @@ impl<'a, K, V> RawTableEntry<'a, K, V> {
         let (index, _slot) = unsafe { self.map.indices.remove(self.raw_bucket) };
         (self.map, index)
     }
+
+    /// Take no action, just return the index and the original map reference.
+    pub(super) fn into_inner(self) -> (&'a mut IndexMapCore<K, V>, usize) {
+        let index = self.index();
+        (self.map, index)
+    }
 }
