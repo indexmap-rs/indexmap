@@ -902,6 +902,8 @@ impl<T, S> IndexSet<T, S> {
     /// Swaps the position of two values in the set.
     ///
     /// ***Panics*** if `a` or `b` are out of bounds.
+    ///
+    /// Computes in **O(1)** time (average).
     pub fn swap_indices(&mut self, a: usize, b: usize) {
         self.map.swap_indices(a, b)
     }
