@@ -1,5 +1,16 @@
 # Releases
 
+## 2.2.3
+
+- Added `move_index` and `swap_indices` methods to `IndexedEntry`,
+  `OccupiedEntry`, and `RawOccupiedEntryMut`, functioning like the existing
+  methods on `IndexMap`.
+- Added `shift_insert` methods on `VacantEntry` and `RawVacantEntryMut`, as
+  well as `shift_insert_hashed_nocheck` on the latter, to insert the new entry
+  at a particular index.
+- Added `shift_insert` methods on `IndexMap` and `IndexSet` to insert a new
+  entry at a particular index, or else move an existing entry there.
+
 ## 2.2.2
 
 - Added indexing methods to raw entries: `RawEntryBuilder::from_hash_full`,
