@@ -35,6 +35,8 @@
 //!   to [`IndexMap`] and [`IndexSet`]. Alternative implementations for
 //!   (de)serializing [`IndexMap`] as an ordered sequence are available in the
 //!   [`map::serde_seq`] module.
+//! * `borsh`: Adds implementations for [`BorshSerialize`] and [`BorshDeserialize`]
+//!   to [`IndexMap`] and [`IndexSet`].
 //! * `arbitrary`: Adds implementations for the [`arbitrary::Arbitrary`] trait
 //!   to [`IndexMap`] and [`IndexSet`].
 //! * `quickcheck`: Adds implementations for the [`quickcheck::Arbitrary`] trait
@@ -46,6 +48,8 @@
 //! [`no_std`]: #no-standard-library-targets
 //! [`Serialize`]: `::serde::Serialize`
 //! [`Deserialize`]: `::serde::Deserialize`
+//! [`BorshSerialize`]: `::borsh::BorshSerialize`
+//! [`BorshDeserialize`]: `::borsh::BorshDeserialize`
 //! [`arbitrary::Arbitrary`]: `::arbitrary::Arbitrary`
 //! [`quickcheck::Arbitrary`]: `::quickcheck::Arbitrary`
 //!
@@ -110,6 +114,8 @@ use alloc::vec::{self, Vec};
 mod arbitrary;
 #[macro_use]
 mod macros;
+#[cfg(feature = "borsh")]
+mod borsh;
 mod mutable_keys;
 #[cfg(feature = "serde")]
 mod serde;
