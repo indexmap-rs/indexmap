@@ -19,6 +19,7 @@ equivalent = { version = "1.0", default-features = false }
 arbitrary = { version = "1.0", optional = true, default-features = false }
 quickcheck = { version = "1.0", optional = true, default-features = false }
 serde = { version = "1.0", optional = true, default-features = false }
+borsh = { version = "1.2", optional = true, default-features = false }
 rayon = { version = "1.5.3", optional = true }
 
 # Internal feature, only used when building as part of rustc,
@@ -54,7 +55,7 @@ no-dev-version = true
 tag-name = "{{version}}"
 
 [package.metadata.docs.rs]
-features = ["arbitrary", "quickcheck", "serde", "rayon"]
+features = ["arbitrary", "quickcheck", "serde", "borsh", "rayon"]
 rustdoc-args = ["--cfg", "docsrs"]
 
 [workspace]
