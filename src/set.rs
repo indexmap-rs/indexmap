@@ -355,6 +355,32 @@ where
         (index, existing.is_none())
     }
 
+    /// Insert the value into the set at its ordered position among sorted values.
+    ///
+    /// This is equivalent to finding the position with
+    /// [`binary_search`][Self::binary_search], and if needed calling
+    /// [`shift_insert`][Self::shift_insert] for a new value.
+    ///
+    /// If the sorted item is found in the set, it returns the index of that
+    /// existing item and `false`, without any change. Otherwise, it inserts the
+    /// new item and returns its sorted index and `true`.
+    ///
+    /// If the existing items are **not** already sorted, then the insertion
+    /// index is unspecified (like [`slice::binary_search`]), but the value
+    /// is moved to or inserted at that position regardless.
+    ///
+    /// Computes in **O(n)** time (average). Instead of repeating calls to
+    /// `insert_sorted`, it may be faster to call batched [`insert`][Self::insert]
+    /// or [`extend`][Self::extend] and only call [`sort`][Self::sort] or
+    /// [`sort_unstable`][Self::sort_unstable] once.
+    pub fn insert_sorted(&mut self, value: T) -> (usize, bool)
+    where
+        T: Ord,
+    {
+        let (index, existing) = self.map.insert_sorted(value, ());
+        (index, existing.is_none())
+    }
+
     /// Insert the value into the set at the given index.
     ///
     /// If an equivalent item already exists in the set, it returns
@@ -669,6 +695,10 @@ impl<T, S> IndexSet<T, S> {
     }
 
     /// Sort the set’s values by their default ordering.
+    ///
+    /// This is a stable sort -- but equivalent values should not normally coexist in
+    /// a set at all, so [`sort_unstable`][Self::sort_unstable] is preferred
+    /// because it is generally faster and doesn't allocate auxiliary memory.
     ///
     /// See [`sort_by`](Self::sort_by) for details.
     pub fn sort(&mut self)

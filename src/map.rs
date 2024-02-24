@@ -414,6 +414,35 @@ where
         self.core.insert_full(hash, key, value)
     }
 
+    /// Insert a key-value pair in the map at its ordered position among sorted keys.
+    ///
+    /// This is equivalent to finding the position with
+    /// [`binary_search_keys`][Self::binary_search_keys], then either updating
+    /// it or calling [`shift_insert`][Self::shift_insert] for a new key.
+    ///
+    /// If the sorted key is found in the map, its corresponding value is
+    /// updated with `value`, and the older value is returned inside
+    /// `(index, Some(_))`. Otherwise, the new key-value pair is inserted at
+    /// the sorted position, and `(index, None)` is returned.
+    ///
+    /// If the existing keys are **not** already sorted, then the insertion
+    /// index is unspecified (like [`slice::binary_search`]), but the key-value
+    /// pair is moved to or inserted at that position regardless.
+    ///
+    /// Computes in **O(n)** time (average). Instead of repeating calls to
+    /// `insert_sorted`, it may be faster to call batched [`insert`][Self::insert]
+    /// or [`extend`][Self::extend] and only call [`sort_keys`][Self::sort_keys]
+    /// or [`sort_unstable_keys`][Self::sort_unstable_keys] once.
+    pub fn insert_sorted(&mut self, key: K, value: V) -> (usize, Option<V>)
+    where
+        K: Ord,
+    {
+        match self.binary_search_keys(&key) {
+            Ok(i) => (i, Some(mem::replace(&mut self[i], value))),
+            Err(i) => (i, self.shift_insert(i, key, value)),
+        }
+    }
+
     /// Insert a key-value pair in the map at the given index.
     ///
     /// If an equivalent key already exists in the map: the key remains and
@@ -787,6 +816,10 @@ impl<K, V, S> IndexMap<K, V, S> {
     }
 
     /// Sort the map’s key-value pairs by the default ordering of the keys.
+    ///
+    /// This is a stable sort -- but equivalent keys should not normally coexist in
+    /// a map at all, so [`sort_unstable_keys`][Self::sort_unstable_keys] is preferred
+    /// because it is generally faster and doesn't allocate auxiliary memory.
     ///
     /// See [`sort_by`](Self::sort_by) for details.
     pub fn sort_keys(&mut self)

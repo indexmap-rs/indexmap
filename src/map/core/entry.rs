@@ -310,6 +310,24 @@ impl<'a, K, V> VacantEntry<'a, K, V> {
         &mut map.entries[i].value
     }
 
+    /// Inserts the entry's key and the given value into the map at its ordered
+    /// position among sorted keys, and returns the new index and a mutable
+    /// reference to the value.
+    ///
+    /// If the existing keys are **not** already sorted, then the insertion
+    /// index is unspecified (like [`slice::binary_search`]), but the key-value
+    /// pair is inserted at that position regardless.
+    ///
+    /// Computes in **O(n)** time (average).
+    pub fn insert_sorted(self, value: V) -> (usize, &'a mut V)
+    where
+        K: Ord,
+    {
+        let slice = crate::map::Slice::from_slice(&self.map.entries);
+        let i = slice.binary_search_keys(&self.key).unwrap_err();
+        (i, self.shift_insert(i, value))
+    }
+
     /// Inserts the entry's key and the given value into the map at the given index,
     /// shifting others to the right, and returns a mutable reference to the value.
     ///
