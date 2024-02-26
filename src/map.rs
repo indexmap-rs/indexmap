@@ -563,11 +563,13 @@ where
     where
         Q: Hash + Equivalent<K>,
     {
-        if self.is_empty() {
-            None
-        } else {
-            let hash = self.hash(key);
-            self.core.get_index_of(hash, key)
+        match self.as_entries() {
+            [] => None,
+            [x] => key.equivalent(&x.key).then_some(0),
+            _ => {
+                let hash = self.hash(key);
+                self.core.get_index_of(hash, key)
+            }
         }
     }
 
@@ -676,11 +678,17 @@ where
     where
         Q: Hash + Equivalent<K>,
     {
-        if self.is_empty() {
-            return None;
+        match self.as_entries() {
+            [x] if key.equivalent(&x.key) => {
+                let (k, v) = self.core.pop()?;
+                Some((0, k, v))
+            }
+            [_] | [] => None,
+            _ => {
+                let hash = self.hash(key);
+                self.core.swap_remove_full(hash, key)
+            }
         }
-        let hash = self.hash(key);
-        self.core.swap_remove_full(hash, key)
     }
 
     /// Remove the key-value pair equivalent to `key` and return
@@ -733,11 +741,17 @@ where
     where
         Q: Hash + Equivalent<K>,
     {
-        if self.is_empty() {
-            return None;
+        match self.as_entries() {
+            [x] if key.equivalent(&x.key) => {
+                let (k, v) = self.core.pop()?;
+                Some((0, k, v))
+            }
+            [_] | [] => None,
+            _ => {
+                let hash = self.hash(key);
+                self.core.shift_remove_full(hash, key)
+            }
         }
-        let hash = self.hash(key);
-        self.core.shift_remove_full(hash, key)
     }
 }
 
