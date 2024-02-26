@@ -113,6 +113,23 @@ quickcheck_limit! {
         true
     }
 
+    fn insert_sorted(insert: Vec<(u32, u32)>) -> bool {
+        let mut hmap = HashMap::new();
+        let mut map = IndexMap::new();
+        let mut map2 = IndexMap::new();
+        for &(key, value) in &insert {
+            hmap.insert(key, value);
+            map.insert_sorted(key, value);
+            match map2.entry(key) {
+                Entry::Occupied(e) => *e.into_mut() = value,
+                Entry::Vacant(e) => { e.insert_sorted(value); }
+            }
+        }
+        itertools::assert_equal(hmap.iter().sorted(), &map);
+        itertools::assert_equal(&map, &map2);
+        true
+    }
+
     fn pop(insert: Vec<u8>) -> bool {
         let mut map = IndexMap::new();
         for &key in &insert {
