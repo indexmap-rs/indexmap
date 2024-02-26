@@ -30,6 +30,8 @@ jobs:
           - rust: stable
             features: serde
           - rust: stable
+            features: borsh
+          - rust: stable
             features: std
           - rust: beta
             features:
