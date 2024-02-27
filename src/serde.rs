@@ -9,8 +9,29 @@ use serde::ser::{Serialize, Serializer};
 use core::fmt::{self, Formatter};
 use core::hash::{BuildHasher, Hash};
 use core::marker::PhantomData;
+use core::{cmp, mem};
 
-use crate::IndexMap;
+use crate::{Bucket, IndexMap, IndexSet};
+
+/// Limit our preallocated capacity from a deserializer `size_hint()`.
+///
+/// We do account for the `Bucket` overhead from its saved `hash` field, but we don't count the
+/// `RawTable` allocation or the fact that its raw capacity will be rounded up to a power of two.
+/// The "max" is an arbitrary choice anyway, not something that needs precise adherence.
+///
+/// This is based on the internal `serde::de::size_hint::cautious(hint)` function.
+pub(crate) fn cautious_capacity<K, V>(hint: Option<usize>) -> usize {
+    const MAX_PREALLOC_BYTES: usize = 1024 * 1024;
+
+    if mem::size_of::<Bucket<K, V>>() == 0 {
+        0
+    } else {
+        cmp::min(
+            hint.unwrap_or(0),
+            MAX_PREALLOC_BYTES / mem::size_of::<Bucket<K, V>>(),
+        )
+    }
+}
 
 impl<K, V, S> Serialize for IndexMap<K, V, S>
 where
@@ -43,8 +64,8 @@ where
     where
         A: MapAccess<'de>,
     {
-        let mut values =
-            IndexMap::with_capacity_and_hasher(map.size_hint().unwrap_or(0), S::default());
+        let capacity = cautious_capacity::<K, V>(map.size_hint());
+        let mut values = IndexMap::with_capacity_and_hasher(capacity, S::default());
 
         while let Some((key, value)) = map.next_entry()? {
             values.insert(key, value);
@@ -82,8 +103,6 @@ where
     }
 }
 
-use crate::IndexSet;
-
 impl<T, S> Serialize for IndexSet<T, S>
 where
     T: Serialize,
@@ -113,8 +132,8 @@ where
     where
         A: SeqAccess<'de>,
     {
-        let mut values =
-            IndexSet::with_capacity_and_hasher(seq.size_hint().unwrap_or(0), S::default());
+        let capacity = cautious_capacity::<T, ()>(seq.size_hint());
+        let mut values = IndexSet::with_capacity_and_hasher(capacity, S::default());
 
         while let Some(value) = seq.next_element()? {
             values.insert(value);
