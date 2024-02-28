@@ -121,8 +121,10 @@ jobs:
         with:
           tool: cargo-hack
       - run: cargo +nightly hack generate-lockfile --remove-dev-deps -Z direct-minimal-versions
-      - name: Build
-        run: cargo build --verbose --all-features
+      - name: Build (nightly)
+        run: cargo +nightly build --verbose --all-features
+      - name: Build (MSRV)
+        run: cargo build --verbose --features arbitrary,quickcheck,serde,rayon
 
   # One job that "summarizes" the success state of this pipeline. This can then be added to branch
   # protection, rather than having to add each job separately.
