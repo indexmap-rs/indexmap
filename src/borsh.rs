@@ -13,7 +13,7 @@ use borsh::{BorshDeserialize, BorshSerialize};
 use crate::map::IndexMap;
 use crate::set::IndexSet;
 
-impl<K, V, H> BorshSerialize for IndexMap<K, V, H>
+impl<K, V, S> BorshSerialize for IndexMap<K, V, S>
 where
     K: BorshSerialize,
     V: BorshSerialize,
@@ -37,21 +37,21 @@ where
     }
 }
 
-impl<K, V, H> BorshDeserialize for IndexMap<K, V, H>
+impl<K, V, S> BorshDeserialize for IndexMap<K, V, S>
 where
     K: BorshDeserialize + Eq + Hash,
     V: BorshDeserialize,
-    H: BuildHasher + Default,
+    S: BuildHasher + Default,
 {
     #[inline]
     fn deserialize_reader<R: Read>(reader: &mut R) -> Result<Self> {
         check_zst::<K>()?;
         let vec = <Vec<(K, V)>>::deserialize_reader(reader)?;
-        Ok(vec.into_iter().collect::<IndexMap<K, V, H>>())
+        Ok(vec.into_iter().collect::<IndexMap<K, V, S>>())
     }
 }
 
-impl<T, H> BorshSerialize for IndexSet<T, H>
+impl<T, S> BorshSerialize for IndexSet<T, S>
 where
     T: BorshSerialize,
 {
@@ -73,16 +73,16 @@ where
     }
 }
 
-impl<T, H> BorshDeserialize for IndexSet<T, H>
+impl<T, S> BorshDeserialize for IndexSet<T, S>
 where
     T: BorshDeserialize + Eq + Hash,
-    H: BuildHasher + Default,
+    S: BuildHasher + Default,
 {
     #[inline]
     fn deserialize_reader<R: Read>(reader: &mut R) -> Result<Self> {
         check_zst::<T>()?;
         let vec = <Vec<T>>::deserialize_reader(reader)?;
-        Ok(vec.into_iter().collect::<IndexSet<T, H>>())
+        Ok(vec.into_iter().collect::<IndexSet<T, S>>())
     }
 }
 
