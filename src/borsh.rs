@@ -17,7 +17,6 @@ impl<K, V, H> BorshSerialize for IndexMap<K, V, H>
 where
     K: BorshSerialize,
     V: BorshSerialize,
-    H: BuildHasher,
 {
     #[inline]
     fn serialize<W: Write>(&self, writer: &mut W) -> Result<()> {
@@ -55,7 +54,6 @@ where
 impl<T, H> BorshSerialize for IndexSet<T, H>
 where
     T: BorshSerialize,
-    H: BuildHasher,
 {
     #[inline]
     fn serialize<W: Write>(&self, writer: &mut W) -> Result<()> {
