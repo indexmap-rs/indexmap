@@ -1,5 +1,11 @@
 # Releases
 
+## 2.2.4
+
+- Added an `insert_sorted` method on `IndexMap`, `IndexSet`, and `VacantEntry`.
+- Avoid hashing for lookups in single-entry maps.
+- Limit preallocated memory in `serde` deserializers.
+
 ## 2.2.3
 
 - Added `move_index` and `swap_indices` methods to `IndexedEntry`,
