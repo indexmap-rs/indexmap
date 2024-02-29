@@ -23,14 +23,10 @@ use crate::{Bucket, IndexMap, IndexSet};
 pub(crate) fn cautious_capacity<K, V>(hint: Option<usize>) -> usize {
     const MAX_PREALLOC_BYTES: usize = 1024 * 1024;
 
-    if mem::size_of::<Bucket<K, V>>() == 0 {
-        0
-    } else {
-        cmp::min(
-            hint.unwrap_or(0),
-            MAX_PREALLOC_BYTES / mem::size_of::<Bucket<K, V>>(),
-        )
-    }
+    cmp::min(
+        hint.unwrap_or(0),
+        MAX_PREALLOC_BYTES / mem::size_of::<Bucket<K, V>>(),
+    )
 }
 
 impl<K, V, S> Serialize for IndexMap<K, V, S>
