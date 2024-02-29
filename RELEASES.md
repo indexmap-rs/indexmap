@@ -1,5 +1,9 @@
 # Releases
 
+## 2.2.5
+
+- Added optional `borsh` serialization support.
+
 ## 2.2.4
 
 - Added an `insert_sorted` method on `IndexMap`, `IndexSet`, and `VacantEntry`.
