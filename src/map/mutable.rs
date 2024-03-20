@@ -6,7 +6,7 @@ use super::{Bucket, Entries, Equivalent, IndexMap};
 ///
 /// These methods expose `&mut K`, mutable references to the key as it is stored
 /// in the map.
-/// You are allowed to modify the keys in the hashmap **if the modification
+/// You are allowed to modify the keys in the map **if the modification
 /// does not change the key’s hash and equality**.
 ///
 /// If keys are modified erroneously, you can no longer look them up.
@@ -49,7 +49,7 @@ pub trait MutableKeys: private::Sealed {
         F: FnMut(&mut Self::Key, &mut Self::Value) -> bool;
 }
 
-/// Opt-in mutable access to keys.
+/// Opt-in mutable access to [`IndexMap`] keys.
 ///
 /// See [`MutableKeys`] for more information.
 impl<K, V, S> MutableKeys for IndexMap<K, V, S>
@@ -79,7 +79,7 @@ where
     where
         F: FnMut(&mut K, &mut V) -> bool,
     {
-        self.retain_mut(keep)
+        self.core.retain_in_order(keep);
     }
 }
 

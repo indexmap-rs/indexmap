@@ -1,6 +1,7 @@
 //! A hash set implemented using [`IndexMap`]
 
 mod iter;
+mod mutable;
 mod slice;
 
 #[cfg(test)]
@@ -9,6 +10,7 @@ mod tests;
 pub use self::iter::{
     Difference, Drain, Intersection, IntoIter, Iter, Splice, SymmetricDifference, Union,
 };
+pub use self::mutable::MutableValues;
 pub use self::slice::Slice;
 
 #[cfg(feature = "rayon")]

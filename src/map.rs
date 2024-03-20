@@ -3,6 +3,7 @@
 
 mod core;
 mod iter;
+mod mutable;
 mod slice;
 
 #[cfg(feature = "serde")]
@@ -17,8 +18,8 @@ pub use self::core::{Entry, IndexedEntry, OccupiedEntry, VacantEntry};
 pub use self::iter::{
     Drain, IntoIter, IntoKeys, IntoValues, Iter, IterMut, Keys, Splice, Values, ValuesMut,
 };
+pub use self::mutable::MutableKeys;
 pub use self::slice::Slice;
-pub use crate::mutable_keys::MutableKeys;
 
 #[cfg(feature = "rayon")]
 pub use crate::rayon::map as rayon;
@@ -806,13 +807,6 @@ impl<K, V, S> IndexMap<K, V, S> {
         F: FnMut(&K, &mut V) -> bool,
     {
         self.core.retain_in_order(move |k, v| keep(k, v));
-    }
-
-    pub(crate) fn retain_mut<F>(&mut self, keep: F)
-    where
-        F: FnMut(&mut K, &mut V) -> bool,
-    {
-        self.core.retain_in_order(keep);
     }
 
     /// Sort the map’s key-value pairs by the default ordering of the keys.

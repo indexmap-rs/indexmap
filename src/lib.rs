@@ -19,7 +19,7 @@
 //! - The [`Equivalent`] trait, which offers more flexible equality definitions
 //!   between borrowed and owned versions of keys.
 //! - The [`MutableKeys`][map::MutableKeys] trait, which gives opt-in mutable
-//!   access to hash map keys.
+//!   access to map keys, and [`MutableValues`][set::MutableValues] for sets.
 //!
 //! ### Feature Flags
 //!
@@ -116,7 +116,6 @@ mod arbitrary;
 mod macros;
 #[cfg(feature = "borsh")]
 mod borsh;
-mod mutable_keys;
 #[cfg(feature = "serde")]
 mod serde;
 mod util;
