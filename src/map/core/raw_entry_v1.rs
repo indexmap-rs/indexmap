@@ -198,18 +198,18 @@ impl<K, V, S> fmt::Debug for RawEntryBuilder<'_, K, V, S> {
 
 impl<'a, K, V, S> RawEntryBuilder<'a, K, V, S> {
     /// Access an entry by key.
-    pub fn from_key<Q: ?Sized>(self, key: &Q) -> Option<(&'a K, &'a V)>
+    pub fn from_key<Q>(self, key: &Q) -> Option<(&'a K, &'a V)>
     where
         S: BuildHasher,
-        Q: Hash + Equivalent<K>,
+        Q: ?Sized + Hash + Equivalent<K>,
     {
         self.map.get_key_value(key)
     }
 
     /// Access an entry by a key and its hash.
-    pub fn from_key_hashed_nocheck<Q: ?Sized>(self, hash: u64, key: &Q) -> Option<(&'a K, &'a V)>
+    pub fn from_key_hashed_nocheck<Q>(self, hash: u64, key: &Q) -> Option<(&'a K, &'a V)>
     where
-        Q: Equivalent<K>,
+        Q: ?Sized + Equivalent<K>,
     {
         let hash = HashValue(hash as usize);
         let i = self.map.core.get_index_of(hash, key)?;
@@ -265,19 +265,19 @@ impl<K, V, S> fmt::Debug for RawEntryBuilderMut<'_, K, V, S> {
 
 impl<'a, K, V, S> RawEntryBuilderMut<'a, K, V, S> {
     /// Access an entry by key.
-    pub fn from_key<Q: ?Sized>(self, key: &Q) -> RawEntryMut<'a, K, V, S>
+    pub fn from_key<Q>(self, key: &Q) -> RawEntryMut<'a, K, V, S>
     where
         S: BuildHasher,
-        Q: Hash + Equivalent<K>,
+        Q: ?Sized + Hash + Equivalent<K>,
     {
         let hash = self.map.hash(key);
         self.from_key_hashed_nocheck(hash.get(), key)
     }
 
     /// Access an entry by a key and its hash.
-    pub fn from_key_hashed_nocheck<Q: ?Sized>(self, hash: u64, key: &Q) -> RawEntryMut<'a, K, V, S>
+    pub fn from_key_hashed_nocheck<Q>(self, hash: u64, key: &Q) -> RawEntryMut<'a, K, V, S>
     where
-        Q: Equivalent<K>,
+        Q: ?Sized + Equivalent<K>,
     {
         self.from_hash(hash, |k| Q::equivalent(key, k))
     }

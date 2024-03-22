@@ -23,9 +23,9 @@ pub trait MutableValues: private::Sealed {
     /// Return item index and mutable reference to the value
     ///
     /// Computes in **O(1)** time (average).
-    fn get_full_mut2<Q: ?Sized>(&mut self, value: &Q) -> Option<(usize, &mut Self::Value)>
+    fn get_full_mut2<Q>(&mut self, value: &Q) -> Option<(usize, &mut Self::Value)>
     where
-        Q: Hash + Equivalent<Self::Value>;
+        Q: ?Sized + Hash + Equivalent<Self::Value>;
 
     /// Return mutable reference to the value at an index.
     ///
@@ -54,9 +54,9 @@ where
 {
     type Value = T;
 
-    fn get_full_mut2<Q: ?Sized>(&mut self, value: &Q) -> Option<(usize, &mut T)>
+    fn get_full_mut2<Q>(&mut self, value: &Q) -> Option<(usize, &mut T)>
     where
-        Q: Hash + Equivalent<T>,
+        Q: ?Sized + Hash + Equivalent<T>,
     {
         match self.map.get_full_mut2(value) {
             Some((index, value, ())) => Some((index, value)),
