@@ -1,6 +1,7 @@
 //! A hash set implemented using [`IndexMap`]
 
 mod iter;
+mod mutable;
 mod slice;
 
 #[cfg(test)]
@@ -9,6 +10,7 @@ mod tests;
 pub use self::iter::{
     Difference, Drain, Intersection, IntoIter, Iter, Splice, SymmetricDifference, Union,
 };
+pub use self::mutable::MutableValues;
 pub use self::slice::Slice;
 
 #[cfg(feature = "rayon")]
@@ -508,9 +510,9 @@ where
     /// Return `true` if an equivalent to `value` exists in the set.
     ///
     /// Computes in **O(1)** time (average).
-    pub fn contains<Q: ?Sized>(&self, value: &Q) -> bool
+    pub fn contains<Q>(&self, value: &Q) -> bool
     where
-        Q: Hash + Equivalent<T>,
+        Q: ?Sized + Hash + Equivalent<T>,
     {
         self.map.contains_key(value)
     }
@@ -519,17 +521,17 @@ where
     /// else `None`.
     ///
     /// Computes in **O(1)** time (average).
-    pub fn get<Q: ?Sized>(&self, value: &Q) -> Option<&T>
+    pub fn get<Q>(&self, value: &Q) -> Option<&T>
     where
-        Q: Hash + Equivalent<T>,
+        Q: ?Sized + Hash + Equivalent<T>,
     {
         self.map.get_key_value(value).map(|(x, &())| x)
     }
 
     /// Return item index and value
-    pub fn get_full<Q: ?Sized>(&self, value: &Q) -> Option<(usize, &T)>
+    pub fn get_full<Q>(&self, value: &Q) -> Option<(usize, &T)>
     where
-        Q: Hash + Equivalent<T>,
+        Q: ?Sized + Hash + Equivalent<T>,
     {
         self.map.get_full(value).map(|(i, x, &())| (i, x))
     }
@@ -537,9 +539,9 @@ where
     /// Return item index, if it exists in the set
     ///
     /// Computes in **O(1)** time (average).
-    pub fn get_index_of<Q: ?Sized>(&self, value: &Q) -> Option<usize>
+    pub fn get_index_of<Q>(&self, value: &Q) -> Option<usize>
     where
-        Q: Hash + Equivalent<T>,
+        Q: ?Sized + Hash + Equivalent<T>,
     {
         self.map.get_index_of(value)
     }
@@ -552,9 +554,9 @@ where
     /// [`.shift_remove(value)`][Self::shift_remove] instead.
     #[deprecated(note = "`remove` disrupts the set order -- \
         use `swap_remove` or `shift_remove` for explicit behavior.")]
-    pub fn remove<Q: ?Sized>(&mut self, value: &Q) -> bool
+    pub fn remove<Q>(&mut self, value: &Q) -> bool
     where
-        Q: Hash + Equivalent<T>,
+        Q: ?Sized + Hash + Equivalent<T>,
     {
         self.swap_remove(value)
     }
@@ -568,9 +570,9 @@ where
     /// Return `false` if `value` was not in the set.
     ///
     /// Computes in **O(1)** time (average).
-    pub fn swap_remove<Q: ?Sized>(&mut self, value: &Q) -> bool
+    pub fn swap_remove<Q>(&mut self, value: &Q) -> bool
     where
-        Q: Hash + Equivalent<T>,
+        Q: ?Sized + Hash + Equivalent<T>,
     {
         self.map.swap_remove(value).is_some()
     }
@@ -584,9 +586,9 @@ where
     /// Return `false` if `value` was not in the set.
     ///
     /// Computes in **O(n)** time (average).
-    pub fn shift_remove<Q: ?Sized>(&mut self, value: &Q) -> bool
+    pub fn shift_remove<Q>(&mut self, value: &Q) -> bool
     where
-        Q: Hash + Equivalent<T>,
+        Q: ?Sized + Hash + Equivalent<T>,
     {
         self.map.shift_remove(value).is_some()
     }
@@ -600,9 +602,9 @@ where
     /// [`.shift_take(value)`][Self::shift_take] instead.
     #[deprecated(note = "`take` disrupts the set order -- \
         use `swap_take` or `shift_take` for explicit behavior.")]
-    pub fn take<Q: ?Sized>(&mut self, value: &Q) -> Option<T>
+    pub fn take<Q>(&mut self, value: &Q) -> Option<T>
     where
-        Q: Hash + Equivalent<T>,
+        Q: ?Sized + Hash + Equivalent<T>,
     {
         self.swap_take(value)
     }
@@ -617,9 +619,9 @@ where
     /// Return `None` if `value` was not in the set.
     ///
     /// Computes in **O(1)** time (average).
-    pub fn swap_take<Q: ?Sized>(&mut self, value: &Q) -> Option<T>
+    pub fn swap_take<Q>(&mut self, value: &Q) -> Option<T>
     where
-        Q: Hash + Equivalent<T>,
+        Q: ?Sized + Hash + Equivalent<T>,
     {
         self.map.swap_remove_entry(value).map(|(x, ())| x)
     }
@@ -634,9 +636,9 @@ where
     /// Return `None` if `value` was not in the set.
     ///
     /// Computes in **O(n)** time (average).
-    pub fn shift_take<Q: ?Sized>(&mut self, value: &Q) -> Option<T>
+    pub fn shift_take<Q>(&mut self, value: &Q) -> Option<T>
     where
-        Q: Hash + Equivalent<T>,
+        Q: ?Sized + Hash + Equivalent<T>,
     {
         self.map.shift_remove_entry(value).map(|(x, ())| x)
     }
@@ -648,9 +650,9 @@ where
     /// the position of what used to be the last element!**
     ///
     /// Return `None` if `value` was not in the set.
-    pub fn swap_remove_full<Q: ?Sized>(&mut self, value: &Q) -> Option<(usize, T)>
+    pub fn swap_remove_full<Q>(&mut self, value: &Q) -> Option<(usize, T)>
     where
-        Q: Hash + Equivalent<T>,
+        Q: ?Sized + Hash + Equivalent<T>,
     {
         self.map.swap_remove_full(value).map(|(i, x, ())| (i, x))
     }
@@ -662,9 +664,9 @@ where
     /// **This perturbs the index of all of those elements!**
     ///
     /// Return `None` if `value` was not in the set.
-    pub fn shift_remove_full<Q: ?Sized>(&mut self, value: &Q) -> Option<(usize, T)>
+    pub fn shift_remove_full<Q>(&mut self, value: &Q) -> Option<(usize, T)>
     where
-        Q: Hash + Equivalent<T>,
+        Q: ?Sized + Hash + Equivalent<T>,
     {
         self.map.shift_remove_full(value).map(|(i, x, ())| (i, x))
     }

@@ -1,5 +1,9 @@
 # Releases
 
+## 2.2.6
+
+- Added trait `MutableValues` for opt-in mutable access to set values.
+
 ## 2.2.5
 
 - Added optional `borsh` serialization support.

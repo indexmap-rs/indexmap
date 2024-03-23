@@ -3,6 +3,7 @@
 
 mod core;
 mod iter;
+mod mutable;
 mod slice;
 
 #[cfg(feature = "serde")]
@@ -17,8 +18,8 @@ pub use self::core::{Entry, IndexedEntry, OccupiedEntry, VacantEntry};
 pub use self::iter::{
     Drain, IntoIter, IntoKeys, IntoValues, Iter, IterMut, Keys, Splice, Values, ValuesMut,
 };
+pub use self::mutable::MutableKeys;
 pub use self::slice::Slice;
-pub use crate::mutable_keys::MutableKeys;
 
 #[cfg(feature = "rayon")]
 pub use crate::rayon::map as rayon;
@@ -533,9 +534,9 @@ where
     /// Return `true` if an equivalent to `key` exists in the map.
     ///
     /// Computes in **O(1)** time (average).
-    pub fn contains_key<Q: ?Sized>(&self, key: &Q) -> bool
+    pub fn contains_key<Q>(&self, key: &Q) -> bool
     where
-        Q: Hash + Equivalent<K>,
+        Q: ?Sized + Hash + Equivalent<K>,
     {
         self.get_index_of(key).is_some()
     }
@@ -544,9 +545,9 @@ where
     /// else `None`.
     ///
     /// Computes in **O(1)** time (average).
-    pub fn get<Q: ?Sized>(&self, key: &Q) -> Option<&V>
+    pub fn get<Q>(&self, key: &Q) -> Option<&V>
     where
-        Q: Hash + Equivalent<K>,
+        Q: ?Sized + Hash + Equivalent<K>,
     {
         if let Some(i) = self.get_index_of(key) {
             let entry = &self.as_entries()[i];
@@ -560,9 +561,9 @@ where
     /// if it is present, else `None`.
     ///
     /// Computes in **O(1)** time (average).
-    pub fn get_key_value<Q: ?Sized>(&self, key: &Q) -> Option<(&K, &V)>
+    pub fn get_key_value<Q>(&self, key: &Q) -> Option<(&K, &V)>
     where
-        Q: Hash + Equivalent<K>,
+        Q: ?Sized + Hash + Equivalent<K>,
     {
         if let Some(i) = self.get_index_of(key) {
             let entry = &self.as_entries()[i];
@@ -573,9 +574,9 @@ where
     }
 
     /// Return item index, key and value
-    pub fn get_full<Q: ?Sized>(&self, key: &Q) -> Option<(usize, &K, &V)>
+    pub fn get_full<Q>(&self, key: &Q) -> Option<(usize, &K, &V)>
     where
-        Q: Hash + Equivalent<K>,
+        Q: ?Sized + Hash + Equivalent<K>,
     {
         if let Some(i) = self.get_index_of(key) {
             let entry = &self.as_entries()[i];
@@ -588,9 +589,9 @@ where
     /// Return item index, if it exists in the map
     ///
     /// Computes in **O(1)** time (average).
-    pub fn get_index_of<Q: ?Sized>(&self, key: &Q) -> Option<usize>
+    pub fn get_index_of<Q>(&self, key: &Q) -> Option<usize>
     where
-        Q: Hash + Equivalent<K>,
+        Q: ?Sized + Hash + Equivalent<K>,
     {
         match self.as_entries() {
             [] => None,
@@ -602,9 +603,9 @@ where
         }
     }
 
-    pub fn get_mut<Q: ?Sized>(&mut self, key: &Q) -> Option<&mut V>
+    pub fn get_mut<Q>(&mut self, key: &Q) -> Option<&mut V>
     where
-        Q: Hash + Equivalent<K>,
+        Q: ?Sized + Hash + Equivalent<K>,
     {
         if let Some(i) = self.get_index_of(key) {
             let entry = &mut self.as_entries_mut()[i];
@@ -614,9 +615,9 @@ where
         }
     }
 
-    pub fn get_full_mut<Q: ?Sized>(&mut self, key: &Q) -> Option<(usize, &K, &mut V)>
+    pub fn get_full_mut<Q>(&mut self, key: &Q) -> Option<(usize, &K, &mut V)>
     where
-        Q: Hash + Equivalent<K>,
+        Q: ?Sized + Hash + Equivalent<K>,
     {
         if let Some(i) = self.get_index_of(key) {
             let entry = &mut self.as_entries_mut()[i];
@@ -635,9 +636,9 @@ where
     /// [`.shift_remove(key)`][Self::shift_remove] instead.
     #[deprecated(note = "`remove` disrupts the map order -- \
         use `swap_remove` or `shift_remove` for explicit behavior.")]
-    pub fn remove<Q: ?Sized>(&mut self, key: &Q) -> Option<V>
+    pub fn remove<Q>(&mut self, key: &Q) -> Option<V>
     where
-        Q: Hash + Equivalent<K>,
+        Q: ?Sized + Hash + Equivalent<K>,
     {
         self.swap_remove(key)
     }
@@ -650,9 +651,9 @@ where
     /// use [`.shift_remove_entry(key)`][Self::shift_remove_entry] instead.
     #[deprecated(note = "`remove_entry` disrupts the map order -- \
         use `swap_remove_entry` or `shift_remove_entry` for explicit behavior.")]
-    pub fn remove_entry<Q: ?Sized>(&mut self, key: &Q) -> Option<(K, V)>
+    pub fn remove_entry<Q>(&mut self, key: &Q) -> Option<(K, V)>
     where
-        Q: Hash + Equivalent<K>,
+        Q: ?Sized + Hash + Equivalent<K>,
     {
         self.swap_remove_entry(key)
     }
@@ -667,9 +668,9 @@ where
     /// Return `None` if `key` is not in map.
     ///
     /// Computes in **O(1)** time (average).
-    pub fn swap_remove<Q: ?Sized>(&mut self, key: &Q) -> Option<V>
+    pub fn swap_remove<Q>(&mut self, key: &Q) -> Option<V>
     where
-        Q: Hash + Equivalent<K>,
+        Q: ?Sized + Hash + Equivalent<K>,
     {
         self.swap_remove_full(key).map(third)
     }
@@ -683,9 +684,9 @@ where
     /// Return `None` if `key` is not in map.
     ///
     /// Computes in **O(1)** time (average).
-    pub fn swap_remove_entry<Q: ?Sized>(&mut self, key: &Q) -> Option<(K, V)>
+    pub fn swap_remove_entry<Q>(&mut self, key: &Q) -> Option<(K, V)>
     where
-        Q: Hash + Equivalent<K>,
+        Q: ?Sized + Hash + Equivalent<K>,
     {
         match self.swap_remove_full(key) {
             Some((_, key, value)) => Some((key, value)),
@@ -703,9 +704,9 @@ where
     /// Return `None` if `key` is not in map.
     ///
     /// Computes in **O(1)** time (average).
-    pub fn swap_remove_full<Q: ?Sized>(&mut self, key: &Q) -> Option<(usize, K, V)>
+    pub fn swap_remove_full<Q>(&mut self, key: &Q) -> Option<(usize, K, V)>
     where
-        Q: Hash + Equivalent<K>,
+        Q: ?Sized + Hash + Equivalent<K>,
     {
         match self.as_entries() {
             [x] if key.equivalent(&x.key) => {
@@ -730,9 +731,9 @@ where
     /// Return `None` if `key` is not in map.
     ///
     /// Computes in **O(n)** time (average).
-    pub fn shift_remove<Q: ?Sized>(&mut self, key: &Q) -> Option<V>
+    pub fn shift_remove<Q>(&mut self, key: &Q) -> Option<V>
     where
-        Q: Hash + Equivalent<K>,
+        Q: ?Sized + Hash + Equivalent<K>,
     {
         self.shift_remove_full(key).map(third)
     }
@@ -746,9 +747,9 @@ where
     /// Return `None` if `key` is not in map.
     ///
     /// Computes in **O(n)** time (average).
-    pub fn shift_remove_entry<Q: ?Sized>(&mut self, key: &Q) -> Option<(K, V)>
+    pub fn shift_remove_entry<Q>(&mut self, key: &Q) -> Option<(K, V)>
     where
-        Q: Hash + Equivalent<K>,
+        Q: ?Sized + Hash + Equivalent<K>,
     {
         match self.shift_remove_full(key) {
             Some((_, key, value)) => Some((key, value)),
@@ -766,9 +767,9 @@ where
     /// Return `None` if `key` is not in map.
     ///
     /// Computes in **O(n)** time (average).
-    pub fn shift_remove_full<Q: ?Sized>(&mut self, key: &Q) -> Option<(usize, K, V)>
+    pub fn shift_remove_full<Q>(&mut self, key: &Q) -> Option<(usize, K, V)>
     where
-        Q: Hash + Equivalent<K>,
+        Q: ?Sized + Hash + Equivalent<K>,
     {
         match self.as_entries() {
             [x] if key.equivalent(&x.key) => {
@@ -806,13 +807,6 @@ impl<K, V, S> IndexMap<K, V, S> {
         F: FnMut(&K, &mut V) -> bool,
     {
         self.core.retain_in_order(move |k, v| keep(k, v));
-    }
-
-    pub(crate) fn retain_mut<F>(&mut self, keep: F)
-    where
-        F: FnMut(&mut K, &mut V) -> bool,
-    {
-        self.core.retain_in_order(keep);
     }
 
     /// Sort the map’s key-value pairs by the default ordering of the keys.
