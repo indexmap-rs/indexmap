@@ -23,6 +23,7 @@ use crate::util::simplify_range;
 use crate::{Bucket, Entries, Equivalent, HashValue};
 
 pub use entry::{Entry, IndexedEntry, OccupiedEntry, VacantEntry};
+pub(crate) use raw::ExtractCore;
 
 /// Core of the map that does not depend on S
 pub(crate) struct IndexMapCore<K, V> {
@@ -145,6 +146,7 @@ impl<K, V> IndexMapCore<K, V> {
 
     #[inline]
     pub(crate) fn len(&self) -> usize {
+        debug_assert_eq!(self.entries.len(), self.indices.len());
         self.indices.len()
     }
 
