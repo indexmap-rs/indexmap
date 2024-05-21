@@ -32,7 +32,7 @@ default-features = false
 features = ["raw"]
 
 [dev-dependencies]
-itertools = "0.12"
+itertools = "0.13"
 rand = {version = "0.8", features = ["small_rng"] }
 quickcheck = { version = "1.0", default-features = false }
 fnv = "1.0"
