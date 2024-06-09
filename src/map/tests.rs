@@ -1,5 +1,5 @@
 use super::*;
-use std::string::String;
+use std::{hash::DefaultHasher, string::String};
 
 #[test]
 fn it_works() {
@@ -295,6 +295,30 @@ fn partial_eq_and_eq() {
     assert_ne!(map_a, map_c);
     assert_ne!(map_c, map_a);
 }
+
+#[test]
+fn hash() {
+    let mut map_a = IndexMap::new();
+    map_a.insert(1, "1");
+    map_a.insert(2, "2");
+    let mut map_b = IndexMap::new();
+    map_b.insert(1, "1");
+    map_b.insert(2, "2");
+    let mut map_c = IndexMap::new();
+    map_c.insert(1, "1");
+    map_c.insert(3, "3");
+
+    let mut hasher_a = DefaultHasher::new();
+    <IndexMap<i32, &str> as Hash>::hash(&map_a, &mut hasher_a);
+    let mut hasher_b = DefaultHasher::new();
+    <IndexMap<i32, &str> as Hash>::hash(&map_b, &mut hasher_b);
+    let mut hasher_c = DefaultHasher::new();
+    <IndexMap<i32, &str> as Hash>::hash(&map_c, &mut hasher_c);
+
+    assert_eq!(hasher_a.finish(), hasher_b.finish());
+    assert_ne!(hasher_a.finish(), hasher_c.finish());
+}
+
 
 #[test]
 fn extend() {

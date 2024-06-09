@@ -25,7 +25,7 @@ use alloc::boxed::Box;
 use alloc::vec::Vec;
 use core::cmp::Ordering;
 use core::fmt;
-use core::hash::{BuildHasher, Hash};
+use core::hash::{BuildHasher, Hash, Hasher};
 use core::ops::{BitAnd, BitOr, BitXor, Index, RangeBounds, Sub};
 
 use super::{Entries, Equivalent, IndexMap};
@@ -1067,6 +1067,18 @@ where
     S: BuildHasher,
 {
 }
+
+#[cfg(feature = "std")]
+impl<T, S> Hash for IndexSet<T, S>
+where
+    T: Hash + std::fmt::Debug,
+    S: BuildHasher,
+{
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        <IndexMap<T, (), S> as Hash>::hash(&self.map, state)
+    }
+}
+
 
 impl<T, S> IndexSet<T, S>
 where

@@ -1415,3 +1415,22 @@ where
     S: BuildHasher,
 {
 }
+
+#[cfg(feature = "std")]
+impl<K, V, S> Hash for IndexMap<K, V, S>
+where
+    K: Hash + std::fmt::Debug,
+    V: Hash + std::fmt::Debug,
+    S: BuildHasher,
+{
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        let hash = self.as_slice().iter().map(|(k, v)| {
+            let mut hasher = std::hash::DefaultHasher::new();
+            k.hash(&mut hasher);
+            v.hash(&mut hasher);
+            hasher.finish()
+        }).fold(0, u64::wrapping_add);
+
+        state.write_u64(hash);
+    }
+}
