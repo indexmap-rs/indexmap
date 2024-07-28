@@ -18,6 +18,7 @@ pub use self::core::{Entry, IndexedEntry, OccupiedEntry, VacantEntry};
 pub use self::iter::{
     Drain, IntoIter, IntoKeys, IntoValues, Iter, IterMut, Keys, Splice, Values, ValuesMut,
 };
+pub use self::mutable::MutableEntryKey;
 pub use self::mutable::MutableKeys;
 pub use self::slice::Slice;
 

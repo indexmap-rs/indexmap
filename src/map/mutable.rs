@@ -1,6 +1,8 @@
 use core::hash::{BuildHasher, Hash};
 
-use super::{Bucket, Entries, Equivalent, IndexMap};
+use super::{
+    Bucket, Entries, Entry, Equivalent, IndexMap, IndexedEntry, OccupiedEntry, VacantEntry,
+};
 
 /// Opt-in mutable access to [`IndexMap`] keys.
 ///
@@ -80,8 +82,77 @@ where
     }
 }
 
+/// Opt-in mutable access to [`Entry`] keys.
+///
+/// These methods expose `&mut K`, mutable references to the key as it is stored
+/// in the map.
+/// You are allowed to modify the keys in the map **if the modification
+/// does not change the key’s hash and equality**.
+///
+/// If keys are modified erroneously, you can no longer look them up.
+/// This is sound (memory safe) but a logical error hazard (just like
+/// implementing `PartialEq`, `Eq`, or `Hash` incorrectly would be).
+///
+/// `use` this trait to enable its methods for `Entry`.
+///
+/// This trait is sealed and cannot be implemented for types outside this crate.
+pub trait MutableEntryKey: private::Sealed {
+    type Key;
+    fn key_mut(&mut self) -> &mut Self::Key;
+}
+
+/// Opt-in mutable access to [`Entry`] keys.
+///
+/// See [`MutableEntryKey`] for more information.
+impl<K, V> MutableEntryKey for Entry<'_, K, V> {
+    type Key = K;
+
+    /// Gets a mutable reference to the entry's key, either within the map if occupied,
+    /// or else the new key that was used to find the entry.
+    fn key_mut(&mut self) -> &mut Self::Key {
+        match self {
+            Entry::Occupied(e) => e.key_mut(),
+            Entry::Vacant(e) => e.key_mut(),
+        }
+    }
+}
+
+/// Opt-in mutable access to [`OccupiedEntry`] keys.
+///
+/// See [`MutableEntryKey`] for more information.
+impl<K, V> MutableEntryKey for OccupiedEntry<'_, K, V> {
+    type Key = K;
+    fn key_mut(&mut self) -> &mut Self::Key {
+        self.key_mut()
+    }
+}
+
+/// Opt-in mutable access to [`VacantEntry`] keys.
+///
+/// See [`MutableEntryKey`] for more information.
+impl<K, V> MutableEntryKey for VacantEntry<'_, K, V> {
+    type Key = K;
+    fn key_mut(&mut self) -> &mut Self::Key {
+        self.key_mut()
+    }
+}
+
+/// Opt-in mutable access to [`IndexedEntry`] keys.
+///
+/// See [`MutableEntryKey`] for more information.
+impl<K, V> MutableEntryKey for IndexedEntry<'_, K, V> {
+    type Key = K;
+    fn key_mut(&mut self) -> &mut Self::Key {
+        self.key_mut()
+    }
+}
+
 mod private {
     pub trait Sealed {}
 
     impl<K, V, S> Sealed for super::IndexMap<K, V, S> {}
+    impl<K, V> Sealed for super::Entry<'_, K, V> {}
+    impl<K, V> Sealed for super::OccupiedEntry<'_, K, V> {}
+    impl<K, V> Sealed for super::VacantEntry<'_, K, V> {}
+    impl<K, V> Sealed for super::IndexedEntry<'_, K, V> {}
 }
