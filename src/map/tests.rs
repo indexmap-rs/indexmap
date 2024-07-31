@@ -497,6 +497,7 @@ fn iter_default() {
     }
     assert_default::<Iter<'static, K, V>>();
     assert_default::<IterMut<'static, K, V>>();
+    assert_default::<IterMut2<'static, K, V>>();
     assert_default::<IntoIter<K, V>>();
     assert_default::<Keys<'static, K, V>>();
     assert_default::<IntoKeys<K, V>>();
