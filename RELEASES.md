@@ -1,5 +1,11 @@
 # Releases
 
+## 2.3.0
+
+- Added trait `MutableEntryKey` for opt-in mutable access to map entry keys.
+- Added method `MutableKeys::iter_mut2` for opt-in mutable iteration of map
+  keys and values.
+
 ## 2.2.6
 
 - Added trait `MutableValues` for opt-in mutable access to set values.
