@@ -1,5 +1,10 @@
 # Releases
 
+## 2.4.0
+
+- Added methods `IndexMap::append` and `IndexSet::append`, moving all items from
+  one map or set into another, and leaving the original capacity for reuse.
+
 ## 2.3.0
 
 - Added trait `MutableEntryKey` for opt-in mutable access to map entry keys.
