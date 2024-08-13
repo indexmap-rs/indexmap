@@ -14,6 +14,8 @@ allows lookup of entries by either hash table key or numerical index.
 
 Note: this crate was originally released under the name `ordermap`,
 but it was renamed to `indexmap` to better reflect its features.
+The [`ordermap`](https://crates.io/crates/ordermap) crate now exists
+as a wrapper over `indexmap` with stronger ordering properties.
 
 # Background
 
