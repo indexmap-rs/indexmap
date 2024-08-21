@@ -51,7 +51,8 @@ test_debug = []
 debug = true
 
 [package.metadata.release]
-no-dev-version = true
+allow-branch = ["master"]
+sign-tag = true
 tag-name = "{{version}}"
 
 [package.metadata.docs.rs]
