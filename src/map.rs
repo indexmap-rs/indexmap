@@ -445,12 +445,52 @@ where
         }
     }
 
+    /// Insert a key-value pair in the map before the entry at the given index, or at the end.
+    ///
+    /// If an equivalent key already exists in the map: the key remains and
+    /// is moved to the new position in the map, its corresponding value is updated
+    /// with `value`, and the older value is returned inside `Some(_)`. The returned index
+    /// will either be the given index or one less, depending on how the entry moved.
+    /// (See [`shift_insert`](Self::shift_insert) for different behavior here.)
+    ///
+    /// If no equivalent key existed in the map: the new key-value pair is
+    /// inserted exactly at the given index, and `None` is returned.
+    ///
+    /// ***Panics*** if `index` is out of bounds.
+    /// Valid indices are `0..=map.len()` (inclusive).
+    ///
+    /// Computes in **O(n)** time (average).
+    ///
+    /// See also [`entry`][Self::entry] if you want to insert *or* modify,
+    /// perhaps only using the index for new entries with [`VacantEntry::shift_insert`].
+    pub fn insert_before(&mut self, mut index: usize, key: K, value: V) -> (usize, Option<V>) {
+        assert!(index <= self.len(), "index out of bounds");
+        match self.entry(key) {
+            Entry::Occupied(mut entry) => {
+                if index > entry.index() {
+                    // Some entries will shift down when this one moves up,
+                    // so "insert before index" becomes "move to index - 1",
+                    // keeping the entry at the original index unmoved.
+                    index -= 1;
+                }
+                let old = mem::replace(entry.get_mut(), value);
+                entry.move_index(index);
+                (index, Some(old))
+            }
+            Entry::Vacant(entry) => {
+                entry.shift_insert(index, value);
+                (index, None)
+            }
+        }
+    }
+
     /// Insert a key-value pair in the map at the given index.
     ///
     /// If an equivalent key already exists in the map: the key remains and
     /// is moved to the given index in the map, its corresponding value is updated
     /// with `value`, and the older value is returned inside `Some(_)`.
     /// Note that existing entries **cannot** be moved to `index == map.len()`!
+    /// (See [`insert_before`](Self::insert_before) for different behavior here.)
     ///
     /// If no equivalent key existed in the map: the new key-value pair is
     /// inserted at the given index, and `None` is returned.
