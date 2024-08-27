@@ -708,6 +708,7 @@ impl<T, S> IndexSet<T, S> {
     /// This preserves the order of the remaining elements.
     ///
     /// Computes in **O(1)** time (average).
+    #[doc(alias = "pop_last")] // like `BTreeSet`
     pub fn pop(&mut self) -> Option<T> {
         self.map.pop().map(|(x, ())| x)
     }
