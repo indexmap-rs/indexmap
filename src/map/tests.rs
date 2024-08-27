@@ -391,6 +391,8 @@ fn get_index_entry() {
     let mut map = IndexMap::new();
 
     assert!(map.get_index_entry(0).is_none());
+    assert!(map.first_entry().is_none());
+    assert!(map.last_entry().is_none());
 
     map.insert(0, "0");
     map.insert(1, "1");
@@ -414,6 +416,18 @@ fn get_index_entry() {
     }
 
     assert_eq!(*map.get(&3).unwrap(), "4");
+
+    {
+        let e = map.first_entry().unwrap();
+        assert_eq!(*e.key(), 0);
+        assert_eq!(*e.get(), "0");
+    }
+
+    {
+        let e = map.last_entry().unwrap();
+        assert_eq!(*e.key(), 2);
+        assert_eq!(*e.get(), "2");
+    }
 }
 
 #[test]

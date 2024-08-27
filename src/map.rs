@@ -1098,6 +1098,13 @@ impl<K, V, S> IndexMap<K, V, S> {
         self.as_entries_mut().first_mut().map(Bucket::ref_mut)
     }
 
+    /// Get the first entry in the map for in-place manipulation.
+    ///
+    /// Computes in **O(1)** time.
+    pub fn first_entry(&mut self) -> Option<IndexedEntry<'_, K, V>> {
+        self.get_index_entry(0)
+    }
+
     /// Get the last key-value pair
     ///
     /// Computes in **O(1)** time.
@@ -1110,6 +1117,13 @@ impl<K, V, S> IndexMap<K, V, S> {
     /// Computes in **O(1)** time.
     pub fn last_mut(&mut self) -> Option<(&K, &mut V)> {
         self.as_entries_mut().last_mut().map(Bucket::ref_mut)
+    }
+
+    /// Get the last entry in the map for in-place manipulation.
+    ///
+    /// Computes in **O(1)** time.
+    pub fn last_entry(&mut self) -> Option<IndexedEntry<'_, K, V>> {
+        self.get_index_entry(self.len().checked_sub(1)?)
     }
 
     /// Remove the key-value pair by index
