@@ -361,7 +361,7 @@ where
     ///
     /// This is equivalent to finding the position with
     /// [`binary_search`][Self::binary_search], and if needed calling
-    /// [`shift_insert`][Self::shift_insert] for a new value.
+    /// [`insert_before`][Self::insert_before] for a new value.
     ///
     /// If the sorted item is found in the set, it returns the index of that
     /// existing item and `false`, without any change. Otherwise, it inserts the

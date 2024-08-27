@@ -420,7 +420,7 @@ where
     ///
     /// This is equivalent to finding the position with
     /// [`binary_search_keys`][Self::binary_search_keys], then either updating
-    /// it or calling [`shift_insert`][Self::shift_insert] for a new key.
+    /// it or calling [`insert_before`][Self::insert_before] for a new key.
     ///
     /// If the sorted key is found in the map, its corresponding value is
     /// updated with `value`, and the older value is returned inside
@@ -441,7 +441,7 @@ where
     {
         match self.binary_search_keys(&key) {
             Ok(i) => (i, Some(mem::replace(&mut self[i], value))),
-            Err(i) => (i, self.shift_insert(i, key, value)),
+            Err(i) => self.insert_before(i, key, value),
         }
     }
 
