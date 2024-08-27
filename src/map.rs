@@ -448,26 +448,32 @@ where
     /// Insert a key-value pair in the map at the given index.
     ///
     /// If an equivalent key already exists in the map: the key remains and
-    /// is moved to the new position in the map, its corresponding value is updated
+    /// is moved to the given index in the map, its corresponding value is updated
     /// with `value`, and the older value is returned inside `Some(_)`.
+    /// Note that existing entries **cannot** be moved to `index == map.len()`!
     ///
     /// If no equivalent key existed in the map: the new key-value pair is
     /// inserted at the given index, and `None` is returned.
     ///
     /// ***Panics*** if `index` is out of bounds.
+    /// Valid indices are `0..map.len()` (exclusive) when moving an existing entry, or
+    /// `0..=map.len()` (inclusive) when inserting a new key.
     ///
     /// Computes in **O(n)** time (average).
     ///
     /// See also [`entry`][Self::entry] if you want to insert *or* modify,
     /// perhaps only using the index for new entries with [`VacantEntry::shift_insert`].
     pub fn shift_insert(&mut self, index: usize, key: K, value: V) -> Option<V> {
+        let len = self.len();
         match self.entry(key) {
             Entry::Occupied(mut entry) => {
+                assert!(index < len, "index out of bounds");
                 let old = mem::replace(entry.get_mut(), value);
                 entry.move_index(index);
                 Some(old)
             }
             Entry::Vacant(entry) => {
+                assert!(index <= len, "index out of bounds");
                 entry.shift_insert(index, value);
                 None
             }

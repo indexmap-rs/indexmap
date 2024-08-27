@@ -385,12 +385,15 @@ where
 
     /// Insert the value into the set at the given index.
     ///
-    /// If an equivalent item already exists in the set, it returns
-    /// `false` leaving the original value in the set, but moving it to
-    /// the new position in the set. Otherwise, it inserts the new
-    /// item at the given index and returns `true`.
+    /// If an equivalent item already exists in the set, it returns `false` leaving
+    /// the original value in the set, but moved to the given index.
+    /// Note that existing values **cannot** be moved to `index == set.len()`!
+    ///
+    /// Otherwise, it inserts the new value at the given index and returns `true`.
     ///
     /// ***Panics*** if `index` is out of bounds.
+    /// Valid indices are `0..set.len()` (exclusive) when moving an existing value, or
+    /// `0..=set.len()` (inclusive) when inserting a new value.
     ///
     /// Computes in **O(n)** time (average).
     pub fn shift_insert(&mut self, index: usize, value: T) -> bool {
