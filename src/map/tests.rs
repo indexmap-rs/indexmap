@@ -417,6 +417,31 @@ fn get_index_entry() {
 }
 
 #[test]
+fn from_entries() {
+    let mut map = IndexMap::from([(1, "1"), (2, "2"), (3, "3")]);
+
+    {
+        let e = match map.entry(1) {
+            Entry::Occupied(e) => IndexedEntry::from(e),
+            Entry::Vacant(_) => panic!(),
+        };
+        assert_eq!(e.index(), 0);
+        assert_eq!(*e.key(), 1);
+        assert_eq!(*e.get(), "1");
+    }
+
+    {
+        let e = match map.get_index_entry(1) {
+            Some(e) => OccupiedEntry::from(e),
+            None => panic!(),
+        };
+        assert_eq!(e.index(), 1);
+        assert_eq!(*e.key(), 2);
+        assert_eq!(*e.get(), "2");
+    }
+}
+
+#[test]
 fn keys() {
     let vec = vec![(1, 'a'), (2, 'b'), (3, 'c')];
     let map: IndexMap<_, _> = vec.into_iter().collect();
