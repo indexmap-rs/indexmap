@@ -821,6 +821,7 @@ impl<K, V, S> IndexMap<K, V, S> {
     /// This preserves the order of the remaining elements.
     ///
     /// Computes in **O(1)** time (average).
+    #[doc(alias = "pop_last")] // like `BTreeMap`
     pub fn pop(&mut self) -> Option<(K, V)> {
         self.core.pop()
     }
@@ -1087,6 +1088,7 @@ impl<K, V, S> IndexMap<K, V, S> {
     /// Get the first key-value pair
     ///
     /// Computes in **O(1)** time.
+    #[doc(alias = "first_key_value")] // like `BTreeMap`
     pub fn first(&self) -> Option<(&K, &V)> {
         self.as_entries().first().map(Bucket::refs)
     }
@@ -1098,9 +1100,17 @@ impl<K, V, S> IndexMap<K, V, S> {
         self.as_entries_mut().first_mut().map(Bucket::ref_mut)
     }
 
+    /// Get the first entry in the map for in-place manipulation.
+    ///
+    /// Computes in **O(1)** time.
+    pub fn first_entry(&mut self) -> Option<IndexedEntry<'_, K, V>> {
+        self.get_index_entry(0)
+    }
+
     /// Get the last key-value pair
     ///
     /// Computes in **O(1)** time.
+    #[doc(alias = "last_key_value")] // like `BTreeMap`
     pub fn last(&self) -> Option<(&K, &V)> {
         self.as_entries().last().map(Bucket::refs)
     }
@@ -1110,6 +1120,13 @@ impl<K, V, S> IndexMap<K, V, S> {
     /// Computes in **O(1)** time.
     pub fn last_mut(&mut self) -> Option<(&K, &mut V)> {
         self.as_entries_mut().last_mut().map(Bucket::ref_mut)
+    }
+
+    /// Get the last entry in the map for in-place manipulation.
+    ///
+    /// Computes in **O(1)** time.
+    pub fn last_entry(&mut self) -> Option<IndexedEntry<'_, K, V>> {
+        self.get_index_entry(self.len().checked_sub(1)?)
     }
 
     /// Remove the key-value pair by index
