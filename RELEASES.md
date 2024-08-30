@@ -1,5 +1,12 @@
 # Releases
 
+## 2.5.0
+
+- Added an `insert_before` method to `IndexMap` and `IndexSet`, as an
+  alternative to `shift_insert` with different behavior on existing entries.
+- Added `first_entry` and `last_entry` methods to `IndexMap`.
+- Added `From` implementations between `IndexedEntry` and `OccupiedEntry`.
+
 ## 2.4.0
 
 - Added methods `IndexMap::append` and `IndexSet::append`, moving all items from
