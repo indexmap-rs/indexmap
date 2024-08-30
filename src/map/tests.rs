@@ -136,6 +136,34 @@ fn shift_insert() {
 }
 
 #[test]
+fn insert_sorted_bad() {
+    let mut map = IndexMap::new();
+    map.insert(10, ());
+    for i in 0..10 {
+        map.insert(i, ());
+    }
+
+    // The binary search will want to insert this at the end (index == len()),
+    // but that's only possible for *new* inserts. It should still be handled
+    // without panicking though, and in this case it's simple enough that we
+    // know the exact result. (But don't read this as an API guarantee!)
+    assert_eq!(map.first(), Some((&10, &())));
+    map.insert_sorted(10, ());
+    assert_eq!(map.last(), Some((&10, &())));
+    assert!(map.keys().copied().eq(0..=10));
+
+    // Other out-of-order entries can also "insert" to a binary-searched
+    // position, moving in either direction.
+    map.move_index(5, 0);
+    map.move_index(6, 10);
+    assert_eq!(map.first(), Some((&5, &())));
+    assert_eq!(map.last(), Some((&6, &())));
+    map.insert_sorted(5, ()); // moves back up
+    map.insert_sorted(6, ()); // moves back down
+    assert!(map.keys().copied().eq(0..=10));
+}
+
+#[test]
 fn grow() {
     let insert = [0, 4, 2, 12, 8, 7, 11];
     let not_present = [1, 3, 6, 9, 10];

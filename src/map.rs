@@ -420,7 +420,7 @@ where
     ///
     /// This is equivalent to finding the position with
     /// [`binary_search_keys`][Self::binary_search_keys], then either updating
-    /// it or calling [`shift_insert`][Self::shift_insert] for a new key.
+    /// it or calling [`insert_before`][Self::insert_before] for a new key.
     ///
     /// If the sorted key is found in the map, its corresponding value is
     /// updated with `value`, and the older value is returned inside
@@ -441,33 +441,147 @@ where
     {
         match self.binary_search_keys(&key) {
             Ok(i) => (i, Some(mem::replace(&mut self[i], value))),
-            Err(i) => (i, self.shift_insert(i, key, value)),
+            Err(i) => self.insert_before(i, key, value),
+        }
+    }
+
+    /// Insert a key-value pair in the map before the entry at the given index, or at the end.
+    ///
+    /// If an equivalent key already exists in the map: the key remains and
+    /// is moved to the new position in the map, its corresponding value is updated
+    /// with `value`, and the older value is returned inside `Some(_)`. The returned index
+    /// will either be the given index or one less, depending on how the entry moved.
+    /// (See [`shift_insert`](Self::shift_insert) for different behavior here.)
+    ///
+    /// If no equivalent key existed in the map: the new key-value pair is
+    /// inserted exactly at the given index, and `None` is returned.
+    ///
+    /// ***Panics*** if `index` is out of bounds.
+    /// Valid indices are `0..=map.len()` (inclusive).
+    ///
+    /// Computes in **O(n)** time (average).
+    ///
+    /// See also [`entry`][Self::entry] if you want to insert *or* modify,
+    /// perhaps only using the index for new entries with [`VacantEntry::shift_insert`].
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use indexmap::IndexMap;
+    /// let mut map: IndexMap<char, ()> = ('a'..='z').map(|c| (c, ())).collect();
+    ///
+    /// // The new key '*' goes exactly at the given index.
+    /// assert_eq!(map.get_index_of(&'*'), None);
+    /// assert_eq!(map.insert_before(10, '*', ()), (10, None));
+    /// assert_eq!(map.get_index_of(&'*'), Some(10));
+    ///
+    /// // Moving the key 'a' up will shift others down, so this moves *before* 10 to index 9.
+    /// assert_eq!(map.insert_before(10, 'a', ()), (9, Some(())));
+    /// assert_eq!(map.get_index_of(&'a'), Some(9));
+    /// assert_eq!(map.get_index_of(&'*'), Some(10));
+    ///
+    /// // Moving the key 'z' down will shift others up, so this moves to exactly 10.
+    /// assert_eq!(map.insert_before(10, 'z', ()), (10, Some(())));
+    /// assert_eq!(map.get_index_of(&'z'), Some(10));
+    /// assert_eq!(map.get_index_of(&'*'), Some(11));
+    ///
+    /// // Moving or inserting before the endpoint is also valid.
+    /// assert_eq!(map.len(), 27);
+    /// assert_eq!(map.insert_before(map.len(), '*', ()), (26, Some(())));
+    /// assert_eq!(map.get_index_of(&'*'), Some(26));
+    /// assert_eq!(map.insert_before(map.len(), '+', ()), (27, None));
+    /// assert_eq!(map.get_index_of(&'+'), Some(27));
+    /// assert_eq!(map.len(), 28);
+    /// ```
+    pub fn insert_before(&mut self, mut index: usize, key: K, value: V) -> (usize, Option<V>) {
+        assert!(index <= self.len(), "index out of bounds");
+        match self.entry(key) {
+            Entry::Occupied(mut entry) => {
+                if index > entry.index() {
+                    // Some entries will shift down when this one moves up,
+                    // so "insert before index" becomes "move to index - 1",
+                    // keeping the entry at the original index unmoved.
+                    index -= 1;
+                }
+                let old = mem::replace(entry.get_mut(), value);
+                entry.move_index(index);
+                (index, Some(old))
+            }
+            Entry::Vacant(entry) => {
+                entry.shift_insert(index, value);
+                (index, None)
+            }
         }
     }
 
     /// Insert a key-value pair in the map at the given index.
     ///
     /// If an equivalent key already exists in the map: the key remains and
-    /// is moved to the new position in the map, its corresponding value is updated
+    /// is moved to the given index in the map, its corresponding value is updated
     /// with `value`, and the older value is returned inside `Some(_)`.
+    /// Note that existing entries **cannot** be moved to `index == map.len()`!
+    /// (See [`insert_before`](Self::insert_before) for different behavior here.)
     ///
     /// If no equivalent key existed in the map: the new key-value pair is
     /// inserted at the given index, and `None` is returned.
     ///
     /// ***Panics*** if `index` is out of bounds.
+    /// Valid indices are `0..map.len()` (exclusive) when moving an existing entry, or
+    /// `0..=map.len()` (inclusive) when inserting a new key.
     ///
     /// Computes in **O(n)** time (average).
     ///
     /// See also [`entry`][Self::entry] if you want to insert *or* modify,
     /// perhaps only using the index for new entries with [`VacantEntry::shift_insert`].
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use indexmap::IndexMap;
+    /// let mut map: IndexMap<char, ()> = ('a'..='z').map(|c| (c, ())).collect();
+    ///
+    /// // The new key '*' goes exactly at the given index.
+    /// assert_eq!(map.get_index_of(&'*'), None);
+    /// assert_eq!(map.shift_insert(10, '*', ()), None);
+    /// assert_eq!(map.get_index_of(&'*'), Some(10));
+    ///
+    /// // Moving the key 'a' up to 10 will shift others down, including the '*' that was at 10.
+    /// assert_eq!(map.shift_insert(10, 'a', ()), Some(()));
+    /// assert_eq!(map.get_index_of(&'a'), Some(10));
+    /// assert_eq!(map.get_index_of(&'*'), Some(9));
+    ///
+    /// // Moving the key 'z' down to 9 will shift others up, including the '*' that was at 9.
+    /// assert_eq!(map.shift_insert(9, 'z', ()), Some(()));
+    /// assert_eq!(map.get_index_of(&'z'), Some(9));
+    /// assert_eq!(map.get_index_of(&'*'), Some(10));
+    ///
+    /// // Existing keys can move to len-1 at most, but new keys can insert at the endpoint.
+    /// assert_eq!(map.len(), 27);
+    /// assert_eq!(map.shift_insert(map.len() - 1, '*', ()), Some(()));
+    /// assert_eq!(map.get_index_of(&'*'), Some(26));
+    /// assert_eq!(map.shift_insert(map.len(), '+', ()), None);
+    /// assert_eq!(map.get_index_of(&'+'), Some(27));
+    /// assert_eq!(map.len(), 28);
+    /// ```
+    ///
+    /// ```should_panic
+    /// use indexmap::IndexMap;
+    /// let mut map: IndexMap<char, ()> = ('a'..='z').map(|c| (c, ())).collect();
+    ///
+    /// // This is an invalid index for moving an existing key!
+    /// map.shift_insert(map.len(), 'a', ());
+    /// ```
     pub fn shift_insert(&mut self, index: usize, key: K, value: V) -> Option<V> {
+        let len = self.len();
         match self.entry(key) {
             Entry::Occupied(mut entry) => {
+                assert!(index < len, "index out of bounds");
                 let old = mem::replace(entry.get_mut(), value);
                 entry.move_index(index);
                 Some(old)
             }
             Entry::Vacant(entry) => {
+                assert!(index <= len, "index out of bounds");
                 entry.shift_insert(index, value);
                 None
             }
