@@ -542,6 +542,26 @@ fn into_values() {
 }
 
 #[test]
+fn drain_range() {
+    // Test the various heuristics of `erase_indices`
+    for range in [
+        0..0,   // nothing erased
+        10..90, // reinsert the few kept (..10 and 90..)
+        80..90, // update the few to adjust (80..)
+        20..30, // sweep everything
+    ] {
+        let mut vec = Vec::from_iter(0..100);
+        let mut map: IndexMap<i32, ()> = (0..100).map(|i| (i, ())).collect();
+        drop(vec.drain(range.clone()));
+        drop(map.drain(range));
+        assert!(vec.iter().eq(map.keys()));
+        for (i, x) in vec.iter().enumerate() {
+            assert_eq!(map.get_index_of(x), Some(i));
+        }
+    }
+}
+
+#[test]
 #[cfg(feature = "std")]
 fn from_array() {
     let map = IndexMap::from([(1, 2), (3, 4)]);
