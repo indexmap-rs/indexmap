@@ -88,6 +88,7 @@ impl<T> Default for Iter<'_, T> {
 ///
 /// This `struct` is created by the [`IndexSet::into_iter`] method
 /// (provided by the [`IntoIterator`] trait). See its documentation for more.
+#[derive(Clone)]
 pub struct IntoIter<T> {
     iter: vec::IntoIter<Bucket<T>>,
 }
