@@ -1149,7 +1149,7 @@ impl<K, V, S> IndexMap<K, V, S> {
 
     /// Get a key-value pair by index
     ///
-    /// Valid indices are *0 <= index < self.len()*
+    /// Valid indices are `0 <= index < self.len()`.
     ///
     /// Computes in **O(1)** time.
     pub fn get_index(&self, index: usize) -> Option<(&K, &V)> {
@@ -1158,7 +1158,7 @@ impl<K, V, S> IndexMap<K, V, S> {
 
     /// Get a key-value pair by index
     ///
-    /// Valid indices are *0 <= index < self.len()*
+    /// Valid indices are `0 <= index < self.len()`.
     ///
     /// Computes in **O(1)** time.
     pub fn get_index_mut(&mut self, index: usize) -> Option<(&K, &mut V)> {
@@ -1167,7 +1167,7 @@ impl<K, V, S> IndexMap<K, V, S> {
 
     /// Get an entry in the map by index for in-place manipulation.
     ///
-    /// Valid indices are *0 <= index < self.len()*
+    /// Valid indices are `0 <= index < self.len()`.
     ///
     /// Computes in **O(1)** time.
     pub fn get_index_entry(&mut self, index: usize) -> Option<IndexedEntry<'_, K, V>> {
@@ -1179,7 +1179,7 @@ impl<K, V, S> IndexMap<K, V, S> {
 
     /// Returns a slice of key-value pairs in the given range of indices.
     ///
-    /// Valid indices are *0 <= index < self.len()*
+    /// Valid indices are `0 <= index < self.len()`.
     ///
     /// Computes in **O(1)** time.
     pub fn get_range<R: RangeBounds<usize>>(&self, range: R) -> Option<&Slice<K, V>> {
@@ -1190,7 +1190,7 @@ impl<K, V, S> IndexMap<K, V, S> {
 
     /// Returns a mutable slice of key-value pairs in the given range of indices.
     ///
-    /// Valid indices are *0 <= index < self.len()*
+    /// Valid indices are `0 <= index < self.len()`.
     ///
     /// Computes in **O(1)** time.
     pub fn get_range_mut<R: RangeBounds<usize>>(&mut self, range: R) -> Option<&mut Slice<K, V>> {
@@ -1245,7 +1245,7 @@ impl<K, V, S> IndexMap<K, V, S> {
 
     /// Remove the key-value pair by index
     ///
-    /// Valid indices are *0 <= index < self.len()*
+    /// Valid indices are `0 <= index < self.len()`.
     ///
     /// Like [`Vec::swap_remove`], the pair is removed by swapping it with the
     /// last element of the map and popping it off. **This perturbs
@@ -1258,7 +1258,7 @@ impl<K, V, S> IndexMap<K, V, S> {
 
     /// Remove the key-value pair by index
     ///
-    /// Valid indices are *0 <= index < self.len()*
+    /// Valid indices are `0 <= index < self.len()`.
     ///
     /// Like [`Vec::remove`], the pair is removed by shifting all of the
     /// elements that follow it, preserving their relative order.
