@@ -983,7 +983,7 @@ impl<T, S> IndexSet<T, S> {
 
     /// Get a value by index
     ///
-    /// Valid indices are *0 <= index < self.len()*
+    /// Valid indices are `0 <= index < self.len()`.
     ///
     /// Computes in **O(1)** time.
     pub fn get_index(&self, index: usize) -> Option<&T> {
@@ -992,7 +992,7 @@ impl<T, S> IndexSet<T, S> {
 
     /// Returns a slice of values in the given range of indices.
     ///
-    /// Valid indices are *0 <= index < self.len()*
+    /// Valid indices are `0 <= index < self.len()`.
     ///
     /// Computes in **O(1)** time.
     pub fn get_range<R: RangeBounds<usize>>(&self, range: R) -> Option<&Slice<T>> {
@@ -1017,7 +1017,7 @@ impl<T, S> IndexSet<T, S> {
 
     /// Remove the value by index
     ///
-    /// Valid indices are *0 <= index < self.len()*
+    /// Valid indices are `0 <= index < self.len()`.
     ///
     /// Like [`Vec::swap_remove`], the value is removed by swapping it with the
     /// last element of the set and popping it off. **This perturbs
@@ -1030,7 +1030,7 @@ impl<T, S> IndexSet<T, S> {
 
     /// Remove the value by index
     ///
-    /// Valid indices are *0 <= index < self.len()*
+    /// Valid indices are `0 <= index < self.len()`.
     ///
     /// Like [`Vec::remove`], the value is removed by shifting all of the
     /// elements that follow it, preserving their relative order.
