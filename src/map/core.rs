@@ -480,6 +480,7 @@ impl<K, V> IndexMapCore<K, V> {
 
     pub(super) fn move_index(&mut self, from: usize, to: usize) {
         let from_hash = self.entries[from].hash;
+        let _ = self.entries[to]; // explicit bounds check
         if from != to {
             // Use a sentinel index so other indices don't collide.
             update_index(&mut self.indices, from_hash, from, usize::MAX);
