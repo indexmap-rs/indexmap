@@ -813,3 +813,18 @@ fn test_partition_point() {
     assert_eq!(b.partition_point(|_, &x| x < 7), 4);
     assert_eq!(b.partition_point(|_, &x| x < 8), 5);
 }
+
+macro_rules! move_index_oob {
+    ($test:ident, $from:expr, $to:expr) => {
+        #[test]
+        #[should_panic(expected = "index out of bounds")]
+        fn $test() {
+            let mut map: IndexMap<i32, ()> = (0..10).map(|k| (k, ())).collect();
+            map.move_index($from, $to);
+        }
+    }
+}
+move_index_oob!(test_move_index_out_of_bounds_0_10, 0, 10);
+move_index_oob!(test_move_index_out_of_bounds_0_max, 0, usize::MAX);
+move_index_oob!(test_move_index_out_of_bounds_10_0, 10, 0);
+move_index_oob!(test_move_index_out_of_bounds_max_0, usize::MAX, 0);
