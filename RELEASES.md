@@ -1,5 +1,10 @@
 # Releases
 
+## 2.6.0
+
+- Implemented `Clone` for `map::IntoIter` and `set::IntoIter`.
+- Updated the `hashbrown` dependency to version 0.15.
+
 ## 2.5.0
 
 - Added an `insert_before` method to `IndexMap` and `IndexSet`, as an
