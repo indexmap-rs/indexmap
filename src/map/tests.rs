@@ -822,7 +822,7 @@ macro_rules! move_index_oob {
             let mut map: IndexMap<i32, ()> = (0..10).map(|k| (k, ())).collect();
             map.move_index($from, $to);
         }
-    }
+    };
 }
 move_index_oob!(test_move_index_out_of_bounds_0_10, 0, 10);
 move_index_oob!(test_move_index_out_of_bounds_0_max, 0, usize::MAX);

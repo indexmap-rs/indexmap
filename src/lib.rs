@@ -1,4 +1,4 @@
-// We *mostly* avoid unsafe code, but `map::core::raw` allows it to use `RawTable` buckets.
+// We *mostly* avoid unsafe code, but `Slice` allows it for DST casting.
 #![deny(unsafe_code)]
 #![warn(rust_2018_idioms)]
 #![no_std]
