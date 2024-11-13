@@ -48,6 +48,11 @@ jobs:
       - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{ matrix.rust }}
+      - name: Downgrade dependencies
+        if: matrix.rust == '1.63.0'
+        run: |
+          cargo generate-lockfile
+          cargo update -p hashbrown --precise 0.15.0
       - name: Tests
         run: |
           cargo build --verbose --features "${{ matrix.features }}"
@@ -83,6 +88,11 @@ jobs:
         with:
           toolchain: ${{ matrix.rust }}
           target: ${{ matrix.target }}
+      - name: Downgrade dependencies
+        if: matrix.rust == '1.63.0'
+        run: |
+          cargo generate-lockfile
+          cargo update -p hashbrown --precise 0.15.0
       - name: Tests
         run: |
           cargo build -vv --target=${{ matrix.target }} --no-default-features
