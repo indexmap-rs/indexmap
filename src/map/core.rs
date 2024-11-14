@@ -316,6 +316,17 @@ impl<K, V> IndexMapCore<K, V> {
         self.indices.find(hash.get(), eq).copied()
     }
 
+    /// Append a key-value pair to `entries`,
+    /// *without* checking whether it already exists.
+    fn push_entry(&mut self, hash: HashValue, key: K, value: V) {
+        if self.entries.len() == self.entries.capacity() {
+            // Reserve our own capacity synced to the indices,
+            // rather than letting `Vec::push` just double it.
+            self.borrow_mut().reserve_entries(1);
+        }
+        self.entries.push(Bucket { hash, key, value });
+    }
+
     pub(crate) fn insert_full(&mut self, hash: HashValue, key: K, value: V) -> (usize, Option<V>)
     where
         K: Eq,
@@ -330,7 +341,7 @@ impl<K, V> IndexMapCore<K, V> {
             hash_table::Entry::Vacant(entry) => {
                 let i = self.entries.len();
                 entry.insert(i);
-                self.borrow_mut().push_entry(hash, key, value);
+                self.push_entry(hash, key, value);
                 debug_assert_eq!(self.indices.len(), self.entries.len());
                 (i, None)
             }
@@ -362,7 +373,7 @@ impl<K, V> IndexMapCore<K, V> {
             hash_table::Entry::Vacant(entry) => {
                 let i = self.entries.len();
                 entry.insert(i);
-                self.borrow_mut().push_entry(hash, key, value);
+                self.push_entry(hash, key, value);
                 debug_assert_eq!(self.indices.len(), self.entries.len());
                 (i, None)
             }
@@ -522,37 +533,25 @@ impl<'a, K, V> RefMut<'a, K, V> {
         self.entries.reserve_exact(additional);
     }
 
-    /// Append a key-value pair to `entries`,
+    /// Insert a key-value pair in `entries`,
     /// *without* checking whether it already exists.
-    fn push_entry(&mut self, hash: HashValue, key: K, value: V) {
+    fn insert_unique(mut self, hash: HashValue, key: K, value: V) -> OccupiedEntry<'a, K, V> {
         if self.entries.len() == self.entries.capacity() {
             // Reserve our own capacity synced to the indices,
             // rather than letting `Vec::push` just double it.
             self.reserve_entries(1);
         }
+        let i = self.indices.len();
+        let entry = self
+            .indices
+            .insert_unique(hash.get(), i, get_hash(self.entries));
+        debug_assert_eq!(i, self.entries.len());
         self.entries.push(Bucket { hash, key, value });
+        OccupiedEntry::new(self.entries, entry)
     }
 
     /// Insert a key-value pair in `entries` at a particular index,
     /// *without* checking whether it already exists.
-    fn insert_entry(&mut self, index: usize, hash: HashValue, key: K, value: V) {
-        if self.entries.len() == self.entries.capacity() {
-            // Reserve our own capacity synced to the indices,
-            // rather than letting `Vec::insert` just double it.
-            self.reserve_entries(1);
-        }
-        self.entries.insert(index, Bucket { hash, key, value });
-    }
-
-    fn insert_unique(&mut self, hash: HashValue, key: K, value: V) -> usize {
-        let i = self.indices.len();
-        self.indices
-            .insert_unique(hash.get(), i, get_hash(self.entries));
-        debug_assert_eq!(i, self.entries.len());
-        self.push_entry(hash, key, value);
-        i
-    }
-
     fn shift_insert_unique(&mut self, index: usize, hash: HashValue, key: K, value: V) {
         let end = self.indices.len();
         assert!(index <= end);
@@ -565,7 +564,12 @@ impl<'a, K, V> RefMut<'a, K, V> {
             let i = if i < index { i } else { i - 1 };
             entries[i].hash.get()
         });
-        self.insert_entry(index, hash, key, value);
+        if self.entries.len() == self.entries.capacity() {
+            // Reserve our own capacity synced to the indices,
+            // rather than letting `Vec::insert` just double it.
+            self.reserve_entries(1);
+        }
+        self.entries.insert(index, Bucket { hash, key, value });
     }
 
     /// Remove an entry by shifting all entries that follow it
