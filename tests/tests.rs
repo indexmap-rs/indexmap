@@ -1,4 +1,16 @@
-use indexmap::{indexmap, indexset};
+use indexmap::{indexmap, indexset, IndexMap, IndexSet};
+
+#[test]
+fn test_set_just() {
+    let s = IndexSet::<u8>::just(42);
+    assert_eq!(s, indexset!(42));
+}
+
+#[test]
+fn test_map_just() {
+    let m = IndexMap::<u8, u16>::just((42, 1337));
+    assert_eq!(m.get(&42), Some(&1337));
+}
 
 #[test]
 fn test_sort() {
