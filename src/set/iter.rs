@@ -633,21 +633,19 @@ impl<I: fmt::Debug> fmt::Debug for UnitValue<I> {
 ///
 /// This `struct` is created by [`IndexSet::extract_if()`].
 /// See its documentation for more.
-pub struct ExtractIf<'a, T, F>
-where
-    F: FnMut(&T) -> bool,
-{
+pub struct ExtractIf<'a, T, F> {
     inner: ExtractCore<'a, T, ()>,
     pred: F,
 }
 
-impl<T, F> ExtractIf<'_, T, F>
-where
-    F: FnMut(&T) -> bool,
-{
-    pub(super) fn new(core: &mut IndexMapCore<T, ()>, pred: F) -> ExtractIf<'_, T, F> {
+impl<T, F> ExtractIf<'_, T, F> {
+    pub(super) fn new<R>(core: &mut IndexMapCore<T, ()>, range: R, pred: F) -> ExtractIf<'_, T, F>
+    where
+        R: RangeBounds<usize>,
+        F: FnMut(&T) -> bool,
+    {
         ExtractIf {
-            inner: core.extract(),
+            inner: core.extract(range),
             pred,
         }
     }
@@ -672,7 +670,7 @@ where
 
 impl<'a, T, F> fmt::Debug for ExtractIf<'a, T, F>
 where
-    F: FnMut(&T) -> bool,
+    T: fmt::Debug,
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("ExtractIf").finish_non_exhaustive()
