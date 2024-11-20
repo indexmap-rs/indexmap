@@ -308,7 +308,8 @@ impl<K, V, S> IndexMap<K, V, S> {
         Drain::new(self.core.drain(range))
     }
 
-    /// Creates an iterator which uses a closure to determine if an element should be removed.
+    /// Creates an iterator which uses a closure to determine if an element should be removed,
+    /// for all elements in the given range.
     ///
     /// If the closure returns true, the element is removed from the map and yielded.
     /// If the closure returns false, or panics, the element remains in the map and will not be
@@ -316,6 +317,11 @@ impl<K, V, S> IndexMap<K, V, S> {
     ///
     /// Note that `extract_if` lets you mutate every value in the filter closure, regardless of
     /// whether you choose to keep or remove it.
+    ///
+    /// The range may be any type that implements [`RangeBounds<usize>`],
+    /// including all of the `std::ops::Range*` types, or even a tuple pair of
+    /// `Bound` start and end values. To check the entire map, use `RangeFull`
+    /// like `map.extract_if(.., predicate)`.
     ///
     /// If the returned `ExtractIf` is not exhausted, e.g. because it is dropped without iterating
     /// or the iteration short-circuits, then the remaining elements will be retained.
@@ -331,7 +337,7 @@ impl<K, V, S> IndexMap<K, V, S> {
     /// use indexmap::IndexMap;
     ///
     /// let mut map: IndexMap<i32, i32> = (0..8).map(|x| (x, x)).collect();
-    /// let extracted: IndexMap<i32, i32> = map.extract_if(|k, _v| k % 2 == 0).collect();
+    /// let extracted: IndexMap<i32, i32> = map.extract_if(.., |k, _v| k % 2 == 0).collect();
     ///
     /// let evens = extracted.keys().copied().collect::<Vec<_>>();
     /// let odds = map.keys().copied().collect::<Vec<_>>();
@@ -339,11 +345,12 @@ impl<K, V, S> IndexMap<K, V, S> {
     /// assert_eq!(evens, vec![0, 2, 4, 6]);
     /// assert_eq!(odds, vec![1, 3, 5, 7]);
     /// ```
-    pub fn extract_if<F>(&mut self, pred: F) -> ExtractIf<'_, K, V, F>
+    pub fn extract_if<F, R>(&mut self, range: R, pred: F) -> ExtractIf<'_, K, V, F>
     where
         F: FnMut(&K, &mut V) -> bool,
+        R: RangeBounds<usize>,
     {
-        ExtractIf::new(&mut self.core, pred)
+        ExtractIf::new(&mut self.core, range, pred)
     }
 
     /// Splits the collection into two at the given index.

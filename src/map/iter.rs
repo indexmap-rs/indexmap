@@ -778,21 +778,19 @@ where
 ///
 /// This `struct` is created by [`IndexMap::extract_if()`].
 /// See its documentation for more.
-pub struct ExtractIf<'a, K, V, F>
-where
-    F: FnMut(&K, &mut V) -> bool,
-{
+pub struct ExtractIf<'a, K, V, F> {
     inner: ExtractCore<'a, K, V>,
     pred: F,
 }
 
-impl<K, V, F> ExtractIf<'_, K, V, F>
-where
-    F: FnMut(&K, &mut V) -> bool,
-{
-    pub(super) fn new(core: &mut IndexMapCore<K, V>, pred: F) -> ExtractIf<'_, K, V, F> {
+impl<K, V, F> ExtractIf<'_, K, V, F> {
+    pub(super) fn new<R>(core: &mut IndexMapCore<K, V>, range: R, pred: F) -> ExtractIf<'_, K, V, F>
+    where
+        R: RangeBounds<usize>,
+        F: FnMut(&K, &mut V) -> bool,
+    {
         ExtractIf {
-            inner: core.extract(),
+            inner: core.extract(range),
             pred,
         }
     }
@@ -818,10 +816,7 @@ where
     }
 }
 
-impl<'a, K, V, F> fmt::Debug for ExtractIf<'a, K, V, F>
-where
-    F: FnMut(&K, &mut V) -> bool,
-{
+impl<'a, K, V, F> fmt::Debug for ExtractIf<'a, K, V, F> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("ExtractIf").finish_non_exhaustive()
     }
