@@ -1,5 +1,10 @@
 # Releases
 
+## 2.7.0 (2024-11-30)
+
+- Added methods `Entry::insert_entry` and `VacantEntry::insert_entry`, returning
+  an `OccupiedEntry` after insertion.
+
 ## 2.6.0 (2024-10-01)
 
 - Implemented `Clone` for `map::IntoIter` and `set::IntoIter`.
