@@ -208,7 +208,12 @@ impl<K, V> IndexMapCore<K, V> {
 
     #[track_caller]
     pub(crate) fn split_off(&mut self, at: usize) -> Self {
-        assert!(at <= self.entries.len());
+        let len = self.entries.len();
+        assert!(
+            at <= len,
+            "index out of bounds: the len is {len} but the index is {at}. Expected index <= len"
+        );
+
         self.erase_indices(at, self.entries.len());
         let entries = self.entries.split_off(at);
 

@@ -1106,8 +1106,12 @@ impl<T, S> Index<usize> for IndexSet<T, S> {
     ///
     /// ***Panics*** if `index` is out of bounds.
     fn index(&self, index: usize) -> &T {
-        self.get_index(index)
-            .expect("IndexSet: index out of bounds")
+        self.get_index(index).unwrap_or_else(|| {
+            panic!(
+                "index out of bounds: the len is {len} but the index is {index}",
+                len = self.len()
+            );
+        })
     }
 }
 
