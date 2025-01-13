@@ -294,6 +294,7 @@ impl<'a, K, V> OccupiedEntry<'a, K, V> {
     /// ***Panics*** if `to` is out of bounds.
     ///
     /// Computes in **O(n)** time (average).
+    #[track_caller]
     pub fn move_index(self, to: usize) {
         let index = self.index();
         self.into_ref_mut().move_index(index, to);
@@ -532,6 +533,7 @@ impl<'a, K, V> IndexedEntry<'a, K, V> {
     /// ***Panics*** if `to` is out of bounds.
     ///
     /// Computes in **O(n)** time (average).
+    #[track_caller]
     pub fn move_index(mut self, to: usize) {
         self.map.move_index(self.index, to);
     }

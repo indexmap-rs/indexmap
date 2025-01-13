@@ -542,6 +542,7 @@ where
     T: Hash + Eq,
     S: BuildHasher,
 {
+    #[track_caller]
     pub(super) fn new<R>(set: &'a mut IndexSet<T, S>, range: R, replace_with: I) -> Self
     where
         R: RangeBounds<usize>,

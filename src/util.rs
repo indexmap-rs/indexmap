@@ -4,6 +4,7 @@ pub(crate) fn third<A, B, C>(t: (A, B, C)) -> C {
     t.2
 }
 
+#[track_caller]
 pub(crate) fn simplify_range<R>(range: R, len: usize) -> Range<usize>
 where
     R: RangeBounds<usize>,

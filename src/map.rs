@@ -299,6 +299,7 @@ impl<K, V, S> IndexMap<K, V, S> {
     ///
     /// ***Panics*** if the starting point is greater than the end point or if
     /// the end point is greater than the length of the map.
+    #[track_caller]
     pub fn drain<R>(&mut self, range: R) -> Drain<'_, K, V>
     where
         R: RangeBounds<usize>,
@@ -313,6 +314,7 @@ impl<K, V, S> IndexMap<K, V, S> {
     /// the elements `[0, at)` with its previous capacity unchanged.
     ///
     /// ***Panics*** if `at > len`.
+    #[track_caller]
     pub fn split_off(&mut self, at: usize) -> Self
     where
         S: Clone,
@@ -493,6 +495,7 @@ where
     /// assert_eq!(map.get_index_of(&'+'), Some(27));
     /// assert_eq!(map.len(), 28);
     /// ```
+    #[track_caller]
     pub fn insert_before(&mut self, mut index: usize, key: K, value: V) -> (usize, Option<V>) {
         assert!(index <= self.len(), "index out of bounds");
         match self.entry(key) {
@@ -571,6 +574,7 @@ where
     /// // This is an invalid index for moving an existing key!
     /// map.shift_insert(map.len(), 'a', ());
     /// ```
+    #[track_caller]
     pub fn shift_insert(&mut self, index: usize, key: K, value: V) -> Option<V> {
         let len = self.len();
         match self.entry(key) {
@@ -627,6 +631,7 @@ where
     /// assert!(map.into_iter().eq([(0, '_'), (1, 'A'), (5, 'E'), (3, 'C'), (2, 'B'), (4, 'D')]));
     /// assert_eq!(removed, &[(2, 'b'), (3, 'c')]);
     /// ```
+    #[track_caller]
     pub fn splice<R, I>(&mut self, range: R, replace_with: I) -> Splice<'_, I::IntoIter, K, V, S>
     where
         R: RangeBounds<usize>,
@@ -1278,6 +1283,7 @@ impl<K, V, S> IndexMap<K, V, S> {
     /// ***Panics*** if `from` or `to` are out of bounds.
     ///
     /// Computes in **O(n)** time (average).
+    #[track_caller]
     pub fn move_index(&mut self, from: usize, to: usize) {
         self.core.move_index(from, to)
     }
@@ -1287,6 +1293,7 @@ impl<K, V, S> IndexMap<K, V, S> {
     /// ***Panics*** if `a` or `b` are out of bounds.
     ///
     /// Computes in **O(1)** time (average).
+    #[track_caller]
     pub fn swap_indices(&mut self, a: usize, b: usize) {
         self.core.swap_indices(a, b)
     }
