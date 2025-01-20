@@ -667,6 +667,7 @@ where
     K: Hash + Eq,
     S: BuildHasher,
 {
+    #[track_caller]
     pub(super) fn new<R>(map: &'a mut IndexMap<K, V, S>, range: R, replace_with: I) -> Self
     where
         R: RangeBounds<usize>,
