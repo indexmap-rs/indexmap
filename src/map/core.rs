@@ -522,6 +522,18 @@ impl<K, V> IndexMapCore<K, V> {
     }
 }
 
+/// Reserve entries capacity, rounded up to match the indices (via `try_capacity`).
+fn reserve_entries<K, V>(entries: &mut Entries<K, V>, additional: usize, try_capacity: usize) {
+    // Use a soft-limit on the maximum capacity, but if the caller explicitly
+    // requested more, do it and let them have the resulting panic.
+    let try_capacity = try_capacity.min(IndexMapCore::<K, V>::MAX_ENTRIES_CAPACITY);
+    let try_add = try_capacity - entries.len();
+    if try_add > additional && entries.try_reserve_exact(try_add).is_ok() {
+        return;
+    }
+    entries.reserve_exact(additional);
+}
+
 impl<'a, K, V> RefMut<'a, K, V> {
     #[inline]
     fn new(indices: &'a mut Indices, entries: &'a mut Entries<K, V>) -> Self {
@@ -529,33 +541,25 @@ impl<'a, K, V> RefMut<'a, K, V> {
     }
 
     /// Reserve entries capacity, rounded up to match the indices
+    #[inline]
     fn reserve_entries(&mut self, additional: usize) {
-        // Use a soft-limit on the maximum capacity, but if the caller explicitly
-        // requested more, do it and let them have the resulting panic.
-        let new_capacity = Ord::min(
-            self.indices.capacity(),
-            IndexMapCore::<K, V>::MAX_ENTRIES_CAPACITY,
-        );
-        let try_add = new_capacity - self.entries.len();
-        if try_add > additional && self.entries.try_reserve_exact(try_add).is_ok() {
-            return;
-        }
-        self.entries.reserve_exact(additional);
+        reserve_entries(self.entries, additional, self.indices.capacity());
     }
 
     /// Insert a key-value pair in `entries`,
     /// *without* checking whether it already exists.
-    fn insert_unique(mut self, hash: HashValue, key: K, value: V) -> OccupiedEntry<'a, K, V> {
-        if self.entries.len() == self.entries.capacity() {
-            // Reserve our own capacity synced to the indices,
-            // rather than letting `Vec::push` just double it.
-            self.reserve_entries(1);
-        }
+    fn insert_unique(self, hash: HashValue, key: K, value: V) -> OccupiedEntry<'a, K, V> {
         let i = self.indices.len();
+        debug_assert_eq!(i, self.entries.len());
         let entry = self
             .indices
             .insert_unique(hash.get(), i, get_hash(self.entries));
-        debug_assert_eq!(i, self.entries.len());
+        if self.entries.len() == self.entries.capacity() {
+            // We can't call `indices.capacity()` while this `entry` has borrowed it, so we'll have
+            // to amortize growth on our own. It's still an improvement over the basic `Vec::push`
+            // doubling though, since we also consider `MAX_ENTRIES_CAPACITY`.
+            reserve_entries(self.entries, 1, 2 * self.entries.capacity());
+        }
         self.entries.push(Bucket { hash, key, value });
         OccupiedEntry::new(self.entries, entry)
     }
