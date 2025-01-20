@@ -68,20 +68,14 @@
 //!
 //! ```
 //! use fnv::FnvBuildHasher;
-//! use fxhash::FxBuildHasher;
 //! use indexmap::{IndexMap, IndexSet};
 //!
 //! type FnvIndexMap<K, V> = IndexMap<K, V, FnvBuildHasher>;
 //! type FnvIndexSet<T> = IndexSet<T, FnvBuildHasher>;
 //!
-//! type FxIndexMap<K, V> = IndexMap<K, V, FxBuildHasher>;
-//! type FxIndexSet<T> = IndexSet<T, FxBuildHasher>;
-//!
 //! let std: IndexSet<i32> = (0..100).collect();
 //! let fnv: FnvIndexSet<i32> = (0..100).collect();
-//! let fx: FxIndexSet<i32> = (0..100).collect();
 //! assert_eq!(std, fnv);
-//! assert_eq!(std, fx);
 //! ```
 //!
 //! ### Rust Version
