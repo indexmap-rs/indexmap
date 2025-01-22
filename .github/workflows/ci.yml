@@ -113,8 +113,12 @@ jobs:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@nightly
         with:
-          components: miri
-      - run: cargo miri test
+          components: miri, rust-src
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-nextest
+      - run: cargo miri nextest run
+      - run: cargo miri test --doc
 
   minimal-versions:
     name: Check MSRV and minimal-versions
