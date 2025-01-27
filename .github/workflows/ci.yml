@@ -26,8 +26,6 @@ jobs:
           - rust: stable
             features: rayon
           - rust: stable
-            features: rustc-rayon
-          - rust: stable
             features: serde
           - rust: stable
             features: borsh

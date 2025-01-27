@@ -125,7 +125,7 @@ macro_rules! double_ended_iterator_methods {
 
 // generate `ParallelIterator` methods by just forwarding to the underlying
 // self.entries and mapping its elements.
-#[cfg(any(feature = "rayon", feature = "rustc-rayon"))]
+#[cfg(feature = "rayon")]
 macro_rules! parallel_iterator_methods {
     // $map_elt is the mapping function from the underlying iterator's element
     ($map_elt:expr) => {
@@ -150,7 +150,7 @@ macro_rules! parallel_iterator_methods {
 
 // generate `IndexedParallelIterator` methods by just forwarding to the underlying
 // self.entries and mapping its elements.
-#[cfg(any(feature = "rayon", feature = "rustc-rayon"))]
+#[cfg(feature = "rayon")]
 macro_rules! indexed_parallel_iterator_methods {
     // $map_elt is the mapping function from the underlying iterator's element
     ($map_elt:expr) => {
