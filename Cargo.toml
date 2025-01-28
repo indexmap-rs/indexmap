@@ -22,10 +22,6 @@ serde = { version = "1.0", optional = true, default-features = false }
 borsh = { version = "1.2", optional = true, default-features = false }
 rayon = { version = "1.9", optional = true }
 
-# Internal feature, only used when building as part of rustc,
-# not part of the stable interface of this crate.
-rustc-rayon = { package = "rustc-rayon", version = "0.5", optional = true }
-
 [dependencies.hashbrown]
 version = "0.15.0"
 default-features = false
