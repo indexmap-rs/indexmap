@@ -432,7 +432,7 @@ impl<K, V> Default for Keys<'_, K, V> {
 /// map.insert("foo", 1);
 /// println!("{:?}", map.keys()[10]); // panics!
 /// ```
-impl<'a, K, V> Index<usize> for Keys<'a, K, V> {
+impl<K, V> Index<usize> for Keys<'_, K, V> {
     type Output = K;
 
     /// Returns a reference to the key at the supplied `index`.
@@ -759,7 +759,7 @@ where
 {
 }
 
-impl<'a, I, K, V, S> fmt::Debug for Splice<'a, I, K, V, S>
+impl<I, K, V, S> fmt::Debug for Splice<'_, I, K, V, S>
 where
     I: fmt::Debug + Iterator<Item = (K, V)>,
     K: fmt::Debug + Hash + Eq,
