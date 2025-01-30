@@ -1486,6 +1486,17 @@ impl<K, V, S> IndexMut<usize> for IndexMap<K, V, S> {
     }
 }
 
+impl<K, V, S> IndexMap<K, V, S>
+where
+    K: Hash + Eq,
+    S: BuildHasher + Default,
+{
+    /// Create an `IndexMap` from the key-value pair.
+    pub fn just(pair: (K, V)) -> Self {
+        Self::from_iter([pair])
+    }
+}
+
 impl<K, V, S> FromIterator<(K, V)> for IndexMap<K, V, S>
 where
     K: Hash + Eq,
