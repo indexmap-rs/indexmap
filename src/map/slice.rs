@@ -357,6 +357,22 @@ impl<K: PartialEq, V: PartialEq> PartialEq<Slice<K, V>> for [(K, V)] {
     }
 }
 
+impl<K: PartialEq, V: PartialEq, const N: usize> PartialEq<[(K, V); N]> for Slice<K, V> {
+    fn eq(&self, other: &[(K, V); N]) -> bool {
+        self.len() == N &&
+            // mapping from `&(K, V)` to `(&K, &V)`
+            self.iter().eq(other.iter().map(|(k, v)| (k, v)))
+    }
+}
+
+impl<K: PartialEq, V: PartialEq, const N: usize> PartialEq<Slice<K, V>> for [(K, V); N] {
+    fn eq(&self, other: &Slice<K, V>) -> bool {
+        N == other.len() &&
+            // mapping from `&(K, V)` to `(&K, &V)`
+            self.iter().map(|(k, v)| (k, v)).eq(other)
+    }
+}
+
 impl<K: Eq, V: Eq> Eq for Slice<K, V> {}
 
 impl<K: PartialOrd, V: PartialOrd> PartialOrd for Slice<K, V> {

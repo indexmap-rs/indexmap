@@ -240,6 +240,18 @@ impl<T: PartialEq> PartialEq<Slice<T>> for [T] {
     }
 }
 
+impl<T: PartialEq, const N: usize> PartialEq<[T; N]> for Slice<T> {
+    fn eq(&self, other: &[T; N]) -> bool {
+        self.len() == N && self.iter().eq(other)
+    }
+}
+
+impl<T: PartialEq, const N: usize> PartialEq<Slice<T>> for [T; N] {
+    fn eq(&self, other: &Slice<T>) -> bool {
+        N == other.len() && self.iter().eq(other)
+    }
+}
+
 impl<T: Eq> Eq for Slice<T> {}
 
 impl<T: PartialOrd> PartialOrd for Slice<T> {
