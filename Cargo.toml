@@ -28,7 +28,7 @@ default-features = false
 
 [dev-dependencies]
 itertools = "0.14"
-rand = {version = "0.8", features = ["small_rng"] }
+rand = {version = "0.9", features = ["small_rng"] }
 quickcheck = { version = "1.0", default-features = false }
 fnv = "1.0"
 lazy_static = "1.3"
