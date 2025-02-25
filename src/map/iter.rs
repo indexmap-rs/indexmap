@@ -385,8 +385,8 @@ impl<K, V> Default for Keys<'_, K, V> {
 /// [values]: IndexMap#impl-Index<usize>-for-IndexMap<K,+V,+S>
 ///
 /// Since `Keys` is also an iterator, consuming items from the iterator will
-/// offset the effective indexes. Similarly, if `Keys` is obtained from
-/// [`Slice::keys`], indexes will be interpreted relative to the position of
+/// offset the effective indices. Similarly, if `Keys` is obtained from
+/// [`Slice::keys`], indices will be interpreted relative to the position of
 /// that slice.
 ///
 /// # Examples
