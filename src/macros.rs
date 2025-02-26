@@ -1,3 +1,39 @@
+/// Create an [`IndexMap`][crate::IndexMap] from a list of key-value pairs and a custom hasher
+///
+/// ## Example
+///
+/// ```
+/// use indexmap::indexmap_with_hasher;
+/// use std::hash::DefaultHasher;
+///
+/// let map = indexmap_with_hasher!{
+///     DefaultHasher;
+///     "a" => 1,
+///     "b" => 2,
+/// };
+/// assert_eq!(map["a"], 1);
+/// assert_eq!(map["b"], 2);
+/// assert_eq!(map.get("c"), None);
+///
+/// // "a" is the first key
+/// assert_eq!(map.keys().next(), Some(&"a"));
+/// ```
+#[macro_export]
+macro_rules! indexmap_with_hasher {
+    ($S:ty; $($key:expr => $value:expr,)+) => { $crate::indexmap_with_hasher!($S; $($key => $value),+) };
+    ($S:ty; $($key:expr => $value:expr),*) => {{
+        type BuildS = core::hash::BuildHasherDefault<$S>;
+        const CAP: usize = <[()]>::len(&[$({ stringify!($key); }),*]);
+        #[allow(unused_mut)]
+        // Specify your custom S (must implement Default + Hasher) as the hasher:
+        let mut map = $crate::IndexMap::<_, _, BuildS>::with_capacity_and_hasher(CAP, <BuildS>::default());
+        $(
+            map.insert($key, $value);
+        )*
+        map
+    }};
+}
+
 #[cfg(feature = "std")]
 #[cfg_attr(docsrs, doc(cfg(feature = "std")))]
 #[macro_export]
@@ -33,6 +69,42 @@ macro_rules! indexmap {
             map
         }
     };
+}
+
+/// Create an [`IndexSet`][crate::IndexSet] from a list of key-value pairs and a custom hasher
+///
+/// ## Example
+///
+/// ```
+/// use indexmap::indexset_with_hasher;
+/// use std::hash::DefaultHasher;
+///
+/// let set = indexset_with_hasher!{
+///     DefaultHasher;
+///     "a",
+///     "b",
+/// };
+/// assert!(set.contains("a"));
+/// assert!(set.contains("b"));
+/// assert!(!set.contains("c"));
+///
+/// // "a" is the first value
+/// assert_eq!(set.iter().next(), Some(&"a"));
+/// ```
+#[macro_export]
+macro_rules! indexset_with_hasher {
+    ($S:ty; $($value:expr,)+) => { $crate::indexset_with_hasher!($S; $($value),+) };
+    ($S:ty; $($value:expr),*) => {{
+        type BuildS = core::hash::BuildHasherDefault<$S>;
+        const CAP: usize = <[()]>::len(&[$({ stringify!($value); }),*]);
+        #[allow(unused_mut)]
+        // Specify your custom S (must implement Default + Hash) as the hasher:
+        let mut set = $crate::IndexSet::<_, BuildS>::with_capacity_and_hasher(CAP, <BuildS>::default());
+        $(
+            set.insert($value);
+        )*
+        set
+    }};
 }
 
 #[cfg(feature = "std")]
