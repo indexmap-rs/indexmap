@@ -1128,6 +1128,17 @@ where
     }
 }
 
+impl<T, S> IndexSet<T, S>
+where
+    T: Hash + Eq,
+    S: BuildHasher + Default,
+{
+    /// Create a new set with the single `element`
+    pub fn just(element: T) -> Self {
+        Self::from_iter([element])
+    }
+}
+
 #[cfg(feature = "std")]
 #[cfg_attr(docsrs, doc(cfg(feature = "std")))]
 impl<T, const N: usize> From<[T; N]> for IndexSet<T, RandomState>
