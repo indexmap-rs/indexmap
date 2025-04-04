@@ -269,3 +269,33 @@ impl core::fmt::Display for TryReserveError {
 #[cfg(feature = "std")]
 #[cfg_attr(docsrs, doc(cfg(feature = "std")))]
 impl std::error::Error for TryReserveError {}
+
+// NOTE: This is copied from the slice module in the std lib.
+/// The error type returned by [`get_disjoint_indices_mut`][`IndexMap::get_disjoint_indices_mut`].
+///
+/// It indicates one of two possible errors:
+/// - An index is out-of-bounds.
+/// - The same index appeared multiple times in the array.
+//    (or different but overlapping indices when ranges are provided)
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum GetDisjointMutError {
+    /// An index provided was out-of-bounds for the slice.
+    IndexOutOfBounds,
+    /// Two indices provided were overlapping.
+    OverlappingIndices,
+}
+
+impl core::fmt::Display for GetDisjointMutError {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        let msg = match self {
+            GetDisjointMutError::IndexOutOfBounds => "an index is out of bounds",
+            GetDisjointMutError::OverlappingIndices => "there were overlapping indices",
+        };
+
+        core::fmt::Display::fmt(msg, f)
+    }
+}
+
+#[cfg(feature = "std")]
+#[cfg_attr(docsrs, doc(cfg(feature = "std")))]
+impl std::error::Error for GetDisjointMutError {}
