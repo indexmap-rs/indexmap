@@ -292,13 +292,12 @@ impl<K, V> Slice<K, V> {
         // SAFETY: Can't allow duplicate indices as we would return several mutable refs to the same data.
         let len = self.len();
         for i in 0..N {
-            let Some(idx) = indices[i] else {
-                continue;
-            };
-            if idx >= len {
-                return Err(GetDisjointMutError::IndexOutOfBounds);
-            } else if indices[..i].contains(&Some(idx)) {
-                return Err(GetDisjointMutError::OverlappingIndices);
+            if let Some(idx) = indices[i] {
+                if idx >= len {
+                    return Err(GetDisjointMutError::IndexOutOfBounds);
+                } else if indices[..i].contains(&Some(idx)) {
+                    return Err(GetDisjointMutError::OverlappingIndices);
+                }
             }
         }
 
