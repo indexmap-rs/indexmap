@@ -275,8 +275,8 @@ impl std::error::Error for TryReserveError {}
 ///
 /// It indicates one of two possible errors:
 /// - An index is out-of-bounds.
-/// - The same index appeared multiple times in the array
-///   (or different but overlapping indices when ranges are provided).
+/// - The same index appeared multiple times in the array.
+//    (or different but overlapping indices when ranges are provided)
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum GetDisjointMutError {
     /// An index provided was out-of-bounds for the slice.

@@ -798,10 +798,9 @@ where
     /// let mut map = indexmap::IndexMap::from([(1, 'a'), (3, 'b'), (2, 'c')]);
     /// assert_eq!(map.get_disjoint_mut([&2, &1]), [Some(&mut 'c'), Some(&mut 'a')]);
     /// ```
-    #[allow(unsafe_code)]
     pub fn get_disjoint_mut<Q, const N: usize>(&mut self, keys: [&Q; N]) -> [Option<&mut V>; N]
     where
-        Q: Hash + Equivalent<K> + ?Sized,
+        Q: ?Sized + Hash + Equivalent<K>,
     {
         let indices = keys.map(|key| self.get_index_of(key));
         match self.as_mut_slice().get_disjoint_opt_mut(indices) {

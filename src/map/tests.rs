@@ -1002,7 +1002,7 @@ fn disjoint_indices_mut_fail_duplicate() {
     map.insert(1, 10);
     map.insert(321, 20);
     assert_eq!(
-        map.get_disjoint_indices_mut([1, 2, 1]),
+        map.get_disjoint_indices_mut([1, 0, 1]),
         Err(crate::GetDisjointMutError::OverlappingIndices)
     );
 }
