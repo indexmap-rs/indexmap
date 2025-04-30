@@ -125,6 +125,7 @@ impl<K, V> Slice<K, V> {
     /// Divides one slice into two at an index.
     ///
     /// ***Panics*** if `index > len`.
+    #[track_caller]
     pub fn split_at(&self, index: usize) -> (&Self, &Self) {
         let (first, second) = self.entries.split_at(index);
         (Self::from_slice(first), Self::from_slice(second))
@@ -133,6 +134,7 @@ impl<K, V> Slice<K, V> {
     /// Divides one mutable slice into two at an index.
     ///
     /// ***Panics*** if `index > len`.
+    #[track_caller]
     pub fn split_at_mut(&mut self, index: usize) -> (&mut Self, &mut Self) {
         let (first, second) = self.entries.split_at_mut(index);
         (Self::from_mut_slice(first), Self::from_mut_slice(second))
