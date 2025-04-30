@@ -80,6 +80,7 @@ fn update_index(table: &mut Indices, hash: HashValue, old: usize, new: usize) {
 /// and without regard for duplication.
 ///
 /// ***Panics*** if there is not sufficient capacity already.
+#[track_caller]
 fn insert_bulk_no_grow<K, V>(indices: &mut Indices, entries: &[Bucket<K, V>]) {
     assert!(indices.capacity() - indices.len() >= entries.len());
     for entry in entries {
