@@ -1105,7 +1105,6 @@ impl<T, S> Index<usize> for IndexSet<T, S> {
     /// Returns a reference to the value at the supplied `index`.
     ///
     /// ***Panics*** if `index` is out of bounds.
-    #[track_caller]
     fn index(&self, index: usize) -> &T {
         if let Some(value) = self.get_index(index) {
             value
