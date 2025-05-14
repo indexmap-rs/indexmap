@@ -80,7 +80,6 @@ fn update_index(table: &mut Indices, hash: HashValue, old: usize, new: usize) {
 /// and without regard for duplication.
 ///
 /// ***Panics*** if there is not sufficient capacity already.
-#[track_caller]
 fn insert_bulk_no_grow<K, V>(indices: &mut Indices, entries: &[Bucket<K, V>]) {
     assert!(indices.capacity() - indices.len() >= entries.len());
     for entry in entries {
@@ -184,7 +183,6 @@ impl<K, V> IndexMapCore<K, V> {
         }
     }
 
-    #[track_caller]
     pub(crate) fn drain<R>(&mut self, range: R) -> vec::Drain<'_, Bucket<K, V>>
     where
         R: RangeBounds<usize>,
@@ -207,7 +205,6 @@ impl<K, V> IndexMapCore<K, V> {
         self.entries.par_drain(range)
     }
 
-    #[track_caller]
     pub(crate) fn split_off(&mut self, at: usize) -> Self {
         let len = self.entries.len();
         assert!(
@@ -223,7 +220,6 @@ impl<K, V> IndexMapCore<K, V> {
         Self { indices, entries }
     }
 
-    #[track_caller]
     pub(crate) fn split_splice<R>(&mut self, range: R) -> (Self, vec::IntoIter<Bucket<K, V>>)
     where
         R: RangeBounds<usize>,
@@ -412,13 +408,11 @@ impl<K, V> IndexMapCore<K, V> {
     }
 
     #[inline]
-    #[track_caller]
     pub(super) fn move_index(&mut self, from: usize, to: usize) {
         self.borrow_mut().move_index(from, to);
     }
 
     #[inline]
-    #[track_caller]
     pub(crate) fn swap_indices(&mut self, a: usize, b: usize) {
         self.borrow_mut().swap_indices(a, b);
     }
@@ -685,7 +679,6 @@ impl<'a, K, V> RefMut<'a, K, V> {
         }
     }
 
-    #[track_caller]
     fn move_index(&mut self, from: usize, to: usize) {
         let from_hash = self.entries[from].hash;
         let _ = self.entries[to]; // explicit bounds check
@@ -707,7 +700,6 @@ impl<'a, K, V> RefMut<'a, K, V> {
         }
     }
 
-    #[track_caller]
     fn swap_indices(&mut self, a: usize, b: usize) {
         // If they're equal and in-bounds, there's nothing to do.
         if a == b && a < self.entries.len() {

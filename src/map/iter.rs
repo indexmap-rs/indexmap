@@ -438,7 +438,6 @@ impl<K, V> Index<usize> for Keys<'_, K, V> {
     /// Returns a reference to the key at the supplied `index`.
     ///
     /// ***Panics*** if `index` is out of bounds.
-    #[track_caller]
     fn index(&self, index: usize) -> &K {
         &self.iter.as_slice()[index].key
     }

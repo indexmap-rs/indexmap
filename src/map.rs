@@ -1388,7 +1388,6 @@ where
     /// Returns a reference to the value corresponding to the supplied `key`.
     ///
     /// ***Panics*** if `key` is not present in the map.
-    #[track_caller]
     fn index(&self, key: &Q) -> &V {
         self.get(key).expect("no entry found for key")
     }
@@ -1431,7 +1430,6 @@ where
     /// Returns a mutable reference to the value corresponding to the supplied `key`.
     ///
     /// ***Panics*** if `key` is not present in the map.
-    #[track_caller]
     fn index_mut(&mut self, key: &Q) -> &mut V {
         self.get_mut(key).expect("no entry found for key")
     }
@@ -1475,7 +1473,6 @@ impl<K, V, S> Index<usize> for IndexMap<K, V, S> {
     /// Returns a reference to the value at the supplied `index`.
     ///
     /// ***Panics*** if `index` is out of bounds.
-    #[track_caller]
     fn index(&self, index: usize) -> &V {
         if let Some((_, value)) = self.get_index(index) {
             value
@@ -1521,7 +1518,6 @@ impl<K, V, S> IndexMut<usize> for IndexMap<K, V, S> {
     /// Returns a mutable reference to the value at the supplied `index`.
     ///
     /// ***Panics*** if `index` is out of bounds.
-    #[track_caller]
     fn index_mut(&mut self, index: usize) -> &mut V {
         let len: usize = self.len();
 
