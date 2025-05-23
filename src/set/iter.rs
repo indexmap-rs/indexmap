@@ -671,7 +671,7 @@ where
 
 impl<T, F> FusedIterator for ExtractIf<'_, T, F> where F: FnMut(&T) -> bool {}
 
-impl<'a, T, F> fmt::Debug for ExtractIf<'a, T, F>
+impl<T, F> fmt::Debug for ExtractIf<'_, T, F>
 where
     T: fmt::Debug,
 {
