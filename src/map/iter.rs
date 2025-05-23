@@ -817,6 +817,8 @@ where
     }
 }
 
+impl<K, V, F> FusedIterator for ExtractIf<'_, K, V, F> where F: FnMut(&K, &mut V) -> bool {}
+
 impl<'a, K, V, F> fmt::Debug for ExtractIf<'a, K, V, F>
 where
     K: fmt::Debug,
