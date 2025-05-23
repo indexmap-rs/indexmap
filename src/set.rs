@@ -267,6 +267,9 @@ impl<T, S> IndexSet<T, S> {
     ///
     /// [`retain`]: IndexSet::retain
     ///
+    /// ***Panics*** if the starting point is greater than the end point or if
+    /// the end point is greater than the length of the set.
+    ///
     /// # Examples
     ///
     /// Splitting a set into even and odd values, reusing the original set:
@@ -283,6 +286,7 @@ impl<T, S> IndexSet<T, S> {
     /// assert_eq!(evens, vec![0, 2, 4, 6]);
     /// assert_eq!(odds, vec![1, 3, 5, 7]);
     /// ```
+    #[track_caller]
     pub fn extract_if<F, R>(&mut self, range: R, pred: F) -> ExtractIf<'_, T, F>
     where
         F: FnMut(&T) -> bool,

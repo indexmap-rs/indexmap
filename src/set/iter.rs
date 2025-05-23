@@ -639,6 +639,7 @@ pub struct ExtractIf<'a, T, F> {
 }
 
 impl<T, F> ExtractIf<'_, T, F> {
+    #[track_caller]
     pub(super) fn new<R>(core: &mut IndexMapCore<T, ()>, range: R, pred: F) -> ExtractIf<'_, T, F>
     where
         R: RangeBounds<usize>,

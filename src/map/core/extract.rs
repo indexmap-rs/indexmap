@@ -6,6 +6,7 @@ use crate::util::simplify_range;
 use core::ops::RangeBounds;
 
 impl<K, V> IndexMapCore<K, V> {
+    #[track_caller]
     pub(crate) fn extract<R>(&mut self, range: R) -> ExtractCore<'_, K, V>
     where
         R: RangeBounds<usize>,
