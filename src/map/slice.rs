@@ -628,4 +628,138 @@ mod tests {
             }
         }
     }
+
+    #[test]
+    fn slice_new() {
+        let slice: &Slice<i32, i32> = Slice::new();
+        assert!(slice.is_empty());
+        assert!(slice.len() == 0);
+    }
+
+    #[test]
+    fn slice_new_mut() {
+        let slice: &mut Slice<i32, i32> = Slice::new_mut();
+        assert!(slice.is_empty());
+        assert!(slice.len() == 0);
+    }
+
+    #[test]
+    fn slice_get_index_mut() {
+        let vec: Vec<(i32, i32)> = (0..10).map(|i| (i, i * i)).collect();
+        let mut map: IndexMap<i32, i32> = vec.iter().cloned().collect();
+        let slice: &mut Slice<i32, i32> = map.as_mut_slice();
+
+        {
+            let (key, value) = slice.get_index_mut(0).unwrap();
+            assert_eq!(*key, 0);
+            assert_eq!(*value, 0);
+
+            *value = 11;
+        }
+        
+        assert_eq!(slice.get_index(0).unwrap().1, &11);
+
+        {
+            let result = slice.get_index_mut(11);
+            assert!(result.is_none());
+        }
+    }
+
+    #[test]
+    fn slice_split_first() {
+        let slice: &mut Slice<i32, i32> = Slice::new_mut();
+        let result = slice.split_first();
+        assert!(result.is_none());
+
+        let vec: Vec<(i32, i32)> = (0..10).map(|i| (i, i * i)).collect();
+        let mut map: IndexMap<i32, i32> = vec.iter().cloned().collect();
+        let slice: &mut Slice<i32, i32> = map.as_mut_slice();
+
+        {
+            let (first, rest) = slice.split_first().unwrap();
+            assert_eq!(*first.0, 0);
+            assert_eq!(*first.1, 0);
+            assert_eq!(rest.len(), 9);
+        }
+        assert_eq!(slice.len(), 10);
+    }
+
+    #[test]
+    fn slice_split_first_mut() {
+        let slice: &mut Slice<i32, i32> = Slice::new_mut();
+        let result = slice.split_first_mut();
+        assert!(result.is_none());
+
+        let vec: Vec<(i32, i32)> = (0..10).map(|i| (i, i * i)).collect();
+        let mut map: IndexMap<i32, i32> = vec.iter().cloned().collect();
+        let slice: &mut Slice<i32, i32> = map.as_mut_slice();
+
+        {
+            let (first, rest) = slice.split_first_mut().unwrap();
+            assert_eq!(*first.0, 0);
+            assert_eq!(*first.1, 0);
+            assert_eq!(rest.len(), 9);
+
+            *first.1 = 11;
+        }
+        assert_eq!(slice.len(), 10);
+        assert_eq!(slice.first().unwrap().1, &11);
+    }
+
+    #[test]
+    fn slice_split_last() {
+        let slice: &mut Slice<i32, i32> = Slice::new_mut();
+        let result = slice.split_last();
+        assert!(result.is_none());
+
+        let vec: Vec<(i32, i32)> = (0..10).map(|i| (i, i * i)).collect();
+        let mut map: IndexMap<i32, i32> = vec.iter().cloned().collect();
+        let slice: &mut Slice<i32, i32> = map.as_mut_slice();
+
+        {
+            let (last, rest) = slice.split_last().unwrap();
+            assert_eq!(*last.0, 9);
+            assert_eq!(*last.1, 81);
+            assert_eq!(rest.len(), 9);
+        }
+        assert_eq!(slice.len(), 10);
+    }
+
+    #[test]
+    fn slice_split_last_mut() {
+        let slice: &mut Slice<i32, i32> = Slice::new_mut();
+        let result = slice.split_last_mut();
+        assert!(result.is_none());
+
+        let vec: Vec<(i32, i32)> = (0..10).map(|i| (i, i * i)).collect();
+        let mut map: IndexMap<i32, i32> = vec.iter().cloned().collect();
+        let slice: &mut Slice<i32, i32> = map.as_mut_slice();
+
+        {
+            let (last, rest) = slice.split_last_mut().unwrap();
+            assert_eq!(*last.0, 9);
+            assert_eq!(*last.1, 81);
+            assert_eq!(rest.len(), 9);
+
+            *last.1 = 100;
+        }
+        assert_eq!(slice.len(), 10);
+        assert_eq!(slice.last().unwrap().1, &100);
+    }
+
+    #[test]
+    fn slice_get_range() {
+        let vec: Vec<(i32, i32)> = (0..10).map(|i| (i, i * i)).collect();
+        let mut map: IndexMap<i32, i32> = vec.iter().cloned().collect();
+        let slice: &mut Slice<i32, i32> = map.as_mut_slice();
+        let result = slice.get_range(3..6);
+        assert_eq!(result.unwrap().len(), 3);
+        for i in 0..3 {
+            assert_eq!(result.unwrap().get_index(i).unwrap().0, &(i as i32 + 3));
+            assert_eq!(
+                *result.unwrap().get_index(i).unwrap().1,
+                ((i + 3) * (i + 3)) as i32
+            );
+        }
+    }
 }
