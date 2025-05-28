@@ -1,3 +1,5 @@
+use rand::seq::index;
+
 use super::*;
 use std::string::String;
 
@@ -602,13 +604,17 @@ fn take() {
 fn swap_take() {
     let mut index_set: IndexSet<i32> = IndexSet::new();
     index_set.insert(10);
-    assert_eq!(index_set.len(), 1);
-
-    let result = index_set.swap_take(&10);
-    assert_eq!(result, Some(10));
-    assert_eq!(index_set.len(), 0);
+    index_set.insert(20);
+    index_set.insert(30);
+    index_set.insert(40);
+    assert_eq!(index_set.len(), 4);
 
     let result = index_set.swap_take(&20);
+    assert_eq!(result, Some(20));
+    assert_eq!(index_set.len(), 3);
+    assert_eq!(index_set[1], 40);
+
+    let result = index_set.swap_take(&50);
     assert_eq!(result, None);
 }
 
@@ -620,10 +626,7 @@ fn sort_unstable() {
     index_set.insert(10);
 
     index_set.sort_unstable();
-    assert_eq!(
-        index_set.iter().cloned().collect::<Vec<_>>(),
-        vec![10, 20, 30]
-    );
+    assert_eq!(index_set.as_slice(), &[10, 20, 30]);
 }
 
 #[test]
@@ -646,15 +649,19 @@ fn shift_remove_full() {
     set.insert(20);
     set.insert(30);
     set.insert(40);
-    let result = set.shift_remove_full(&30);
-    assert_eq!(result, Some((2, 30)));
-    assert_eq!(set.len(), 3);
+    set.insert(50);
 
     let result = set.shift_remove_full(&20);
     assert_eq!(result, Some((1, 20)));
-    assert_eq!(set.len(), 2);
+    assert_eq!(set.len(), 4);
+
+    set.swap_remove(&30);
 
     let result = set.shift_remove_full(&50);
+    assert_eq!(result, Some((1, 50)));
+    assert_eq!(set.len(), 2);
+
+    let result = set.shift_remove_full(&60);
     assert_eq!(result, None);
     assert_eq!(set.len(), 2);
 }
@@ -666,13 +673,16 @@ fn shift_remove_index() {
     set.insert(20);
     set.insert(30);
     set.insert(40);
-
-    let result = set.shift_remove_index(2);
-    assert_eq!(result, Some(30));
-    assert_eq!(set.len(), 3);
+    set.insert(50);
 
     let result = set.shift_remove_index(1);
     assert_eq!(result, Some(20));
+    assert_eq!(set.len(), 4);
+
+    set.swap_remove(&30);
+
+    let result = set.shift_remove_index(1);
+    assert_eq!(result, Some(50));
     assert_eq!(set.len(), 2);
 
     let result = set.shift_remove_index(2);
@@ -685,9 +695,7 @@ fn sort_unstable_by() {
     let mut set: IndexSet<i32> = IndexSet::new();
     set.extend(vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
     set.sort_unstable_by(|a, b| b.cmp(a));
-    let expected: Vec<i32> = vec![10, 9, 8, 7, 6, 5, 4, 3, 2, 1];
-    let result: Vec<i32> = set.iter().cloned().collect();
-    assert_eq!(result, expected);
+    assert_eq!(set.as_slice(), &[10, 9, 8, 7, 6, 5, 4, 3, 2, 1]);
 }
 
 #[test]
@@ -697,9 +705,7 @@ fn sort_by() {
     set.insert(1);
     set.insert(2);
     set.sort_by(|a, b| a.cmp(b));
-    assert_eq!(set.get_index(0), Some(&1));
-    assert_eq!(set.get_index(1), Some(&2));
-    assert_eq!(set.get_index(2), Some(&3));
+    assert_eq!(set.as_slice(), &[1, 2, 3]);
 }
 
 #[test]
@@ -710,7 +716,7 @@ fn drain() {
     set.insert(3);
 
     let drain = set.drain(0..2);
-    assert_eq!(drain.collect::<Vec<_>>(), vec![1, 2]);
+    assert_eq!(drain.as_slice(), &[1, 2]);
 }
 
 #[test]
@@ -729,10 +735,7 @@ fn retain() {
     set.extend(vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
     set.retain(|&x| x > 4);
     assert_eq!(set.len(), 6);
-    assert_eq!(
-        set.iter().cloned().collect::<Vec<_>>(),
-        vec![5, 6, 7, 8, 9, 10]
-    );
+    assert_eq!(set.as_slice(), &[5, 6, 7, 8, 9, 10]);
 
     set.retain(|_| false);
     assert_eq!(set.len(), 0);
@@ -786,9 +789,7 @@ fn sorted_unstable_by() {
     let mut set: IndexSet<i32> = IndexSet::new();
     set.extend(vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
     set.sort_unstable_by(|a, b| b.cmp(a));
-    let expected: Vec<i32> = vec![10, 9, 8, 7, 6, 5, 4, 3, 2, 1];
-    let result: Vec<i32> = set.iter().cloned().collect();
-    assert_eq!(result, expected);
+    assert_eq!(set.as_slice(), &[10, 9, 8, 7, 6, 5, 4, 3, 2, 1]);
 }
 
 #[test]
@@ -814,9 +815,7 @@ fn get_range() {
     set.extend(vec![1, 2, 3, 4, 5]);
     let result = set.get_range(0..3);
     let slice: &Slice<i32> = result.unwrap();
-    for i in 0..3 {
-        assert_eq!(slice.entries[i].key, i as i32 + 1);
-    }
+    assert_eq!(slice, &[1, 2, 3]);
 
     let result = set.get_range(0..0);
     assert_eq!(result.unwrap().len(), 0);
@@ -832,11 +831,15 @@ fn shift_take() {
     set.insert(2);
     set.insert(3);
     set.insert(4);
+    set.insert(5);
+
     let result = set.shift_take(&2);
     assert_eq!(result, Some(2));
-    assert_eq!(set.as_slice(), &[1, 3, 4]);
 
-    let result = set.shift_take(&5);
+    set.swap_remove(&3);
+    assert_eq!(set.as_slice(), &[1, 5, 4]);
+
+    let result = set.shift_take(&6);
     assert_eq!(result, None);
 }
 

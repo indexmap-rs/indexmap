@@ -607,7 +607,7 @@ fn get_index_mut2() {
 
         *value = 7;
     }
-    assert_eq!(map.get_index(0).unwrap().1, &7);
+    assert_eq!(map[0], 7);
 
     {
         let (key, _) = map.get_index_mut2(0).unwrap();
@@ -623,13 +623,16 @@ fn shift_shift_remove_index() {
     map.insert(3, 4);
     map.insert(5, 6);
     map.insert(7, 8);
-
-    let result = map.shift_remove_index(2);
-    assert_eq!(result, Some((5, 6)));
-    assert_eq!(map.len(), 3);
+    map.insert(9, 10);
 
     let result = map.shift_remove_index(1);
     assert_eq!(result, Some((3, 4)));
+    assert_eq!(map.len(), 4);
+
+    map.swap_remove(&5);
+
+    let result = map.shift_remove_index(1);
+    assert_eq!(result, Some((9, 10)));
     assert_eq!(map.len(), 2);
 
     let result = map.shift_remove_index(2);
@@ -644,13 +647,17 @@ fn shift_remove_entry() {
     map.insert(3, 4);
     map.insert(5, 6);
     map.insert(7, 8);
-
-    let result = map.shift_remove_entry(&5);
-    assert_eq!(result, Some((5, 6)));
-    assert_eq!(map.len(), 3);
+    map.insert(9, 10);
 
     let result = map.shift_remove_entry(&3);
     assert_eq!(result, Some((3, 4)));
+    assert_eq!(map.len(), 4);
+
+    map.swap_remove(&5);
+    assert_eq!(map.as_slice(), &[(1, 2), (9, 10), (7, 8)]);
+
+    let result = map.shift_remove_entry(&9);
+    assert_eq!(result, Some((9, 10)));
     assert_eq!(map.len(), 2);
 
     let result = map.shift_remove_entry(&9);
@@ -665,13 +672,16 @@ fn shift_remove_full() {
     map.insert(3, 4);
     map.insert(5, 6);
     map.insert(7, 8);
-
-    let result = map.shift_remove_full(&5);
-    assert_eq!(result, Some((2, 5, 6)));
-    assert_eq!(map.len(), 3);
+    map.insert(9, 10);
 
     let result = map.shift_remove_full(&3);
     assert_eq!(result, Some((1, 3, 4)));
+    assert_eq!(map.len(), 4);
+
+    map.swap_remove(&5);
+
+    let result = map.shift_remove_full(&9);
+    assert_eq!(result, Some((1, 9, 10)));
     assert_eq!(map.len(), 2);
 
     let result = map.shift_remove_full(&9);
@@ -683,24 +693,26 @@ fn shift_remove_full() {
 fn sorted_unstable_by() {
     let mut map: IndexMap<i32, i32> = IndexMap::new();
     map.extend(vec![(1, 10), (2, 20), (3, 30), (4, 40), (5, 50)]);
-    let sorted = map.sorted_unstable_by(|a, b, c, d| d.cmp(&b));
+    let sorted = map.sorted_unstable_by(|_a, b, _c, d| d.cmp(&b));
 
-    let expected: Vec<(i32, i32)> = vec![(5, 50), (4, 40), (3, 30), (2, 20), (1, 10)];
-    let result: Vec<(i32, i32)> = sorted.map(|(k, v)| (k, v)).collect();
-    assert_eq!(result, expected);
+    assert_eq!(
+        sorted.as_slice(),
+        &[(5, 50), (4, 40), (3, 30), (2, 20), (1, 10)]
+    );
 }
 
 #[test]
 fn into_boxed_slice() {
     let mut map: IndexMap<i32, i32> = IndexMap::new();
-    for i in 0..100 {
+    for i in 0..5 {
         map.insert(i, i * 10);
     }
     let boxed_slice: Box<Slice<i32, i32>> = map.into_boxed_slice();
-    assert_eq!(boxed_slice.len(), 100);
-    for i in 0..100 {
-        assert_eq!(boxed_slice[i], i as i32 * 10);
-    }
+    assert_eq!(boxed_slice.len(), 5);
+    assert_eq!(
+        boxed_slice.as_ref(),
+        &[(0, 0), (1, 10), (2, 20), (3, 30), (4, 40)]
+    );
 }
 
 #[test]
@@ -755,10 +767,7 @@ fn get_range() {
     let result = index_map.get_range(2..4);
     let slice: &Slice<i32, i32> = result.unwrap();
     assert_eq!(slice.len(), 2);
-    for i in 0..slice.len() {
-        assert_eq!(slice.entries[i].key, i as i32 + 3);
-        assert_eq!(slice.entries[i].value, (i as i32 + 3) * 10);
-    }
+    assert_eq!(slice, &[(3, 30), (4, 40)]);
 }
 
 #[test]
@@ -779,16 +788,12 @@ fn get_range_mut() {
     let result = index_map.get_range_mut(2..4);
     let slice: &mut Slice<i32, i32> = result.unwrap();
     assert_eq!(slice.len(), 2);
-    for i in 0..slice.len() {
-        assert_eq!(slice.entries[i].key, i as i32 + 3);
-        assert_eq!(slice.entries[i].value, (i as i32 + 3) * 10);
+    assert_eq!(slice, &mut [(3, 30), (4, 40)]);
 
+    for i in 0..slice.len() {
         slice.entries[i].value += 1;
     }
-
-    for i in 0..slice.len() {
-        assert_eq!(slice.entries[i].value, (i as i32 + 3) * 10 + 1);
-    }
+    assert_eq!(slice, &mut [(3, 31), (4, 41)]);
 }
 
 #[test]
