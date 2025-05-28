@@ -610,7 +610,7 @@ fn swap_take() {
     let result = index_set.swap_take(&20);
     assert_eq!(result, Some(20));
     assert_eq!(index_set.len(), 3);
-    assert_eq!(index_set[1], 40);
+    assert_eq!(index_set.as_slice(), &[10, 40, 30]);
 
     let result = index_set.swap_take(&50);
     assert_eq!(result, None);
