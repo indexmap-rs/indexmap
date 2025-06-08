@@ -628,16 +628,22 @@ fn shift_shift_remove_index() {
     let result = map.shift_remove_index(1);
     assert_eq!(result, Some((3, 4)));
     assert_eq!(map.len(), 4);
-
-    map.swap_remove(&5);
+    assert_eq!(map.as_slice(), &[(1, 2), (5, 6), (7, 8), (9, 10)]);
 
     let result = map.shift_remove_index(1);
+    assert_eq!(result, Some((5, 6)));
+    assert_eq!(map.len(), 3);
+    assert_eq!(map.as_slice(), &[(1, 2), (7, 8), (9, 10)]);
+
+    let result = map.shift_remove_index(2);
     assert_eq!(result, Some((9, 10)));
     assert_eq!(map.len(), 2);
+    assert_eq!(map.as_slice(), &[(1, 2), (7, 8)]);
 
     let result = map.shift_remove_index(2);
     assert_eq!(result, None);
     assert_eq!(map.len(), 2);
+    assert_eq!(map.as_slice(), &[(1, 2), (7, 8)]);
 }
 
 #[test]
@@ -652,17 +658,17 @@ fn shift_remove_entry() {
     let result = map.shift_remove_entry(&3);
     assert_eq!(result, Some((3, 4)));
     assert_eq!(map.len(), 4);
-
-    map.swap_remove(&5);
-    assert_eq!(map.as_slice(), &[(1, 2), (9, 10), (7, 8)]);
+    assert_eq!(map.as_slice(), &[(1, 2), (5, 6), (7, 8), (9, 10)]);
 
     let result = map.shift_remove_entry(&9);
     assert_eq!(result, Some((9, 10)));
-    assert_eq!(map.len(), 2);
+    assert_eq!(map.len(), 3);
+    assert_eq!(map.as_slice(), &[(1, 2), (5, 6), (7, 8)]);
 
     let result = map.shift_remove_entry(&9);
     assert_eq!(result, None);
-    assert_eq!(map.len(), 2);
+    assert_eq!(map.len(), 3);
+    assert_eq!(map.as_slice(), &[(1, 2), (5, 6), (7, 8)]);
 }
 
 #[test]
@@ -677,16 +683,17 @@ fn shift_remove_full() {
     let result = map.shift_remove_full(&3);
     assert_eq!(result, Some((1, 3, 4)));
     assert_eq!(map.len(), 4);
-
-    map.swap_remove(&5);
+    assert_eq!(map.as_slice(), &[(1, 2), (5, 6), (7, 8), (9, 10)]);
 
     let result = map.shift_remove_full(&9);
-    assert_eq!(result, Some((1, 9, 10)));
-    assert_eq!(map.len(), 2);
+    assert_eq!(result, Some((3, 9, 10)));
+    assert_eq!(map.len(), 3);
+    assert_eq!(map.as_slice(), &[(1, 2), (5, 6), (7, 8)]);
 
     let result = map.shift_remove_full(&9);
     assert_eq!(result, None);
-    assert_eq!(map.len(), 2);
+    assert_eq!(map.len(), 3);
+    assert_eq!(map.as_slice(), &[(1, 2), (5, 6), (7, 8)]);
 }
 
 #[test]
@@ -791,7 +798,7 @@ fn get_range_mut() {
     assert_eq!(slice, &mut [(3, 30), (4, 40)]);
 
     for i in 0..slice.len() {
-        slice.entries[i].value += 1;
+        slice[i] += 1;
     }
     assert_eq!(slice, &mut [(3, 31), (4, 41)]);
 }
