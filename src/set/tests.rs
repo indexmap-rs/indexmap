@@ -812,7 +812,7 @@ fn last() {
     set.insert(6);
 
     assert_eq!(set.last(), Some(&6));
-    
+
     set.pop();
     assert_eq!(set.last(), Some(&5));
 
@@ -845,12 +845,18 @@ fn shift_take() {
 
     let result = set.shift_take(&2);
     assert_eq!(result, Some(2));
+    assert_eq!(set.len(), 4);
+    assert_eq!(set.as_slice(), &[1, 3, 4, 5]);
 
-    set.swap_remove(&3);
-    assert_eq!(set.as_slice(), &[1, 5, 4]);
+    let result = set.shift_take(&5);
+    assert_eq!(result, Some(5));
+    assert_eq!(set.len(), 3);
+    assert_eq!(set.as_slice(), &[1, 3, 4]);
 
-    let result = set.shift_take(&6);
+    let result = set.shift_take(&5);
     assert_eq!(result, None);
+    assert_eq!(set.len(), 3);
+    assert_eq!(set.as_slice(), &[1, 3, 4]);
 }
 
 #[test]
