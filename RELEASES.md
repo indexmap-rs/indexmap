@@ -7,7 +7,7 @@
 - Added a `get_disjoint_indices_mut` method to `IndexMap` and `map::Slice`,
   matching Rust 1.86's `get_disjoint_mut` method on slices.
 - Deprecated the `borsh` feature in favor of their own `indexmap` feature,
-  solving a cyclic dependency that occured via `borsh-derive`.
+  solving a cyclic dependency that occurred via `borsh-derive`.
 
 ## 2.8.0 (2025-03-10)
 
