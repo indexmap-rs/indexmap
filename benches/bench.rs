@@ -1,12 +1,11 @@
 #![feature(test)]
 
 extern crate test;
-#[macro_use]
-extern crate lazy_static;
 
 use fnv::FnvHasher;
 use std::hash::BuildHasherDefault;
 use std::hash::Hash;
+use std::sync::LazyLock;
 type FnvBuilder = BuildHasherDefault<FnvHasher>;
 
 use test::black_box;
@@ -353,53 +352,45 @@ const LOOKUP_MAP_SIZE: u32 = 100_000_u32;
 const LOOKUP_SAMPLE_SIZE: u32 = 5000;
 const SORT_MAP_SIZE: usize = 10_000;
 
-// use lazy_static so that comparison benchmarks use the exact same inputs
-lazy_static! {
-    static ref KEYS: Vec<u32> = shuffled_keys(0..LOOKUP_MAP_SIZE);
-}
+// use (lazy) statics so that comparison benchmarks use the exact same inputs
 
-lazy_static! {
-    static ref HMAP_100K: HashMap<u32, u32> = {
-        let c = LOOKUP_MAP_SIZE;
-        let mut map = HashMap::with_capacity(c as usize);
-        let keys = &*KEYS;
-        for &key in keys {
-            map.insert(key, key);
-        }
-        map
-    };
-}
+static KEYS: LazyLock<Vec<u32>> = LazyLock::new(|| shuffled_keys(0..LOOKUP_MAP_SIZE));
 
-lazy_static! {
-    static ref IMAP_100K: IndexMap<u32, u32> = {
-        let c = LOOKUP_MAP_SIZE;
-        let mut map = IndexMap::with_capacity(c as usize);
-        let keys = &*KEYS;
-        for &key in keys {
-            map.insert(key, key);
-        }
-        map
-    };
-}
+static HMAP_100K: LazyLock<HashMap<u32, u32>> = LazyLock::new(|| {
+    let c = LOOKUP_MAP_SIZE;
+    let mut map = HashMap::with_capacity(c as usize);
+    let keys = &*KEYS;
+    for &key in keys {
+        map.insert(key, key);
+    }
+    map
+});
 
-lazy_static! {
-    static ref IMAP_SORT_U32: IndexMap<u32, u32> = {
-        let mut map = IndexMap::with_capacity(SORT_MAP_SIZE);
-        for &key in &KEYS[..SORT_MAP_SIZE] {
-            map.insert(key, key);
-        }
-        map
-    };
-}
-lazy_static! {
-    static ref IMAP_SORT_S: IndexMap<String, String> = {
-        let mut map = IndexMap::with_capacity(SORT_MAP_SIZE);
-        for &key in &KEYS[..SORT_MAP_SIZE] {
-            map.insert(format!("{:^16x}", &key), String::new());
-        }
-        map
-    };
-}
+static IMAP_100K: LazyLock<IndexMap<u32, u32>> = LazyLock::new(|| {
+    let c = LOOKUP_MAP_SIZE;
+    let mut map = IndexMap::with_capacity(c as usize);
+    let keys = &*KEYS;
+    for &key in keys {
+        map.insert(key, key);
+    }
+    map
+});
+
+static IMAP_SORT_U32: LazyLock<IndexMap<u32, u32>> = LazyLock::new(|| {
+    let mut map = IndexMap::with_capacity(SORT_MAP_SIZE);
+    for &key in &KEYS[..SORT_MAP_SIZE] {
+        map.insert(key, key);
+    }
+    map
+});
+
+static IMAP_SORT_S: LazyLock<IndexMap<String, String>> = LazyLock::new(|| {
+    let mut map = IndexMap::with_capacity(SORT_MAP_SIZE);
+    for &key in &KEYS[..SORT_MAP_SIZE] {
+        map.insert(format!("{:^16x}", &key), String::new());
+    }
+    map
+});
 
 #[bench]
 fn lookup_hashmap_100_000_multi(b: &mut Bencher) {
