@@ -1,4 +1,4 @@
-use super::{Bucket, Entries, IndexSet, IntoIter, Iter};
+use super::{Bucket, IndexSet, IntoIter, Iter};
 use crate::util::{slice_eq, try_simplify_range};
 
 use alloc::boxed::Box;

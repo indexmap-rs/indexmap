@@ -1,5 +1,5 @@
 use super::core::IndexMapCore;
-use super::{Bucket, Entries, IndexMap, Slice};
+use super::{Bucket, IndexMap, Slice};
 
 use alloc::vec::{self, Vec};
 use core::fmt;

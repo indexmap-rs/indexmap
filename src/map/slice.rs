@@ -1,6 +1,5 @@
 use super::{
-    Bucket, Entries, IndexMap, IntoIter, IntoKeys, IntoValues, Iter, IterMut, Keys, Values,
-    ValuesMut,
+    Bucket, IndexMap, IntoIter, IntoKeys, IntoValues, Iter, IterMut, Keys, Values, ValuesMut,
 };
 use crate::util::{slice_eq, try_simplify_range};
 use crate::GetDisjointMutError;

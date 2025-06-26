@@ -1,4 +1,4 @@
-use super::{Bucket, Entries, IndexSet, Slice};
+use super::{Bucket, IndexSet, Slice};
 
 use alloc::vec::{self, Vec};
 use core::fmt;
