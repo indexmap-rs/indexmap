@@ -28,7 +28,7 @@ use core::fmt;
 use core::hash::{BuildHasher, Hash};
 use core::ops::{BitAnd, BitOr, BitXor, Index, RangeBounds, Sub};
 
-use super::{Entries, Equivalent, IndexMap};
+use super::{Equivalent, IndexMap};
 
 type Bucket<T> = super::Bucket<T, ()>;
 
@@ -105,32 +105,6 @@ where
     }
 }
 
-impl<T, S> Entries for IndexSet<T, S> {
-    type Entry = Bucket<T>;
-
-    #[inline]
-    fn into_entries(self) -> Vec<Self::Entry> {
-        self.map.into_entries()
-    }
-
-    #[inline]
-    fn as_entries(&self) -> &[Self::Entry] {
-        self.map.as_entries()
-    }
-
-    #[inline]
-    fn as_entries_mut(&mut self) -> &mut [Self::Entry] {
-        self.map.as_entries_mut()
-    }
-
-    fn with_entries<F>(&mut self, f: F)
-    where
-        F: FnOnce(&mut [Self::Entry]),
-    {
-        self.map.with_entries(f);
-    }
-}
-
 impl<T, S> fmt::Debug for IndexSet<T, S>
 where
     T: fmt::Debug,
@@ -187,6 +161,23 @@ impl<T, S> IndexSet<T, S> {
         IndexSet {
             map: IndexMap::with_hasher(hash_builder),
         }
+    }
+
+    #[inline]
+    pub(crate) fn into_entries(self) -> Vec<Bucket<T>> {
+        self.map.into_entries()
+    }
+
+    #[inline]
+    pub(crate) fn as_entries(&self) -> &[Bucket<T>] {
+        self.map.as_entries()
+    }
+
+    pub(crate) fn with_entries<F>(&mut self, f: F)
+    where
+        F: FnOnce(&mut [Bucket<T>]),
+    {
+        self.map.with_entries(f);
     }
 
     /// Return the number of elements the set can hold without reallocating.
