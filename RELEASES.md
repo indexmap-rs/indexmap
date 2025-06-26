@@ -1,5 +1,11 @@
 # Releases
 
+## 2.10.0 (2025-06-26)
+
+- Added `extract_if` methods to `IndexMap` and `IndexSet`, similar to the
+  methods for `HashMap` and `HashSet` with ranges like `Vec::extract_if`.
+- Added more `#[track_caller]` annotations to functions that may panic.
+
 ## 2.9.0 (2025-04-04)
 
 - Added a `get_disjoint_mut` method to `IndexMap`, matching Rust 1.86's
