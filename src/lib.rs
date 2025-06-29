@@ -115,6 +115,8 @@ mod macros;
 mod borsh;
 #[cfg(feature = "serde")]
 mod serde;
+#[cfg(feature = "sval2")]
+mod sval2;
 mod util;
 
 pub mod map;
