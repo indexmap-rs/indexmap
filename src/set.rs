@@ -422,6 +422,56 @@ where
         (index, existing.is_none())
     }
 
+    /// Insert the value into the set at its ordered position among values
+    /// sorted by `cmp`.
+    ///
+    /// This is equivalent to finding the position with
+    /// [`binary_search_by`][Self::binary_search_by], then calling
+    /// [`insert_before`][Self::insert_before].
+    ///
+    /// If the sorted item is found in the set, it returns the index of that
+    /// existing item and `false`. Otherwise, it inserts the new item and
+    /// returns its sorted index and `true`.
+    ///
+    /// If the existing items are **not** already sorted, then the insertion
+    /// index is unspecified (like [`slice::binary_search`]), but the value
+    /// is moved to or inserted at that position regardless.
+    ///
+    /// Computes in **O(n)** time (average).
+    pub fn insert_sorted_by<F>(&mut self, mut cmp: F, value: T) -> (usize, bool)
+    where
+        T: Ord,
+        F: FnMut(&T) -> Ordering,
+    {
+        let (index, existing) = self.map.insert_sorted_by(|k, _| cmp(k), value, ());
+        (index, existing.is_none())
+    }
+
+    /// Insert the value into the set at its ordered position among values
+    /// sorted by `cmp`.
+    ///
+    /// This is equivalent to finding the position with
+    /// [`binary_search_by_key`][Self::binary_search_by] with `cmp(key)`, then
+    /// calling [`insert_before`][Self::insert_before].
+    ///
+    /// If the sorted item is found in the set, it returns the index of that
+    /// existing item and `false`. Otherwise, it inserts the new item and
+    /// returns its sorted index and `true`.
+    ///
+    /// If the existing items are **not** already sorted, then the insertion
+    /// index is unspecified (like [`slice::binary_search`]), but the value
+    /// is moved to or inserted at that position regardless.
+    ///
+    /// Computes in **O(n)** time (average).
+    pub fn insert_sorted_by_key<F, B>(&mut self, mut cmp: F, value: T) -> (usize, bool)
+    where
+        B: Ord,
+        F: FnMut(&T) -> B,
+    {
+        let (index, existing) = self.map.insert_sorted_by_key(|k, _| cmp(k), value, ());
+        (index, existing.is_none())
+    }
+
     /// Insert the value into the set before the value at the given index, or at the end.
     ///
     /// If an equivalent item already exists in the set, it returns `false` leaving the
