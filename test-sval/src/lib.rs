@@ -2,10 +2,10 @@
 
 use fnv::FnvBuildHasher;
 use indexmap::{indexmap, indexset, IndexMap, IndexSet};
-use sval2_test::{assert_tokens, Token};
+use sval_test::{assert_tokens, Token};
 
 #[test]
-fn test_sval2_map() {
+fn test_sval_map() {
     let map = indexmap! { 1 => 2, 3 => 4 };
     assert_tokens(
         &map,
@@ -29,7 +29,7 @@ fn test_sval2_map() {
 }
 
 #[test]
-fn test_sval2_set() {
+fn test_sval_set() {
     let set = indexset! { 1, 2, 3, 4 };
     assert_tokens(
         &set,
@@ -53,7 +53,7 @@ fn test_sval2_set() {
 }
 
 #[test]
-fn test_sval2_map_fnv_hasher() {
+fn test_sval_map_fnv_hasher() {
     let mut map: IndexMap<i32, i32, FnvBuildHasher> = Default::default();
     map.insert(1, 2);
     map.insert(3, 4);
@@ -79,7 +79,7 @@ fn test_sval2_map_fnv_hasher() {
 }
 
 #[test]
-fn test_sval2_set_fnv_hasher() {
+fn test_sval_set_fnv_hasher() {
     let mut set: IndexSet<i32, FnvBuildHasher> = Default::default();
     set.extend(1..5);
     assert_tokens(
