@@ -1,4 +1,4 @@
-#![cfg_attr(docsrs, doc(cfg(feature = "serde")))]
+#![cfg_attr(docsrs, doc(cfg(feature = "sval")))]
 
 use crate::{IndexMap, IndexSet};
 use sval::{Stream, Value};
