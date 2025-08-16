@@ -550,6 +550,22 @@ where
         }
     }
 
+    /// Replaces the value at the given index. The new value does not need to be
+    /// equivalent to the one it is replacing, but it must be unique to the rest
+    /// of the set.
+    ///
+    /// Returns `Ok(old_value)` if successful, or `Err((other_index, value))` if
+    /// an equivalent value already exists at a different index. The set will be
+    /// unchanged in the error case.
+    ///
+    /// ***Panics*** if `index` is out of bounds.
+    ///
+    /// Computes in **O(1)** time (average).
+    #[track_caller]
+    pub fn replace_index(&mut self, index: usize, value: T) -> Result<T, (usize, T)> {
+        self.map.replace_index(index, value)
+    }
+
     /// Return an iterator over the values that are in `self` but not `other`.
     ///
     /// Values are produced in the same order that they appear in `self`.

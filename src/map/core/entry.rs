@@ -414,6 +414,17 @@ impl<'a, K, V> VacantEntry<'a, K, V> {
             .shift_insert_unique(index, self.hash, self.key, value);
         &mut self.map.entries[index].value
     }
+
+    /// Replaces the key at the given index with this entry's key, returning the
+    /// old key and an `OccupiedEntry` for that index.
+    ///
+    /// ***Panics*** if `index` is out of bounds.
+    ///
+    /// Computes in **O(1)** time (average).
+    #[track_caller]
+    pub fn replace_index(self, index: usize) -> (K, OccupiedEntry<'a, K, V>) {
+        self.map.replace_index_unique(index, self.hash, self.key)
+    }
 }
 
 impl<K: fmt::Debug, V> fmt::Debug for VacantEntry<'_, K, V> {
