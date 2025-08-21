@@ -130,6 +130,46 @@ quickcheck_limit! {
         true
     }
 
+    fn insert_sorted_by(insert: Vec<(u32, u32)>) -> bool {
+        let mut hmap = HashMap::new();
+        let mut map = IndexMap::new();
+        let mut map2 = IndexMap::new();
+        for &(key, value) in &insert {
+            hmap.insert(key, value);
+            map.insert_sorted_by(key, value, |key1, _, key2, _| key2.cmp(key1));
+            match map2.entry(key) {
+                Entry::Occupied(e) => *e.into_mut() = value,
+                Entry::Vacant(e) => {
+                    e.insert_sorted_by(value, |key1, _, key2, _| key2.cmp(key1));
+                }
+            }
+        }
+        let hsorted = hmap.iter().sorted_by(|(key1, _), (key2, _)| key2.cmp(key1));
+        itertools::assert_equal(hsorted, &map);
+        itertools::assert_equal(&map, &map2);
+        true
+    }
+
+    fn insert_sorted_by_key(insert: Vec<(i32, u32)>) -> bool {
+        let mut hmap = HashMap::new();
+        let mut map = IndexMap::new();
+        let mut map2 = IndexMap::new();
+        for &(key, value) in &insert {
+            hmap.insert(key, value);
+            map.insert_sorted_by_key(key, value, |&k, _| (k.unsigned_abs(), k));
+            match map2.entry(key) {
+                Entry::Occupied(e) => *e.into_mut() = value,
+                Entry::Vacant(e) => {
+                    e.insert_sorted_by_key(value, |&k, _| (k.unsigned_abs(), k));
+                }
+            }
+        }
+        let hsorted = hmap.iter().sorted_by_key(|(&k, _)| (k.unsigned_abs(), k));
+        itertools::assert_equal(hsorted, &map);
+        itertools::assert_equal(&map, &map2);
+        true
+    }
+
     fn replace_index(insert: Vec<u8>, index: u8, new_key: u8) -> TestResult {
         if insert.is_empty() {
             return TestResult::discard();

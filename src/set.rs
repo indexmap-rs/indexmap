@@ -434,12 +434,14 @@ where
     /// is moved to or inserted at that position regardless.
     ///
     /// Computes in **O(n)** time (average).
-    pub fn insert_sorted_by<F>(&mut self, mut cmp: F, value: T) -> (usize, bool)
+    pub fn insert_sorted_by<F>(&mut self, value: T, mut cmp: F) -> (usize, bool)
     where
         T: Ord,
-        F: FnMut(&T) -> Ordering,
+        F: FnMut(&T, &T) -> Ordering,
     {
-        let (index, existing) = self.map.insert_sorted_by(|k, _| cmp(k), value, ());
+        let (index, existing) = self
+            .map
+            .insert_sorted_by(value, (), |a, (), b, ()| cmp(a, b));
         (index, existing.is_none())
     }
 
@@ -455,12 +457,12 @@ where
     /// is moved to or inserted at that position regardless.
     ///
     /// Computes in **O(n)** time (average).
-    pub fn insert_sorted_by_key<F, B>(&mut self, mut sort_key: F, value: T) -> (usize, bool)
+    pub fn insert_sorted_by_key<B, F>(&mut self, value: T, mut sort_key: F) -> (usize, bool)
     where
         B: Ord,
         F: FnMut(&T) -> B,
     {
-        let (index, existing) = self.map.insert_sorted_by_key(|k, _| sort_key(k), value, ());
+        let (index, existing) = self.map.insert_sorted_by_key(value, (), |k, _| sort_key(k));
         (index, existing.is_none())
     }
 
@@ -938,7 +940,7 @@ impl<T, S> IndexSet<T, S> {
     where
         F: FnMut(&T, &T) -> Ordering,
     {
-        self.map.sort_by(move |a, _, b, _| cmp(a, b));
+        self.map.sort_by(move |a, (), b, ()| cmp(a, b));
     }
 
     /// Sort the values of the set and return a by-value iterator of
