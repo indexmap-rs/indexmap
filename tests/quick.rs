@@ -136,11 +136,11 @@ quickcheck_limit! {
         let mut map2 = IndexMap::new();
         for &(key, value) in &insert {
             hmap.insert(key, value);
-            map.insert_sorted_by(key, value, |other, _| key.cmp(other));
+            map.insert_sorted_by(key, value, |key1, _, key2, _| key2.cmp(key1));
             match map2.entry(key) {
                 Entry::Occupied(e) => *e.into_mut() = value,
                 Entry::Vacant(e) => {
-                    e.insert_sorted_by(value, |other, _| key.cmp(other));
+                    e.insert_sorted_by(value, |key1, _, key2, _| key2.cmp(key1));
                 }
             }
         }

@@ -505,12 +505,12 @@ where
     /// pair is moved to or inserted at that position regardless.
     ///
     /// Computes in **O(n)** time (average).
-    pub fn insert_sorted_by<F>(&mut self, key: K, value: V, cmp: F) -> (usize, Option<V>)
+    pub fn insert_sorted_by<F>(&mut self, key: K, value: V, mut cmp: F) -> (usize, Option<V>)
     where
         K: Ord,
-        F: FnMut(&K, &V) -> Ordering,
+        F: FnMut(&K, &V, &K, &V) -> Ordering,
     {
-        let (Ok(i) | Err(i)) = self.binary_search_by(cmp);
+        let (Ok(i) | Err(i)) = self.binary_search_by(|k, v| cmp(k, v, &key, &value));
         self.insert_before(i, key, value)
     }
 

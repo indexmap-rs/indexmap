@@ -437,9 +437,11 @@ where
     pub fn insert_sorted_by<F>(&mut self, value: T, mut cmp: F) -> (usize, bool)
     where
         T: Ord,
-        F: FnMut(&T) -> Ordering,
+        F: FnMut(&T, &T) -> Ordering,
     {
-        let (index, existing) = self.map.insert_sorted_by(value, (), |k, _| cmp(k));
+        let (index, existing) = self
+            .map
+            .insert_sorted_by(value, (), |a, (), b, ()| cmp(a, b));
         (index, existing.is_none())
     }
 
@@ -938,7 +940,7 @@ impl<T, S> IndexSet<T, S> {
     where
         F: FnMut(&T, &T) -> Ordering,
     {
-        self.map.sort_by(move |a, _, b, _| cmp(a, b));
+        self.map.sort_by(move |a, (), b, ()| cmp(a, b));
     }
 
     /// Sort the values of the set and return a by-value iterator of
