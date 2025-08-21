@@ -1229,24 +1229,38 @@ fn disjoint_indices_mut_fail_duplicate() {
 
 #[test]
 fn insert_sorted_by_key() {
-    let values = [(-1, 8), (3, 18), (-27, 2), (-2, 5)];
+    let mut values = [(-1, 8), (3, 18), (-27, 2), (-2, 5)];
     let mut map: IndexMap<i32, i32> = IndexMap::new();
-    for (key, value) in values.into_iter() {
-        map.insert_sorted_by_key(|k, _| k.abs(), key, value);
+    for (key, value) in values {
+        let (_, old) = map.insert_sorted_by_key(|k, _| k.abs(), key, value);
+        assert_eq!(old, None);
     }
-    let values: Vec<_> = map.iter().map(|(k,v)|(*k,*v)).collect();
-    map.sort_by_cached_key(|key, _| key.abs());
+    values.sort_by_key(|(key, _)| key.abs());
+    assert_eq!(values, *map.as_slice());
 
-    assert_eq!(values, map.into_iter().collect::<Vec<_>>());
+    for (key, value) in &mut values {
+        let (_, old) = map.insert_sorted_by_key(|k, _| k.abs(), *key, -*value);
+        assert_eq!(old, Some(*value));
+        *value = -*value;
+    }
+    assert_eq!(values, *map.as_slice());
 }
 
 #[test]
 fn insert_sorted_by() {
     let mut values = [(1, 1), (2, 2), (3, 3), (4, 4), (5, 5)];
     let mut map: IndexMap<i32, i32> = IndexMap::new();
-    for (key, value) in values.into_iter() {
-        map.insert_sorted_by(|probe, _| probe.cmp(&key).reverse(), key, value);
+    for (key, value) in values {
+        let (_, old) = map.insert_sorted_by(|probe, _| key.cmp(probe), key, value);
+        assert_eq!(old, None);
     }
     values.reverse();
-    assert_eq!(values, map.into_iter().collect::<Vec<_>>().as_slice());
+    assert_eq!(values, *map.as_slice());
+
+    for (key, value) in &mut values {
+        let (_, old) = map.insert_sorted_by(|probe, _| (*key).cmp(probe), *key, -*value);
+        assert_eq!(old, Some(*value));
+        *value = -*value;
+    }
+    assert_eq!(values, *map.as_slice());
 }
