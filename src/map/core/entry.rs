@@ -1,5 +1,6 @@
 use super::{equivalent, Entries, IndexMapCore, RefMut};
 use crate::HashValue;
+use core::cmp::Ordering;
 use core::{fmt, mem};
 use hashbrown::hash_table;
 
@@ -399,6 +400,45 @@ impl<'a, K, V> VacantEntry<'a, K, V> {
     {
         let slice = crate::map::Slice::from_slice(self.map.entries);
         let i = slice.binary_search_keys(&self.key).unwrap_err();
+        (i, self.shift_insert(i, value))
+    }
+
+    /// Inserts the entry's key and the given value into the map at its ordered
+    /// position among keys sorted by `cmp`, and returns the new index and a
+    /// mutable reference to the value.
+    ///
+    /// If the existing keys are **not** already sorted, then the insertion
+    /// index is unspecified (like [`slice::binary_search`]), but the key-value
+    /// pair is inserted at that position regardless.
+    ///
+    /// Computes in **O(n)** time (average).
+    pub fn insert_sorted_by<F>(self, value: V, cmp: F) -> (usize, &'a mut V)
+    where
+        K: Ord,
+        F: FnMut(&K, &V) -> Ordering,
+    {
+        let slice = crate::map::Slice::from_slice(self.map.entries);
+        let (Ok(i) | Err(i)) = slice.binary_search_by(cmp);
+        (i, self.shift_insert(i, value))
+    }
+
+    /// Inserts the entry's key and the given value into the map at its ordered
+    /// position using a sort-key extraction function, and returns the new index
+    /// and a mutable reference to the value.
+    ///
+    /// If the existing keys are **not** already sorted, then the insertion
+    /// index is unspecified (like [`slice::binary_search`]), but the key-value
+    /// pair is inserted at that position regardless.
+    ///
+    /// Computes in **O(n)** time (average).
+    pub fn insert_sorted_by_key<B, F>(self, value: V, mut sort_key: F) -> (usize, &'a mut V)
+    where
+        B: Ord,
+        F: FnMut(&K, &V) -> B,
+    {
+        let search_key = sort_key(&self.key, &value);
+        let slice = crate::map::Slice::from_slice(self.map.entries);
+        let (Ok(i) | Err(i)) = slice.binary_search_by_key(&search_key, sort_key);
         (i, self.shift_insert(i, value))
     }
 
