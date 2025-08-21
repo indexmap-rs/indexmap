@@ -1074,6 +1074,34 @@ impl<T, S> IndexSet<T, S> {
         self.as_slice().binary_search_by_key(b, f)
     }
 
+    /// Checks if the values of this set are sorted.
+    #[inline]
+    pub fn is_sorted(&self) -> bool
+    where
+        T: PartialOrd,
+    {
+        self.as_slice().is_sorted()
+    }
+
+    /// Checks if this set is sorted using the given comparator function.
+    #[inline]
+    pub fn is_sorted_by<'a, F>(&'a self, cmp: F) -> bool
+    where
+        F: FnMut(&'a T, &'a T) -> bool,
+    {
+        self.as_slice().is_sorted_by(cmp)
+    }
+
+    /// Checks if this set is sorted using the given sort-key function.
+    #[inline]
+    pub fn is_sorted_by_key<'a, F, K>(&'a self, sort_key: F) -> bool
+    where
+        F: FnMut(&'a T) -> K,
+        K: PartialOrd,
+    {
+        self.as_slice().is_sorted_by_key(sort_key)
+    }
+
     /// Returns the index of the partition point of a sorted set according to the given predicate
     /// (the index of the first element of the second partition).
     ///
