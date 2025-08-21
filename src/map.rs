@@ -731,7 +731,7 @@ where
         Ok(self.core.replace_index_unique(index, hash, key))
     }
 
-    /// Get the given key’s corresponding entry in the map for insertion and/or
+    /// Get the given key's corresponding entry in the map for insertion and/or
     /// in-place manipulation.
     ///
     /// Computes in **O(1)** time (amortized average).
@@ -1124,7 +1124,7 @@ impl<K, V, S> IndexMap<K, V, S> {
         self.core.retain_in_order(move |k, v| keep(k, v));
     }
 
-    /// Sort the map’s key-value pairs by the default ordering of the keys.
+    /// Sort the map's key-value pairs by the default ordering of the keys.
     ///
     /// This is a stable sort -- but equivalent keys should not normally coexist in
     /// a map at all, so [`sort_unstable_keys`][Self::sort_unstable_keys] is preferred
@@ -1140,7 +1140,7 @@ impl<K, V, S> IndexMap<K, V, S> {
         });
     }
 
-    /// Sort the map’s key-value pairs in place using the comparison
+    /// Sort the map's key-value pairs in place using the comparison
     /// function `cmp`.
     ///
     /// The comparison function receives two key and value pairs to compare (you
@@ -1214,7 +1214,7 @@ impl<K, V, S> IndexMap<K, V, S> {
         IntoIter::new(entries)
     }
 
-    /// Sort the map’s key-value pairs in place using a sort-key extraction function.
+    /// Sort the map's key-value pairs in place using a sort-key extraction function.
     ///
     /// During sorting, the function is called at most once per entry, by using temporary storage
     /// to remember the results of its evaluation. The order of calls to the function is
@@ -1289,7 +1289,7 @@ impl<K, V, S> IndexMap<K, V, S> {
         self.as_slice().partition_point(pred)
     }
 
-    /// Reverses the order of the map’s key-value pairs in place.
+    /// Reverses the order of the map's key-value pairs in place.
     ///
     /// Computes in **O(n)** time and **O(1)** space.
     pub fn reverse(&mut self) {

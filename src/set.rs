@@ -919,7 +919,7 @@ impl<T, S> IndexSet<T, S> {
         self.map.retain(move |x, &mut ()| keep(x))
     }
 
-    /// Sort the set’s values by their default ordering.
+    /// Sort the set's values by their default ordering.
     ///
     /// This is a stable sort -- but equivalent values should not normally coexist in
     /// a set at all, so [`sort_unstable`][Self::sort_unstable] is preferred
@@ -933,7 +933,7 @@ impl<T, S> IndexSet<T, S> {
         self.map.sort_keys()
     }
 
-    /// Sort the set’s values in place using the comparison function `cmp`.
+    /// Sort the set's values in place using the comparison function `cmp`.
     ///
     /// Computes in **O(n log n)** time and **O(n)** space. The sort is stable.
     pub fn sort_by<F>(&mut self, mut cmp: F)
@@ -987,7 +987,7 @@ impl<T, S> IndexSet<T, S> {
         IntoIter::new(entries)
     }
 
-    /// Sort the set’s values in place using a key extraction function.
+    /// Sort the set's values in place using a key extraction function.
     ///
     /// During sorting, the function is called at most once per entry, by using temporary storage
     /// to remember the results of its evaluation. The order of calls to the function is
@@ -1062,7 +1062,7 @@ impl<T, S> IndexSet<T, S> {
         self.as_slice().partition_point(pred)
     }
 
-    /// Reverses the order of the set’s values in place.
+    /// Reverses the order of the set's values in place.
     ///
     /// Computes in **O(n)** time and **O(1)** space.
     pub fn reverse(&mut self) {
