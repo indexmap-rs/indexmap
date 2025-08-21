@@ -505,7 +505,7 @@ where
     /// pair is moved to or inserted at that position regardless.
     ///
     /// Computes in **O(n)** time (average).
-    pub fn insert_sorted_by<F>(&mut self, cmp: F, key: K, value: V) -> (usize, Option<V>)
+    pub fn insert_sorted_by<F>(&mut self, key: K, value: V, cmp: F) -> (usize, Option<V>)
     where
         K: Ord,
         F: FnMut(&K, &V) -> Ordering,
@@ -526,11 +526,11 @@ where
     /// pair is moved to or inserted at that position regardless.
     ///
     /// Computes in **O(n)** time (average).
-    pub fn insert_sorted_by_key<F, B>(
+    pub fn insert_sorted_by_key<B, F>(
         &mut self,
-        mut sort_key: F,
         key: K,
         value: V,
+        mut sort_key: F,
     ) -> (usize, Option<V>)
     where
         B: Ord,
