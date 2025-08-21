@@ -1226,3 +1226,41 @@ fn disjoint_indices_mut_fail_duplicate() {
         Err(crate::GetDisjointMutError::OverlappingIndices)
     );
 }
+
+#[test]
+fn insert_sorted_by_key() {
+    let mut values = [(-1, 8), (3, 18), (-27, 2), (-2, 5)];
+    let mut map: IndexMap<i32, i32> = IndexMap::new();
+    for (key, value) in values {
+        let (_, old) = map.insert_sorted_by_key(|k, _| k.abs(), key, value);
+        assert_eq!(old, None);
+    }
+    values.sort_by_key(|(key, _)| key.abs());
+    assert_eq!(values, *map.as_slice());
+
+    for (key, value) in &mut values {
+        let (_, old) = map.insert_sorted_by_key(|k, _| k.abs(), *key, -*value);
+        assert_eq!(old, Some(*value));
+        *value = -*value;
+    }
+    assert_eq!(values, *map.as_slice());
+}
+
+#[test]
+fn insert_sorted_by() {
+    let mut values = [(1, 1), (2, 2), (3, 3), (4, 4), (5, 5)];
+    let mut map: IndexMap<i32, i32> = IndexMap::new();
+    for (key, value) in values {
+        let (_, old) = map.insert_sorted_by(|probe, _| key.cmp(probe), key, value);
+        assert_eq!(old, None);
+    }
+    values.reverse();
+    assert_eq!(values, *map.as_slice());
+
+    for (key, value) in &mut values {
+        let (_, old) = map.insert_sorted_by(|probe, _| (*key).cmp(probe), *key, -*value);
+        assert_eq!(old, Some(*value));
+        *value = -*value;
+    }
+    assert_eq!(values, *map.as_slice());
+}
