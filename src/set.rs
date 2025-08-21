@@ -956,6 +956,19 @@ impl<T, S> IndexSet<T, S> {
         IntoIter::new(entries)
     }
 
+    /// Sort the set's values in place using a key extraction function.
+    ///
+    /// Computes in **O(n log n)** time and **O(n)** space. The sort is stable.
+    pub fn sort_by_key<K, F>(&mut self, mut sort_key: F)
+    where
+        K: Ord,
+        F: FnMut(&T) -> K,
+    {
+        self.with_entries(move |entries| {
+            entries.sort_by_key(move |a| sort_key(&a.key));
+        });
+    }
+
     /// Sort the set's values by their default ordering.
     ///
     /// See [`sort_unstable_by`](Self::sort_unstable_by) for details.
@@ -985,6 +998,19 @@ impl<T, S> IndexSet<T, S> {
         let mut entries = self.into_entries();
         entries.sort_unstable_by(move |a, b| cmp(&a.key, &b.key));
         IntoIter::new(entries)
+    }
+
+    /// Sort the set's values in place using a key extraction function.
+    ///
+    /// Computes in **O(n log n)** time. The sort is unstable.
+    pub fn sort_unstable_by_key<K, F>(&mut self, mut sort_key: F)
+    where
+        K: Ord,
+        F: FnMut(&T) -> K,
+    {
+        self.with_entries(move |entries| {
+            entries.sort_unstable_by_key(move |a| sort_key(&a.key));
+        });
     }
 
     /// Sort the set's values in place using a key extraction function.
