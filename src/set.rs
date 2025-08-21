@@ -429,10 +429,6 @@ where
     /// [`binary_search_by`][Self::binary_search_by], then calling
     /// [`insert_before`][Self::insert_before].
     ///
-    /// If the sorted item is found in the set, it returns the index of that
-    /// existing item and `false`. Otherwise, it inserts the new item and
-    /// returns its sorted index and `true`.
-    ///
     /// If the existing items are **not** already sorted, then the insertion
     /// index is unspecified (like [`slice::binary_search`]), but the value
     /// is moved to or inserted at that position regardless.
@@ -453,10 +449,6 @@ where
     /// This is equivalent to finding the position with
     /// [`binary_search_by_key`][Self::binary_search_by] with `cmp(key)`, then
     /// calling [`insert_before`][Self::insert_before].
-    ///
-    /// If the sorted item is found in the set, it returns the index of that
-    /// existing item and `false`. Otherwise, it inserts the new item and
-    /// returns its sorted index and `true`.
     ///
     /// If the existing items are **not** already sorted, then the insertion
     /// index is unspecified (like [`slice::binary_search`]), but the value

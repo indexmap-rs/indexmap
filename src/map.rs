@@ -498,7 +498,7 @@ where
     ///
     /// This is equivalent to finding the position with
     /// [`binary_search_by`][Self::binary_search_by], then calling
-    /// [`insert_before`][Self::insert_before] for a new key.
+    /// [`insert_before`][Self::insert_before] with the given key and value.
     ///
     /// If the existing keys are **not** already sorted, then the insertion
     /// index is unspecified (like [`slice::binary_search`]), but the key-value
@@ -519,7 +519,7 @@ where
     ///
     /// This is equivalent to finding the position with
     /// [`binary_search_by_key`][Self::binary_search_by_key] with `cmp(key)`, then
-    /// calling [`insert_before`][Self::insert_before] for a new key.
+    /// calling [`insert_before`][Self::insert_before] with the given key and value.
     ///
     /// If the existing keys are **not** already sorted, then the insertion
     /// index is unspecified (like [`slice::binary_search`]), but the key-value
