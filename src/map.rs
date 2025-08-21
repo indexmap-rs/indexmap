@@ -652,6 +652,37 @@ where
         }
     }
 
+    /// Replaces the key at the given index. The new key does not need to be
+    /// equivalent to the one it is replacing, but it must be unique to the rest
+    /// of the map.
+    ///
+    /// Returns `Ok(old_key)` if successful, or `Err((other_index, key))` if an
+    /// equivalent key already exists at a different index. The map will be
+    /// unchanged in the error case.
+    ///
+    /// Direct indexing can be used to change the corresponding value: simply
+    /// `map[index] = value`, or `mem::replace(&mut map[index], value)` to
+    /// retrieve the old value as well.
+    ///
+    /// ***Panics*** if `index` is out of bounds.
+    ///
+    /// Computes in **O(1)** time (average).
+    #[track_caller]
+    pub fn replace_index(&mut self, index: usize, key: K) -> Result<K, (usize, K)> {
+        // If there's a direct match, we don't even need to hash it.
+        let entry = &mut self.as_entries_mut()[index];
+        if key == entry.key {
+            return Ok(mem::replace(&mut entry.key, key));
+        }
+
+        let hash = self.hash(&key);
+        if let Some(i) = self.core.get_index_of(hash, &key) {
+            debug_assert_ne!(i, index);
+            return Err((i, key));
+        }
+        Ok(self.core.replace_index_unique(index, hash, key))
+    }
+
     /// Get the given key’s corresponding entry in the map for insertion and/or
     /// in-place manipulation.
     ///

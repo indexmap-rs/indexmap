@@ -130,6 +130,60 @@ quickcheck_limit! {
         true
     }
 
+    fn replace_index(insert: Vec<u8>, index: u8, new_key: u8) -> TestResult {
+        if insert.is_empty() {
+            return TestResult::discard();
+        }
+        let mut map = IndexMap::new();
+        for &key in &insert {
+            map.insert(key, ());
+        }
+        let mut index = usize::from(index);
+        if index < map.len() {
+            match map.replace_index(index, new_key) {
+                Ok(old_key) => {
+                    assert!(old_key == new_key || !map.contains_key(&old_key));
+                }
+                Err((i, key)) => {
+                    assert_eq!(key, new_key);
+                    index = i;
+                }
+            }
+            assert_eq!(map.get_index_of(&new_key), Some(index));
+            assert_eq!(map.get_index(index), Some((&new_key, &())));
+            TestResult::passed()
+        } else {
+            TestResult::must_fail(move || map.replace_index(index, new_key))
+        }
+    }
+
+    fn vacant_replace_index(insert: Vec<u8>, index: u8, new_key: u8) -> TestResult {
+        if insert.is_empty() {
+            return TestResult::discard();
+        }
+        let mut map = IndexMap::new();
+        for &key in &insert {
+            map.insert(key, ());
+        }
+        let index = usize::from(index);
+        if let Some((&old_key, &())) = map.get_index(index) {
+            match map.entry(new_key) {
+                Entry::Occupied(_) => return TestResult::discard(),
+                Entry::Vacant(entry) => {
+                    let (replaced_key, entry) = entry.replace_index(index);
+                    assert_eq!(old_key, replaced_key);
+                    assert_eq!(*entry.key(), new_key);
+                }
+            };
+            assert!(!map.contains_key(&old_key));
+            assert_eq!(map.get_index_of(&new_key), Some(index));
+            assert_eq!(map.get_index(index), Some((&new_key, &())));
+            TestResult::passed()
+        } else {
+            TestResult::must_fail(move || map.replace_index(index, new_key))
+        }
+    }
+
     fn pop(insert: Vec<u8>) -> bool {
         let mut map = IndexMap::new();
         for &key in &insert {
