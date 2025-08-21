@@ -514,11 +514,11 @@ where
         self.insert_before(i, key, value)
     }
 
-    /// Insert a key-value pair in the map at its ordered position among keys
-    /// sorted by `cmp`.
+    /// Insert a key-value pair in the map at its ordered position
+    /// using a sort-key extraction function.
     ///
     /// This is equivalent to finding the position with
-    /// [`binary_search_by_key`][Self::binary_search_by_key] with `cmp(key)`, then
+    /// [`binary_search_by_key`][Self::binary_search_by_key] with `sort_key(key)`, then
     /// calling [`insert_before`][Self::insert_before] with the given key and value.
     ///
     /// If the existing keys are **not** already sorted, then the insertion
@@ -526,12 +526,18 @@ where
     /// pair is moved to or inserted at that position regardless.
     ///
     /// Computes in **O(n)** time (average).
-    pub fn insert_sorted_by_key<F, B>(&mut self, mut cmp: F, key: K, value: V) -> (usize, Option<V>)
+    pub fn insert_sorted_by_key<F, B>(
+        &mut self,
+        mut sort_key: F,
+        key: K,
+        value: V,
+    ) -> (usize, Option<V>)
     where
         B: Ord,
         F: FnMut(&K, &V) -> B,
     {
-        let (Ok(i) | Err(i)) = self.binary_search_by_key(&cmp(&key, &value), cmp);
+        let search_key = sort_key(&key, &value);
+        let (Ok(i) | Err(i)) = self.binary_search_by_key(&search_key, sort_key);
         self.insert_before(i, key, value)
     }
 
