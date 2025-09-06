@@ -902,6 +902,22 @@ where
         }
     }
 
+    /// Return references to the key-value pair stored for `key`,
+    /// if it is present, else `None`.
+    ///
+    /// Computes in **O(1)** time (average).
+    pub fn get_key_value_mut<Q>(&mut self, key: &Q) -> Option<(&K, &mut V)>
+    where
+        Q: ?Sized + Hash + Equivalent<K>,
+    {
+        if let Some(i) = self.get_index_of(key) {
+            let entry = &mut self.as_entries_mut()[i];
+            Some((&entry.key, &mut entry.value))
+        } else {
+            None
+        }
+    }
+
     pub fn get_full_mut<Q>(&mut self, key: &Q) -> Option<(usize, &K, &mut V)>
     where
         Q: ?Sized + Hash + Equivalent<K>,
