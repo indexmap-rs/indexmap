@@ -414,7 +414,6 @@ impl<'a, K, V> VacantEntry<'a, K, V> {
     /// Computes in **O(n)** time (average).
     pub fn insert_sorted_by<F>(self, value: V, mut cmp: F) -> (usize, &'a mut V)
     where
-        K: Ord,
         F: FnMut(&K, &V, &K, &V) -> Ordering,
     {
         let slice = crate::map::Slice::from_slice(self.map.entries);
