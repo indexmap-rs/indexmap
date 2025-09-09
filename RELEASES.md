@@ -1,5 +1,10 @@
 # Releases
 
+## 2.11.1 (2025-09-08)
+
+- Added a `get_key_value_mut` method to `IndexMap`.
+- Removed the unnecessary `Ord` bound on `insert_sorted_by` methods.
+
 ## 2.11.0 (2025-08-22)
 
 - Added `insert_sorted_by` and `insert_sorted_by_key` methods to `IndexMap`,
