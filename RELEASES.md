@@ -1,5 +1,9 @@
 # Releases
 
+## 2.11.3 (2025-09-15)
+
+- Make the minimum `serde` version only apply when "serde" is enabled.
+
 ## 2.11.2 (2025-09-15)
 
 - Switched the "serde" feature to depend on `serde_core`, improving build
