@@ -227,8 +227,8 @@ impl<'a, K, V> OccupiedEntry<'a, K, V> {
 
     /// Remove the key, value pair stored in the map for this entry, and return the value.
     ///
-    /// Like [`Vec::swap_remove`][crate::Vec::swap_remove], the pair is removed by swapping it with
-    /// the last element of the map and popping it off.
+    /// Like [`Vec::swap_remove`][alloc::vec::Vec::swap_remove], the pair is removed by swapping it
+    /// with the last element of the map and popping it off.
     /// **This perturbs the position of what used to be the last element!**
     ///
     /// Computes in **O(1)** time (average).
@@ -238,7 +238,7 @@ impl<'a, K, V> OccupiedEntry<'a, K, V> {
 
     /// Remove the key, value pair stored in the map for this entry, and return the value.
     ///
-    /// Like [`Vec::remove`][crate::Vec::remove], the pair is removed by shifting all of the
+    /// Like [`Vec::remove`][alloc::vec::Vec::remove], the pair is removed by shifting all of the
     /// elements that follow it, preserving their relative order.
     /// **This perturbs the index of all of those elements!**
     ///
@@ -261,8 +261,8 @@ impl<'a, K, V> OccupiedEntry<'a, K, V> {
 
     /// Remove and return the key, value pair stored in the map for this entry
     ///
-    /// Like [`Vec::swap_remove`][crate::Vec::swap_remove], the pair is removed by swapping it with
-    /// the last element of the map and popping it off.
+    /// Like [`Vec::swap_remove`][alloc::vec::Vec::swap_remove], the pair is removed by swapping it
+    /// with the last element of the map and popping it off.
     /// **This perturbs the position of what used to be the last element!**
     ///
     /// Computes in **O(1)** time (average).
@@ -273,7 +273,7 @@ impl<'a, K, V> OccupiedEntry<'a, K, V> {
 
     /// Remove and return the key, value pair stored in the map for this entry
     ///
-    /// Like [`Vec::remove`][crate::Vec::remove], the pair is removed by shifting all of the
+    /// Like [`Vec::remove`][alloc::vec::Vec::remove], the pair is removed by shifting all of the
     /// elements that follow it, preserving their relative order.
     /// **This perturbs the index of all of those elements!**
     ///
@@ -531,8 +531,8 @@ impl<'a, K, V> IndexedEntry<'a, K, V> {
 
     /// Remove and return the key, value pair stored in the map for this entry
     ///
-    /// Like [`Vec::swap_remove`][crate::Vec::swap_remove], the pair is removed by swapping it with
-    /// the last element of the map and popping it off.
+    /// Like [`Vec::swap_remove`][alloc::vec::Vec::swap_remove], the pair is removed by swapping it
+    /// with the last element of the map and popping it off.
     /// **This perturbs the position of what used to be the last element!**
     ///
     /// Computes in **O(1)** time (average).
@@ -542,7 +542,7 @@ impl<'a, K, V> IndexedEntry<'a, K, V> {
 
     /// Remove and return the key, value pair stored in the map for this entry
     ///
-    /// Like [`Vec::remove`][crate::Vec::remove], the pair is removed by shifting all of the
+    /// Like [`Vec::remove`][alloc::vec::Vec::remove], the pair is removed by shifting all of the
     /// elements that follow it, preserving their relative order.
     /// **This perturbs the index of all of those elements!**
     ///
@@ -553,8 +553,8 @@ impl<'a, K, V> IndexedEntry<'a, K, V> {
 
     /// Remove the key, value pair stored in the map for this entry, and return the value.
     ///
-    /// Like [`Vec::swap_remove`][crate::Vec::swap_remove], the pair is removed by swapping it with
-    /// the last element of the map and popping it off.
+    /// Like [`Vec::swap_remove`][alloc::vec::Vec::swap_remove], the pair is removed by swapping it
+    /// with the last element of the map and popping it off.
     /// **This perturbs the position of what used to be the last element!**
     ///
     /// Computes in **O(1)** time (average).
@@ -564,7 +564,7 @@ impl<'a, K, V> IndexedEntry<'a, K, V> {
 
     /// Remove the key, value pair stored in the map for this entry, and return the value.
     ///
-    /// Like [`Vec::remove`][crate::Vec::remove], the pair is removed by shifting all of the
+    /// Like [`Vec::remove`][alloc::vec::Vec::remove], the pair is removed by shifting all of the
     /// elements that follow it, preserving their relative order.
     /// **This perturbs the index of all of those elements!**
     ///
