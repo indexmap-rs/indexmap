@@ -1,5 +1,10 @@
 # Releases
 
+## 2.11.2 (2025-09-15)
+
+- Switched the "serde" feature to depend on `serde_core`, improving build
+  parallelism in cases where other dependents have enabled "serde/derive".
+
 ## 2.11.1 (2025-09-08)
 
 - Added a `get_key_value_mut` method to `IndexMap`.
