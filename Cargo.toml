@@ -26,7 +26,7 @@ sval = { version = "2", optional = true, default-features = false }
 borsh = { version = "1.2", optional = true, default-features = false }
 
 [dependencies.hashbrown]
-version = "0.15.0"
+version = "0.16.0"
 default-features = false
 
 # serde v1.0.220 is the first version that released with `serde_core`.
