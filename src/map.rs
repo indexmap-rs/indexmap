@@ -35,7 +35,7 @@ use alloc::boxed::Box;
 use alloc::vec::Vec;
 
 #[cfg(feature = "std")]
-use std::collections::hash_map::RandomState;
+use std::hash::RandomState;
 
 pub(crate) use self::core::{ExtractCore, IndexMapCore};
 use crate::util::{third, try_simplify_range};

@@ -18,7 +18,7 @@ pub use crate::rayon::set as rayon;
 use crate::TryReserveError;
 
 #[cfg(feature = "std")]
-use std::collections::hash_map::RandomState;
+use std::hash::RandomState;
 
 use crate::util::try_simplify_range;
 use alloc::boxed::Box;
