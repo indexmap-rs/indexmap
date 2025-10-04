@@ -15,6 +15,7 @@ bench = false
 
 [dependencies]
 equivalent = { version = "1.0", default-features = false }
+hashbrown = { version = "0.16", default-features = false }
 
 arbitrary = { version = "1.0", optional = true, default-features = false }
 quickcheck = { version = "1.0", optional = true, default-features = false }
@@ -24,10 +25,6 @@ sval = { version = "2", optional = true, default-features = false }
 
 # deprecated: use borsh's "indexmap" feature instead.
 borsh = { version = "1.2", optional = true, default-features = false }
-
-[dependencies.hashbrown]
-version = ">= 0.15.0, < 0.17.0"
-default-features = false
 
 # serde v1.0.220 is the first version that released with `serde_core`.
 # This is required to avoid conflict with other `serde` users which may require an older version.
