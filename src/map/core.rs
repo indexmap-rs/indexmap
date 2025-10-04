@@ -111,7 +111,7 @@ where
 
 impl<K, V> IndexMapCore<K, V> {
     /// The maximum capacity before the `entries` allocation would exceed `isize::MAX`.
-    const MAX_ENTRIES_CAPACITY: usize = (isize::MAX as usize) / mem::size_of::<Bucket<K, V>>();
+    const MAX_ENTRIES_CAPACITY: usize = (isize::MAX as usize) / size_of::<Bucket<K, V>>();
 
     #[inline]
     pub(crate) const fn new() -> Self {
