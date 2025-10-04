@@ -1,14 +1,14 @@
 [package]
 name = "indexmap"
 edition = "2021"
-version = "2.11.4"
+version = "2.12.0"
 documentation = "https://docs.rs/indexmap/"
 repository = "https://github.com/indexmap-rs/indexmap"
 license = "Apache-2.0 OR MIT"
 description = "A hash table with consistent order and fast iteration."
 keywords = ["hashmap", "no_std"]
 categories = ["data-structures", "no-std"]
-rust-version = "1.63"
+rust-version = "1.82"
 
 [lib]
 bench = false
