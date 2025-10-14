@@ -47,7 +47,7 @@ struct RefMut<'a, K, V> {
 }
 
 #[inline(always)]
-fn get_hash<K, V>(entries: &[Bucket<K, V>]) -> impl Fn(&usize) -> u64 + '_ {
+fn get_hash<K, V>(entries: &[Bucket<K, V>]) -> impl Fn(&usize) -> u64 + use<'_, K, V> {
     move |&i| entries[i].hash.get()
 }
 
@@ -55,7 +55,7 @@ fn get_hash<K, V>(entries: &[Bucket<K, V>]) -> impl Fn(&usize) -> u64 + '_ {
 fn equivalent<'a, K, V, Q: ?Sized + Equivalent<K>>(
     key: &'a Q,
     entries: &'a [Bucket<K, V>],
-) -> impl Fn(&usize) -> bool + 'a {
+) -> impl Fn(&usize) -> bool + use<'a, K, V, Q> {
     move |&i| Q::equivalent(key, &entries[i].key)
 }
 
