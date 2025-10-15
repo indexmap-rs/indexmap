@@ -20,7 +20,8 @@ use hashbrown::hash_table;
 /// Opt-in access to the experimental raw entry API.
 ///
 /// See the [`raw_entry_v1`][self] module documentation for more information.
-pub trait RawEntryApiV1<K, V, S>: private::Sealed {
+#[expect(private_bounds)]
+pub trait RawEntryApiV1<K, V, S>: Sealed {
     /// Creates a raw immutable entry builder for the [`IndexMap`].
     ///
     /// Raw entries provide the lowest level of control for searching and
@@ -646,8 +647,6 @@ impl<'a, K, V, S> RawVacantEntryMut<'a, K, V, S> {
     }
 }
 
-mod private {
-    pub trait Sealed {}
+trait Sealed {}
 
-    impl<K, V, S> Sealed for super::IndexMap<K, V, S> {}
-}
+impl<K, V, S> Sealed for IndexMap<K, V, S> {}

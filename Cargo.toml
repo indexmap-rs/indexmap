@@ -61,5 +61,11 @@ rustdoc-args = ["--cfg", "docsrs"]
 [workspace]
 members = ["test-nostd", "test-serde", "test-sval"]
 
+[lints.rust]
+private-bounds = "deny"
+private-interfaces = "deny"
+unnameable-types = "deny"
+unreachable-pub = "deny"
+
 [lints.clippy]
 style = "allow"
