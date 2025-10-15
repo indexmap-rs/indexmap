@@ -67,5 +67,10 @@ private-interfaces = "deny"
 unnameable-types = "deny"
 unreachable-pub = "deny"
 
+# We *mostly* avoid unsafe code, but there are a few fine-grained cases allowed
+unsafe-code = "deny"
+
+rust-2018-idioms = "warn"
+
 [lints.clippy]
 style = "allow"
