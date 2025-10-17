@@ -264,8 +264,7 @@ impl<K, V> Slice<K, V> {
     where
         K: PartialOrd,
     {
-        // TODO(MSRV 1.82): self.entries.is_sorted_by(|a, b| a.key <= b.key)
-        self.is_sorted_by_key(|k, _| k)
+        self.entries.is_sorted_by(|a, b| a.key <= b.key)
     }
 
     /// Checks if this slice is sorted using the given comparator function.
@@ -274,17 +273,8 @@ impl<K, V> Slice<K, V> {
     where
         F: FnMut(&'a K, &'a V, &'a K, &'a V) -> bool,
     {
-        // TODO(MSRV 1.82): self.entries
-        //     .is_sorted_by(move |a, b| cmp(&a.key, &a.value, &b.key, &b.value))
-        let mut iter = self.entries.iter();
-        match iter.next() {
-            Some(mut prev) => iter.all(move |next| {
-                let sorted = cmp(&prev.key, &prev.value, &next.key, &next.value);
-                prev = next;
-                sorted
-            }),
-            None => true,
-        }
+        self.entries
+            .is_sorted_by(move |a, b| cmp(&a.key, &a.value, &b.key, &b.value))
     }
 
     /// Checks if this slice is sorted using the given sort-key function.
@@ -294,17 +284,8 @@ impl<K, V> Slice<K, V> {
         F: FnMut(&'a K, &'a V) -> T,
         T: PartialOrd,
     {
-        // TODO(MSRV 1.82): self.entries
-        //     .is_sorted_by_key(move |a| sort_key(&a.key, &a.value))
-        let mut iter = self.entries.iter().map(move |a| sort_key(&a.key, &a.value));
-        match iter.next() {
-            Some(mut prev) => iter.all(move |next| {
-                let sorted = prev <= next;
-                prev = next;
-                sorted
-            }),
-            None => true,
-        }
+        self.entries
+            .is_sorted_by_key(move |a| sort_key(&a.key, &a.value))
     }
 
     /// Returns the index of the partition point of a sorted map according to the given predicate

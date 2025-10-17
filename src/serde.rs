@@ -9,7 +9,6 @@ use serde_core::ser::{Serialize, Serializer};
 use core::fmt::{self, Formatter};
 use core::hash::{BuildHasher, Hash};
 use core::marker::PhantomData;
-use core::{cmp, mem};
 
 use crate::{Bucket, IndexMap, IndexSet};
 
@@ -23,9 +22,9 @@ use crate::{Bucket, IndexMap, IndexSet};
 pub(crate) fn cautious_capacity<K, V>(hint: Option<usize>) -> usize {
     const MAX_PREALLOC_BYTES: usize = 1024 * 1024;
 
-    cmp::min(
+    Ord::min(
         hint.unwrap_or(0),
-        MAX_PREALLOC_BYTES / mem::size_of::<Bucket<K, V>>(),
+        MAX_PREALLOC_BYTES / size_of::<Bucket<K, V>>(),
     )
 }
 

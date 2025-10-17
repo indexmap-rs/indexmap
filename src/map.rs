@@ -28,14 +28,14 @@ pub use crate::rayon::map as rayon;
 
 use ::core::cmp::Ordering;
 use ::core::fmt;
-use ::core::hash::{BuildHasher, Hash, Hasher};
+use ::core::hash::{BuildHasher, Hash};
 use ::core::mem;
 use ::core::ops::{Index, IndexMut, RangeBounds};
 use alloc::boxed::Box;
 use alloc::vec::Vec;
 
 #[cfg(feature = "std")]
-use std::collections::hash_map::RandomState;
+use std::hash::RandomState;
 
 pub(crate) use self::core::{ExtractCore, IndexMapCore};
 use crate::util::{third, try_simplify_range};
@@ -813,9 +813,8 @@ where
     S: BuildHasher,
 {
     pub(crate) fn hash<Q: ?Sized + Hash>(&self, key: &Q) -> HashValue {
-        let mut h = self.hash_builder.build_hasher();
-        key.hash(&mut h);
-        HashValue(h.finish() as usize)
+        let h = self.hash_builder.hash_one(key);
+        HashValue(h as usize)
     }
 
     /// Return `true` if an equivalent to `key` exists in the map.
@@ -1826,10 +1825,11 @@ where
         // Otherwise reserve half the hint (rounded up), so the map
         // will only resize twice in the worst case.
         let iter = iterable.into_iter();
+        let (lower_len, _) = iter.size_hint();
         let reserve = if self.is_empty() {
-            iter.size_hint().0
+            lower_len
         } else {
-            (iter.size_hint().0 + 1) / 2
+            lower_len.div_ceil(2)
         };
         self.reserve(reserve);
         iter.for_each(move |(k, v)| {

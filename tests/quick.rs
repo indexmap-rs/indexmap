@@ -829,8 +829,7 @@ quickcheck_limit! {
 
 fn assert_sorted_by_key<I, Key, X>(iterable: I, key: Key)
 where
-    I: IntoIterator,
-    I::Item: Ord + Clone + Debug,
+    I: IntoIterator<Item: Ord + Clone + Debug>,
     Key: Fn(&I::Item) -> X,
     X: Ord,
 {
