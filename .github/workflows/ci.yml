@@ -113,7 +113,9 @@ jobs:
       - uses: taiki-e/install-action@v2
         with:
           tool: cargo-nextest
+        if: github.event_name == 'merge_group'
       - run: cargo miri nextest run
+        if: github.event_name == 'merge_group'
       - run: cargo miri test --doc
 
   minimal-versions:
