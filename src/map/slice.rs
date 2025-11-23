@@ -27,7 +27,7 @@ pub struct Slice<K, V> {
 // and reference lifetimes are bound together in function signatures.
 #[allow(unsafe_code)]
 impl<K, V> Slice<K, V> {
-    pub(super) const fn from_slice(entries: &[Bucket<K, V>]) -> &Self {
+    pub(crate) const fn from_slice(entries: &[Bucket<K, V>]) -> &Self {
         unsafe { &*(entries as *const [Bucket<K, V>] as *const Self) }
     }
 
