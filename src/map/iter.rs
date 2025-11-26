@@ -1,4 +1,5 @@
-use super::{Bucket, ExtractCore, IndexMap, IndexMapCore, Slice};
+use super::{Bucket, IndexMap, Slice};
+use crate::inner::{Core, ExtractCore};
 
 use alloc::vec::{self, Vec};
 use core::fmt;
@@ -655,7 +656,7 @@ where
     S: BuildHasher,
 {
     map: &'a mut IndexMap<K, V, S>,
-    tail: IndexMapCore<K, V>,
+    tail: Core<K, V>,
     drain: vec::IntoIter<Bucket<K, V>>,
     replace_with: I,
 }
@@ -785,7 +786,7 @@ pub struct ExtractIf<'a, K, V, F> {
 
 impl<K, V, F> ExtractIf<'_, K, V, F> {
     #[track_caller]
-    pub(super) fn new<R>(core: &mut IndexMapCore<K, V>, range: R, pred: F) -> ExtractIf<'_, K, V, F>
+    pub(super) fn new<R>(core: &mut Core<K, V>, range: R, pred: F) -> ExtractIf<'_, K, V, F>
     where
         R: RangeBounds<usize>,
         F: FnMut(&K, &mut V) -> bool,
