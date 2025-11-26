@@ -1,0 +1,11 @@
+[package]
+name = "test-approxim"
+version = "0.1.0"
+publish = false
+edition = "2021"
+
+[dependencies]
+
+[dev-dependencies]
+approxim = { version = "0.6.6" }
+indexmap = { path = "..", features = ["approxim"] }
