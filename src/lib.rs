@@ -41,7 +41,7 @@
 //!   dependency that arose between [`borsh`] and `indexmap`, `borsh v1.5.6`
 //!   added an `indexmap` feature that should be used instead of enabling the
 //!   feature here.
-//! * `approxim`: Add implementations for [`AbsDiffEq`], [`RelativeEq`] and [`UlpsEq`]
+//! * `approxim`: Adds implementations for [`AbsDiffEq`], [`RelativeEq`] and [`UlpsEq`]
 //!   to [`IndexMap`].
 //!
 //! _Note: only the `std` feature is enabled by default._
