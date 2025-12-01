@@ -40,7 +40,7 @@ fnv = "1.0"
 serde = { version = "1.0", default-features = false, features = ["derive"] }
 
 [features]
-default = ["std", "approxim"]
+default = ["std"]
 std = []
 serde = ["dep:serde_core", "dep:serde"]
 approxim = ["dep:approxim", "std"]

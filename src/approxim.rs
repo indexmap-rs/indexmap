@@ -1,19 +1,10 @@
 #![cfg_attr(docsrs, doc(cfg(feature = "approxim")))]
-//! Trait implementations from [`approxim`](https://docs.rs/approxim/latest/approxim/) crate.
+//! Trait implementations from [`approxim`](https://docs.rs/approxim/latest/approxim/) crate
+//! for [`IndexMap`].
 //!
-//! Considering [`IndexMap`] preserves insertion order, these trait implementations
-//! take that into account. Meaning
-//! ```should_panic
-//! # use approxim::assert_abs_diff_eq;
-//! # use indexmap::indexmap;
-//!
-//! let left = indexmap! { 1 => 2, 3 => 4 };
-//! let right = indexmap! { 3 => 4, 1 => 2,  };
-//!
-//! assert_abs_diff_eq!(left, right); // false
-//! ```
-//! will result in relative inequality, despite the contents
-//! being the same.
+//! Keys are compared using `PartialEq` and values are compared using the approximate comparison
+//! traits. Insertion order is not taken into account for the comparison, just as with
+//! [`PartialEq`].
 
 use core::hash::BuildHasher;
 use std::hash::Hash;
@@ -22,73 +13,75 @@ use approxim::{AbsDiffEq, RelativeEq, UlpsEq};
 
 use crate::IndexMap;
 
-impl<K, V, S> AbsDiffEq for IndexMap<K, V, S>
+impl<K, V1, V2, S1, S2> AbsDiffEq<IndexMap<K, V2, S2>> for IndexMap<K, V1, S1>
 where
     K: Eq + Hash,
-    V: AbsDiffEq,
-    V::Epsilon: Copy,
-    S: BuildHasher,
+    V1: AbsDiffEq<V2>,
+    V1::Epsilon: Copy,
+    S1: BuildHasher,
+    S2: BuildHasher,
 {
-    type Epsilon = V::Epsilon;
+    type Epsilon = V1::Epsilon;
 
     fn default_epsilon() -> Self::Epsilon {
-        V::default_epsilon()
+        V1::default_epsilon()
     }
 
-    fn abs_diff_eq(&self, other: &Self, epsilon: Self::Epsilon) -> bool {
+    fn abs_diff_eq(&self, other: &IndexMap<K, V2, S2>, epsilon: Self::Epsilon) -> bool {
         self.len() == other.len()
-            && self.iter().zip(other.iter()).all(
-                |((key_left, val_left), (key_right, val_right))| {
-                    key_left == key_right && val_left.abs_diff_eq(val_right, epsilon)
-                },
-            )
+            && self.iter().all(|(key, value)| {
+                other
+                    .get(key)
+                    .map_or(false, |v| value.abs_diff_eq(v, epsilon))
+            })
     }
 }
 
-/// RelativeEq implementation for V:RelativeEq
-impl<K, V, S> RelativeEq for IndexMap<K, V, S>
+impl<K, V1, V2, S1, S2> RelativeEq<IndexMap<K, V2, S2>> for IndexMap<K, V1, S1>
 where
     K: Eq + Hash,
-    V: RelativeEq,
-    V::Epsilon: Copy,
-    S: BuildHasher,
+    V1: RelativeEq<V2>,
+    V1::Epsilon: Copy,
+    S1: BuildHasher,
+    S2: BuildHasher,
 {
     fn default_max_relative() -> Self::Epsilon {
-        V::default_max_relative()
+        V1::default_max_relative()
     }
 
     fn relative_eq(
         &self,
-        other: &Self,
+        other: &IndexMap<K, V2, S2>,
         epsilon: Self::Epsilon,
         max_relative: Self::Epsilon,
     ) -> bool {
         self.len() == other.len()
-            && self.iter().zip(other.iter()).all(
-                |((key_left, val_left), (key_right, val_right))| {
-                    key_left == key_right && val_left.relative_eq(val_right, epsilon, max_relative)
-                },
-            )
+            && self.iter().all(|(key, value)| {
+                other
+                    .get(key)
+                    .map_or(false, |v| value.relative_eq(v, epsilon, max_relative))
+            })
     }
 }
 
-impl<K, V, S> UlpsEq for IndexMap<K, V, S>
+impl<K, V1, V2, S1, S2> UlpsEq<IndexMap<K, V2, S2>> for IndexMap<K, V1, S1>
 where
     K: Eq + Hash,
-    V: UlpsEq,
-    V::Epsilon: Copy,
-    S: BuildHasher,
+    V1: UlpsEq<V2>,
+    V1::Epsilon: Copy,
+    S1: BuildHasher,
+    S2: BuildHasher,
 {
     fn default_max_ulps() -> u32 {
-        V::default_max_ulps()
+        V1::default_max_ulps()
     }
 
-    fn ulps_eq(&self, other: &Self, epsilon: Self::Epsilon, max_ulps: u32) -> bool {
+    fn ulps_eq(&self, other: &IndexMap<K, V2, S2>, epsilon: Self::Epsilon, max_ulps: u32) -> bool {
         self.len() == other.len()
-            && self.iter().zip(other.iter()).all(
-                |((key_left, val_left), (key_right, val_right))| {
-                    key_left == key_right && val_left.ulps_eq(val_right, epsilon, max_ulps)
-                },
-            )
+            && self.iter().all(|(key, value)| {
+                other
+                    .get(key)
+                    .map_or(false, |v| value.ulps_eq(v, epsilon, max_ulps))
+            })
     }
 }
