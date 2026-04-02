@@ -1,9 +1,9 @@
 #![cfg(test)]
 
 use fnv::FnvBuildHasher;
-use indexmap::{indexmap, indexset, IndexMap, IndexSet};
+use indexmap::{IndexMap, IndexSet, indexmap, indexset};
 use serde::{Deserialize, Serialize};
-use serde_test::{assert_tokens, Token};
+use serde_test::{Token, assert_tokens};
 
 #[test]
 fn test_serde_map() {
