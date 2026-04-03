@@ -1,8 +1,8 @@
 #![cfg(test)]
 
 use fnv::FnvBuildHasher;
-use indexmap::{indexmap, indexset, IndexMap, IndexSet};
-use sval_test::{assert_tokens, Token};
+use indexmap::{IndexMap, IndexSet, indexmap, indexset};
+use sval_test::{Token, assert_tokens};
 
 #[test]
 fn test_sval_map() {

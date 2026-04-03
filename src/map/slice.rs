@@ -1,8 +1,8 @@
 use super::{
     Bucket, IndexMap, IntoIter, IntoKeys, IntoValues, Iter, IterMut, Keys, Values, ValuesMut,
 };
-use crate::util::{slice_eq, try_simplify_range};
 use crate::GetDisjointMutError;
+use crate::util::{slice_eq, try_simplify_range};
 
 use alloc::boxed::Box;
 use alloc::vec::Vec;
