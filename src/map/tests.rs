@@ -29,7 +29,7 @@ fn insert() {
 
     for (i, &elt) in insert.iter().enumerate() {
         assert_eq!(map.len(), i);
-        map.insert(elt, elt);
+        assert_eq!(map.insert(elt, elt), None);
         assert_eq!(map.len(), i + 1);
         assert_eq!(map.get(&elt), Some(&elt));
         assert_eq!(map[&elt], elt);
@@ -37,7 +37,7 @@ fn insert() {
     println!("{:?}", map);
 
     for &elt in &not_present {
-        assert!(map.get(&elt).is_none());
+        assert_eq!(map.get(&elt), None);
     }
 }
 
@@ -51,7 +51,7 @@ fn insert_full() {
         assert_eq!(map.len(), i);
         let (index, existing) = map.insert_full(elt, elt);
         assert_eq!(existing, None);
-        assert_eq!(Some(index), map.get_full(&elt).map(|x| x.0));
+        assert_eq!(map.get_full(&elt), Some((index, &elt, &elt)));
         assert_eq!(map.len(), i + 1);
     }
 
@@ -59,7 +59,7 @@ fn insert_full() {
     for &elt in &present {
         let (index, existing) = map.insert_full(elt, elt);
         assert_eq!(existing, Some(elt));
-        assert_eq!(Some(index), map.get_full(&elt).map(|x| x.0));
+        assert_eq!(map.get_full(&elt), Some((index, &elt, &elt)));
         assert_eq!(map.len(), len);
     }
 }
@@ -86,6 +86,48 @@ fn insert_2() {
 
     for &i in &keys {
         assert!(map.get(&i).is_some(), "did not find {}", i);
+    }
+}
+
+#[test]
+fn try_insert() {
+    let insert = [0, 4, 2, 12, 8, 7, 11, 5];
+    let not_present = [1, 3, 6, 9, 10];
+    let mut map = IndexMap::with_capacity(insert.len());
+
+    for (i, &elt) in insert.iter().enumerate() {
+        assert_eq!(map.len(), i);
+        assert!(map.try_insert(elt, elt).is_ok());
+        assert_eq!(map.len(), i + 1);
+        assert_eq!(map.get(&elt), Some(&elt));
+        assert_eq!(map[&elt], elt);
+    }
+    println!("{:?}", map);
+
+    for &elt in &not_present {
+        assert_eq!(map.get(&elt), None);
+    }
+}
+
+#[test]
+fn try_insert_full() {
+    let insert = vec![9, 2, 7, 1, 4, 6, 13];
+    let present = vec![1, 6, 2];
+    let mut map = IndexMap::with_capacity(insert.len());
+
+    for (i, &elt) in insert.iter().enumerate() {
+        assert_eq!(map.len(), i);
+        let (index, ..) = map.try_insert_full(elt, elt).unwrap();
+        assert_eq!(map.get_full(&elt), Some((index, &elt, &elt)));
+        assert_eq!(map.len(), i + 1);
+    }
+
+    let len = map.len();
+    for &elt in &present {
+        let entry = map.try_insert_full(elt, elt).unwrap_err().entry;
+        assert_eq!(entry.key(), &elt);
+        assert_eq!(Some(entry.index()), map.get_index_of(&elt));
+        assert_eq!(map.len(), len);
     }
 }
 

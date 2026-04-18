@@ -468,6 +468,40 @@ where
         self.core.insert_full(hash, key, value)
     }
 
+    /// Tries to insert a key-value pair in the map, and returns a mutable reference to the value
+    /// in the new entry.
+    ///
+    /// If the map already had this key present, nothing is updated, and an error is returned with
+    /// the occupied entry and the given key and value.
+    pub fn try_insert(&mut self, key: K, value: V) -> Result<&mut V, OccupiedError<'_, K, V>> {
+        let hash = self.hash(&key);
+        match OccupiedEntry::find(&mut self.core, hash, &key) {
+            Ok(entry) => Err(OccupiedError { entry, key, value }),
+            Err(map) => Ok(map.insert_unique(hash, key, value).value_mut()),
+        }
+    }
+
+    /// Tries to insert a key-value pair in the map, and returns the index and references to the
+    /// key and value in the new entry.
+    ///
+    /// If the map already had this key present, nothing is updated, and an error is returned with
+    /// the occupied entry and the given key and value.
+    pub fn try_insert_full(
+        &mut self,
+        key: K,
+        value: V,
+    ) -> Result<(usize, &K, &mut V), OccupiedError<'_, K, V>> {
+        let hash = self.hash(&key);
+        match OccupiedEntry::find(&mut self.core, hash, &key) {
+            Ok(entry) => Err(OccupiedError { entry, key, value }),
+            Err(map) => {
+                let index = map.len();
+                let (key, value) = map.insert_unique(hash, key, value).ref_mut();
+                Ok((index, key, value))
+            }
+        }
+    }
+
     /// Insert a key-value pair in the map at its ordered position among sorted keys.
     ///
     /// This is equivalent to finding the position with
@@ -1889,4 +1923,28 @@ where
     V: Eq,
     S: BuildHasher,
 {
+}
+
+/// The error returned by [`try_insert`][IndexMap::try_insert] or
+/// [`try_insert_full`][IndexMap::try_insert_full] when the key already exists.
+///
+/// Contains the occupied entry and the key and value that were not inserted.
+#[non_exhaustive]
+pub struct OccupiedError<'a, K, V> {
+    /// The entry in the map that was already occupied.
+    pub entry: OccupiedEntry<'a, K, V>,
+    /// The key which was not inserted.
+    pub key: K,
+    /// The value which was not inserted.
+    pub value: V,
+}
+
+impl<K: fmt::Debug, V: fmt::Debug> fmt::Debug for OccupiedError<'_, K, V> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("OccupiedError")
+            .field("key", self.entry.key())
+            .field("old_value", self.entry.get())
+            .field("new_value", &self.value)
+            .finish_non_exhaustive()
+    }
 }
