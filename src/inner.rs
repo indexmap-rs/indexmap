@@ -39,6 +39,14 @@ fn get_hash<K, V>(entries: &[Bucket<K, V>]) -> impl Fn(&usize) -> u64 + use<'_, 
 }
 
 #[inline]
+fn equal<'a, K: Eq, V>(
+    key: &'a K,
+    entries: &'a [Bucket<K, V>],
+) -> impl Fn(&usize) -> bool + use<'a, K, V> {
+    move |&i| K::eq(key, &entries[i].key)
+}
+
+#[inline]
 fn equivalent<'a, K, V, Q: ?Sized + Equivalent<K>>(
     key: &'a Q,
     entries: &'a [Bucket<K, V>],
@@ -327,7 +335,7 @@ impl<K, V> Core<K, V> {
     where
         K: Eq,
     {
-        let eq = equivalent(&key, &self.entries);
+        let eq = equal(&key, &self.entries);
         let hasher = get_hash(&self.entries);
         match self.indices.entry(hash.get(), eq, hasher) {
             hash_table::Entry::Occupied(entry) => {
@@ -354,7 +362,7 @@ impl<K, V> Core<K, V> {
     where
         K: Eq,
     {
-        let eq = equivalent(&key, &self.entries);
+        let eq = equal(&key, &self.entries);
         let hasher = get_hash(&self.entries);
         match self.indices.entry(hash.get(), eq, hasher) {
             hash_table::Entry::Occupied(entry) => {

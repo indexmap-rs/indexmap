@@ -1,4 +1,4 @@
-use super::{Bucket, Core, equivalent, get_hash};
+use super::{Bucket, Core, equal, get_hash};
 use crate::HashValue;
 use crate::map::{Entry, IndexedEntry};
 use core::cmp::Ordering;
@@ -9,7 +9,7 @@ impl<'a, K, V> Entry<'a, K, V> {
     where
         K: Eq,
     {
-        let eq = equivalent(&key, &map.entries);
+        let eq = equal(&key, &map.entries);
         match map.indices.find_entry(hash.get(), eq) {
             Ok(entry) => Entry::Occupied(OccupiedEntry {
                 bucket: entry.bucket_index(),
