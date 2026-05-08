@@ -9,14 +9,9 @@ impl<'a, K, V> Entry<'a, K, V> {
     where
         K: Eq,
     {
-        let eq = equal(&key, &map.entries);
-        match map.indices.find_entry(hash.get(), eq) {
-            Ok(entry) => Entry::Occupied(OccupiedEntry {
-                bucket: entry.bucket_index(),
-                index: *entry.get(),
-                map,
-            }),
-            Err(_) => Entry::Vacant(VacantEntry { map, hash, key }),
+        match OccupiedEntry::find(map, hash, &key) {
+            Ok(entry) => Entry::Occupied(entry),
+            Err(map) => Entry::Vacant(VacantEntry { map, hash, key }),
         }
     }
 }
@@ -32,6 +27,25 @@ pub struct OccupiedEntry<'a, K, V> {
 }
 
 impl<'a, K, V> OccupiedEntry<'a, K, V> {
+    pub(crate) fn find(
+        map: &'a mut Core<K, V>,
+        hash: HashValue,
+        key: &K,
+    ) -> Result<Self, &'a mut Core<K, V>>
+    where
+        K: Eq,
+    {
+        let eq = equal(key, &map.entries);
+        match map.indices.find_entry(hash.get(), eq) {
+            Ok(entry) => Ok(Self {
+                bucket: entry.bucket_index(),
+                index: *entry.get(),
+                map,
+            }),
+            Err(_) => Err(map),
+        }
+    }
+
     /// Constructor for `RawEntryMut::from_hash`
     pub(crate) fn from_hash<F>(
         map: &'a mut Core<K, V>,
