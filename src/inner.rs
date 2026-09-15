@@ -520,6 +520,7 @@ impl<K, V> Core<K, V> {
 
     /// Insert a key-value pair in `entries` at a particular index,
     /// *without* checking whether it already exists.
+    #[track_caller]
     pub(crate) fn shift_insert_unique(
         &mut self,
         index: usize,
@@ -528,7 +529,7 @@ impl<K, V> Core<K, V> {
         value: V,
     ) -> &mut Bucket<K, V> {
         let end = self.indices.len();
-        assert!(index <= end);
+        assert_index_le(index, end);
         // Increment others first so we don't have duplicate indices.
         self.increment_indices(index, end);
         let entries = &*self.entries;

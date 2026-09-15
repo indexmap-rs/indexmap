@@ -790,6 +790,29 @@ fn get_range_mut() {
 }
 
 #[test]
+#[should_panic = "index out of bounds: the len is 1 but the index is 5. Expected index <= len"]
+fn vacant_entry_shift_insert_oob() {
+    let mut map: IndexMap<u32, u32> = IndexMap::new();
+    map.insert(0, 0);
+    let Entry::Vacant(entry) = map.entry(1) else {
+        unreachable!()
+    };
+    entry.shift_insert(5, 10);
+}
+
+#[test]
+fn vacant_entry_shift_insert_at_len() {
+    let mut map: IndexMap<u32, u32> = IndexMap::new();
+    map.insert(0, 0);
+    let len = map.len();
+    let Entry::Vacant(entry) = map.entry(1) else {
+        unreachable!()
+    };
+    entry.shift_insert(len, 10);
+    assert_eq!(map.get_index(1), Some((&1, &10)));
+}
+
+#[test]
 #[should_panic = "index out of bounds"]
 fn shift_insert_oob() {
     let mut map: IndexMap<u32, u32> = IndexMap::new();
