@@ -936,7 +936,10 @@ where
 
     /// Return the values for `N` keys.
     ///
-    /// ***Panics*** if any key is duplicated.
+    /// ***Panics*** if any two keys resolve to the same entry in the map.
+    ///
+    /// Duplicated keys that are not present in the map resolve to no entry, so
+    /// they do not panic; each occurrence yields `None`.
     ///
     /// # Examples
     ///
