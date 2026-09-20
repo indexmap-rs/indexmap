@@ -67,6 +67,14 @@ type Bucket<T> = super::Bucket<T, ()>;
 /// Internally, `IndexSet<T, S>` just holds an [`IndexMap<T, (), S>`](IndexMap). Thus the complexity
 /// of the two are the same for most methods.
 ///
+/// # Logic errors
+///
+/// It is a logic error to modify a value while it is in the set so that its
+/// `Hash` or equality behavior changes. The [`MutableValues`] trait provides
+/// mutable access to values and documents this restriction. After such a
+/// modification, lookups can fail and the set can contain duplicate logical
+/// values. The set remains memory-safe, but its logical invariants no longer hold.
+///
 /// # Examples
 ///
 /// ```

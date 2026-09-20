@@ -73,6 +73,14 @@ use crate::{Bucket, Equivalent, GetDisjointMutError, HashValue, TryReserveError}
 /// index for a key, and the method `.get_index` looks up the key-value pair by
 /// index.
 ///
+/// # Logic errors
+///
+/// It is a logic error to modify a key while it is in the map so that its
+/// `Hash` or equality behavior changes. The [`MutableKeys`] trait provides
+/// mutable access to keys and documents this restriction. After such a
+/// modification, lookups can fail and the map can contain duplicate logical
+/// keys. The map remains memory-safe, but its logical invariants no longer hold.
+///
 /// # Examples
 ///
 /// ```
