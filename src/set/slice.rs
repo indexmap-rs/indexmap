@@ -426,4 +426,20 @@ mod tests {
             }
         }
     }
+
+    #[test]
+    fn slice_split_at_checked() {
+        let set: IndexSet<i32> = (0..4).collect();
+        let slice = set.as_slice();
+
+        let (first, second) = slice.split_at_checked(1).unwrap();
+        assert_eq!(first, &[0]);
+        assert_eq!(second, &[1, 2, 3]);
+
+        let (first, second) = slice.split_at_checked(4).unwrap();
+        assert_eq!(first.len(), 4);
+        assert!(second.is_empty());
+
+        assert!(slice.split_at_checked(5).is_none());
+    }
 }

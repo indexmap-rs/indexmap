@@ -786,4 +786,37 @@ mod tests {
         assert_eq!(subslice.len(), 3);
         assert_eq!(subslice, &[(3, 9), (4, 16), (5, 25)]);
     }
+
+    #[test]
+    fn slice_split_at_checked() {
+        let map: IndexMap<i32, i32> = (0..4).map(|i| (i, i * i)).collect();
+        let slice = map.as_slice();
+
+        let (first, second) = slice.split_at_checked(1).unwrap();
+        assert_eq!(first, &[(0, 0)]);
+        assert_eq!(second, &[(1, 1), (2, 4), (3, 9)]);
+
+        let (first, second) = slice.split_at_checked(4).unwrap();
+        assert_eq!(first.len(), 4);
+        assert!(second.is_empty());
+
+        assert!(slice.split_at_checked(5).is_none());
+    }
+
+    #[test]
+    fn slice_split_at_mut_checked() {
+        let mut map: IndexMap<i32, i32> = (0..4).map(|i| (i, i * i)).collect();
+        let slice: &mut Slice<i32, i32> = map.as_mut_slice();
+
+        {
+            let (first, second) = slice.split_at_mut_checked(2).unwrap();
+            assert_eq!(first, &[(0, 0), (1, 1)]);
+            assert_eq!(second, &[(2, 4), (3, 9)]);
+            first[0] = 100;
+            second[0] = 200;
+        }
+        assert_eq!(slice, &[(0, 100), (1, 1), (2, 200), (3, 9)]);
+
+        assert!(slice.split_at_mut_checked(5).is_none());
+    }
 }
