@@ -607,6 +607,24 @@ fn get_index_mut2() {
 }
 
 #[test]
+fn get_key_value_mut() {
+    let mut map: IndexMap<i32, i32> = IndexMap::new();
+    map.insert(1, 2);
+    map.insert(3, 4);
+
+    {
+        let (key, value) = map.get_key_value_mut(&3).unwrap();
+        assert_eq!(*key, 3);
+        assert_eq!(*value, 4);
+        *value = 7;
+    }
+    assert_eq!(map[&3], 7);
+    assert_eq!(map[&1], 2);
+
+    assert!(map.get_key_value_mut(&5).is_none());
+}
+
+#[test]
 fn shift_shift_remove_index() {
     let mut map: IndexMap<i32, i32> = IndexMap::new();
     map.insert(1, 2);
